@@ -1,10 +1,9 @@
-﻿using DacpacDiff.Core.Diff;
-using DacpacDiff.Core.Model;
+﻿using DacpacDiff.Core.Model;
 using System;
 using System.Linq;
 using System.Text;
 
-namespace DacpacDiff.Comparer.Diff
+namespace DacpacDiff.Core.Diff
 {
     public class DiffTableCreate : IDifference
     {
@@ -18,7 +17,7 @@ namespace DacpacDiff.Comparer.Diff
         {
             Table = table;
 
-            foreach (var fld in table.Fields ?? new FieldModel[0])
+            foreach (var fld in table.Fields ?? Array.Empty<FieldModel>())
             {
                 fld.SetState(table, null);
             }
@@ -28,13 +27,16 @@ namespace DacpacDiff.Comparer.Diff
         {
             var sql = new StringBuilder();
 
-            foreach (var fld in (Table.Fields ?? new FieldModel[0]).OrderBy(f => f.Order))
+            foreach (var fld in (Table.Fields ?? Array.Empty<FieldModel>()).OrderBy(f => f.Order))
             {
                 var ln = fld.GetTableFieldSql();
                 sql.Append($",\r\n    {ln}");
             }
 
-            if (sql.Length > 0) sql.Remove(0, 3);
+            if (sql.Length > 0)
+            {
+                sql.Remove(0, 3);
+            }
             sql.Insert(0, $"CREATE TABLE {Table.FullName}\r\n(\r\n");
 
             if ((Table.PrimaryKey?.Length ?? 0) > 0)
@@ -50,7 +52,7 @@ namespace DacpacDiff.Comparer.Diff
                 {
                     sql.Append($" (HISTORY_TABLE = {Table.Temporality.HistoryTable})");
                 }
-                sql.Append(")");
+                sql.Append(')');
             }
             else
             {

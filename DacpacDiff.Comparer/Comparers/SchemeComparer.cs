@@ -1,5 +1,4 @@
-﻿using DacpacDiff.Comparer.Diff;
-using DacpacDiff.Core.Diff;
+﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
 using System;
 using System.Collections.Generic;

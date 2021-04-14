@@ -1,10 +1,9 @@
-﻿using DacpacDiff.Core.Diff;
-using DacpacDiff.Core.Model;
+﻿using DacpacDiff.Core.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DacpacDiff.Comparer.Diff
+namespace DacpacDiff.Core.Diff
 {
     public class DiffFieldAlter : IDifference, IDataLossChange
     {

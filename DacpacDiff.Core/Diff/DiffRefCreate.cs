@@ -1,8 +1,7 @@
-﻿using DacpacDiff.Core.Diff;
-using DacpacDiff.Core.Model;
+﻿using DacpacDiff.Core.Model;
 using System;
 
-namespace DacpacDiff.Comparer.Diff
+namespace DacpacDiff.Core.Diff
 {
     public class DiffRefCreate : IDifference
     {

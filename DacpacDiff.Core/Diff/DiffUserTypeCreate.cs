@@ -1,8 +1,7 @@
-﻿using DacpacDiff.Core.Diff;
-using DacpacDiff.Core.Model;
+﻿using DacpacDiff.Core.Model;
 using System.Text;
 
-namespace DacpacDiff.Comparer.Diff
+namespace DacpacDiff.Core.Diff
 {
     public class DiffUserTypeCreate : IDifference
     {
@@ -34,7 +33,7 @@ namespace DacpacDiff.Comparer.Diff
                 sql.Append("CREATE TYPE ")
                     .Append(UserType.FullName)
                     .Append(" AS TABLE\r\n")
-                    .Append("(");
+                    .Append('(');
 
                 var first = true;
                 foreach (var fld in UserType.Fields)

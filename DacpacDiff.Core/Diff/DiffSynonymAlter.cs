@@ -1,7 +1,6 @@
-﻿using DacpacDiff.Core.Diff;
-using DacpacDiff.Core.Model;
+﻿using DacpacDiff.Core.Model;
 
-namespace DacpacDiff.Comparer.Diff
+namespace DacpacDiff.Core.Diff
 {
     public class DiffSynonymAlter : IDifference
     {

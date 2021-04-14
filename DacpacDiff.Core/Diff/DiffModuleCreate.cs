@@ -1,9 +1,8 @@
-﻿using DacpacDiff.Core.Diff;
-using DacpacDiff.Core.Model;
+﻿using DacpacDiff.Core.Model;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace DacpacDiff.Comparer.Diff
+namespace DacpacDiff.Core.Diff
 {
     public class DiffModuleCreate : IDifference
     {
