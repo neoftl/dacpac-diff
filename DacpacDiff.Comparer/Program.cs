@@ -1,7 +1,6 @@
 ﻿using CommandLine;
 using DacpacDiff.Comparer;
 using DacpacDiff.Comparer.Comparers;
-using DacpacDiff.Comparer.Output;
 using DacpacDiff.Core.Parser;
 using DacpacDiff.Core.Utility;
 using System;
@@ -39,7 +38,7 @@ Parser.Default.ParseArguments<Options>(args)
 
         var schemeParserFactory = new SchemeParserFactory();
         var comparerFactory = new ComparerFactory();
-        var outputFormatFactory = new FileFormatFactory();
+        var formatProvider = FormatProviderFactory.GetFormat("mssql");
 
         // Source scheme
         var leftFmt = schemeParserFactory.GetFileFormat(leftSchemeFile);
@@ -68,7 +67,7 @@ Parser.Default.ParseArguments<Options>(args)
         var rightVer = rightScheme.GetDatabaseVersion();
 
         // Output
-        var outputFormat = outputFormatFactory.GetFormat("mssql"); // TODO: other formats
+        var outputFormat = formatProvider.GetOutputGenerator();
         var result = outputFormat.Generate(leftScheme.Name, rightScheme.Name, rightVer, diffs, !o.DisableDatalossCheck, !o.PrettyPrint);
 
         if (outputFile != null)

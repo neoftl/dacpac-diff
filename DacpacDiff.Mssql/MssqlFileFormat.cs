@@ -1,41 +1,30 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Output;
+using DacpacDiff.Core.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using IFormatProvider = DacpacDiff.Core.IFormatProvider;
 
-namespace DacpacDiff.Mssql.Output
+namespace DacpacDiff.Mssql
 {
     /// <summary>
     /// Converts a set of diffs to valid MSSQL
     /// </summary>
     public class MssqlFileFormat : IFileFormat
     {
-        public static readonly string SECTION_START = @"BEGIN TRAN;
-IF (@@TRANCOUNT <> 2) BEGIN
-    DECLARE @M NVARCHAR(MAX) = CONCAT('Failed: Transaction mismatch (', @@TRANCOUNT, ')'); RAISERROR(@M, 0, 1) WITH NOWAIT;
-    IF (@@TRANCOUNT > 0) ROLLBACK;
-    SET NOEXEC ON;
-END";
-        public static readonly string SECTION_END = @"IF (@@ERROR <> 0) BEGIN
-    RAISERROR('Failed', 0, 1) WITH NOWAIT;
-    IF (@@TRANCOUNT > 0) ROLLBACK;
-    SET NOEXEC ON;
-END ELSE IF (@@TRANCOUNT <> 2) BEGIN
-    DECLARE @M NVARCHAR(MAX) = CONCAT('Failed: Transaction mismatch (', @@TRANCOUNT, ')'); RAISERROR(@M, 0, 1) WITH NOWAIT;
-    IF (@@TRANCOUNT > 0) ROLLBACK;
-    SET NOEXEC ON;
-END;
-COMMIT";
+        private readonly IFormatProvider _formatProvider;
 
-        public MssqlFileFormat()
+        public MssqlFileFormat(IFormatProvider formatProvider)
         {
+            _formatProvider = formatProvider;
         }
 
-        private static string flatten(string sql, bool flat)
+        public static string Flatten(string sql) => Flatten(sql, true);
+        public static string Flatten(string sql, bool flat)
         {
-            return flat ? sql.Replace("\r\n", " ").Replace("  ", " ").Replace("  ", " ").Replace("  ", " ") : sql;
+            return flat ? sql.Replace(Environment.NewLine, " ").Replace("  ", " ").Replace("  ", " ").Replace("  ", " ") : sql;
         }
 
         public string Generate(string leftFileName, string rightFileName, string targetVersion, IEnumerable<IDifference> diffs, bool withDataLossCheck, bool flat = true)
@@ -52,10 +41,12 @@ COMMIT";
             var count = 0;
             foreach (var diff in diffs)
             {
+                var diffFormatter = _formatProvider.GetDiffFormatter(diff);
+
                 if ((diff.Title?.Length ?? 0) == 0)
                 {
-                    sqlBody.Append(diff.ToString())
-                        .AppendLine();
+                    diffFormatter.Format(sqlBody, withDataLossCheck, !flat)
+                        .EnsureLine();
                     continue;
                 }
 
@@ -63,32 +54,15 @@ COMMIT";
                 var progress = (double)(99.99 / diffCount) * count;
 
                 sqlHead.Append("-- ").Append(diffNum)
-                    .Append(diff.Title).Append(": ").Append(diff.Name)
-                    .AppendLine();
-
-                sqlBody.Append($"\r\nRAISERROR('> ").Append(diffNum)
+                    .Append(diff.Title).Append(": ").Append(diff.Name).AppendLine()
+                    .AppendLine()
+                    .Append($"RAISERROR('> ").Append(diffNum)
                     .Append(diff.Title).Append(": ").Append(diff.Name)
                     .AppendFormat(" ({0,5}%)", progress.ToString("0.00"))
-                    .Append("', 0, 1) WITH NOWAIT; ")
-                    .Append(flat ? string.Empty : "\r\n")
-                    .Append(flatten(SECTION_START, flat))
-                    .AppendLine("\r\nGO\r\n");
+                    .Append("', 0, 1) WITH NOWAIT; ");
 
-                if (withDataLossCheck && diff is IDataLossChange d && d.GetDataLossTable(out var tableName))
-                {
-                    sqlBody.AppendLine()
-                        .AppendLine($"IF EXISTS (SELECT 1 FROM {tableName}) BEGIN")
-                        .AppendLine($"    RAISERROR('WARNING! This change may cause dataloss to {tableName}. Verify and remove this error block to continue.', 0, 1) WITH NOWAIT;")
-                        .AppendLine("    IF (@@TRANCOUNT > 0) ROLLBACK;")
-                        .AppendLine("    SET NOEXEC ON;")
-                        .AppendLine("END")
-                        .AppendLine();
-                }
-
-                sqlBody.Append(diff.ToString())
-                    .AppendLine("\r\n\r\nGO")
-                    .Append(flatten(SECTION_END, flat))
-                    .AppendLine("\r\nGO");
+                diffFormatter.Format(sqlBody, withDataLossCheck, !flat)
+                    .EnsureLine();
             }
 
             sqlHead.Append(sqlBody)

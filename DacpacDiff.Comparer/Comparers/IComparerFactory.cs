@@ -2,8 +2,8 @@
 
 namespace DacpacDiff.Comparer.Comparers
 {
-	public interface IComparerFactory
-	{
-		IComparer<T> GetComparer<T>() where T : IModel;
-	}
+    public interface IComparerFactory
+    {
+        IComparer<T> GetComparer<T>() where T : IModel;
+    }
 }

@@ -27,12 +27,12 @@ namespace DacpacDiff.Core.Model
         public bool Nullable { get; set; }
         public bool Identity { get; set; }
 
-        public RefModel Ref { get; set; } = RefModel.Empty;
-        public bool HasReference => Ref.Name.Length > 0;
-        public string RefName => Ref.Name;
-        public string RefTargetTable => Ref.TargetTable;
-        public string RefTargetField => Ref.TargetField;
-        public bool IsNamedReference => Ref.IsSystemNamed;
+        public RefModel? Ref { get; set; }
+        public bool HasReference => Ref is null;
+        public string? RefName => Ref?.Name;
+        public string? RefTargetTable => Ref?.TargetTable;
+        public string? RefTargetField => Ref?.TargetField;
+        public bool IsNamedReference => Ref?.IsSystemNamed ?? false;
 
         public string[] Dependents { get; set; }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace DacpacDiff.Core.Utility
@@ -45,6 +46,22 @@ namespace DacpacDiff.Core.Utility
                 foreach (var val in values)
                 {
                     dict[keySelector(val)] = val;
+                }
+            }
+            return dict;
+        }
+
+        /// <summary>
+        /// Apply all of the content of <paramref name="items"/> to this dictionary, using selectors to determine the key and value of each item.
+        /// Overwrites existing keys.
+        /// </summary>
+        public static IDictionary<TKey, TValue>? Merge<TItem, TKey, TValue>(this IDictionary<TKey, TValue>? dict, IEnumerable<TItem>? items, Func<TItem, TKey> keySelector, Func<TItem, TValue> valueSelector)
+        {
+            if (dict is not null && items is not null)
+            {
+                foreach (var val in items)
+                {
+                    dict[keySelector(val)] = valueSelector(val);
                 }
             }
             return dict;

@@ -2,7 +2,7 @@
 using DacpacDiff.Core.Model;
 using System;
 
-namespace DacpacDiff.Comparer.Diff
+namespace DacpacDiff.Core.Diff
 {
     public class DiffObjectDrop : IDifference, IDataLossChange
     {
@@ -59,23 +59,6 @@ namespace DacpacDiff.Comparer.Diff
             Name = table.FullName;
             Type = ObjectType.TABLE;
             // TODO: if temporal, will need to do both
-        }
-
-        public override string ToString()
-        {
-            if (Type == ObjectType.INDEX)
-            {
-                // TODO: Need "DROP INDEX [x] ON [y]"
-                var m = System.Text.RegularExpressions.Regex.Match(((ModuleModel)Model)?.Definition, @"(?i)ON\s+((?:\[[^\]]+\]\s*\.|\w+\s*\.)?\s*(?:\[[^\]]+\]|\w+))\s*\(");
-                if (!m.Success)
-                {
-                    System.Console.Error.WriteLine($"Cannot drop INDEX {Name} using this schema version");
-                    return null;
-                }
-                return $"DROP INDEX [{((ModuleModel)Model).Name}] ON {m.Groups[1].Value}";
-            }
-
-            return $"DROP {Type} {Name}";
         }
 
         public bool GetDataLossTable(out string tableName)

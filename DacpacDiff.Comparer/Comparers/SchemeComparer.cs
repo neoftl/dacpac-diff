@@ -120,7 +120,7 @@ namespace DacpacDiff.Comparer.Comparers
                         break;
                     }
 
-                    result.Add(new DiffComment { Comment = $"\r\nL{partL}R{partR} ({matches.Length} | Rem {remain.Count})" });
+                    result.Add(new DiffComment { Comment = $"{Environment.NewLine}L{partL}R{partR} ({matches.Length} | Rem {remain.Count})" });
                     result.AddRange(matches);
                     remain.RemoveAll(d => matches.Any(m => m == d));
                     ++partR;
