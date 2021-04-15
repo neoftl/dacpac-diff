@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace DacpacDiff.Comparer.Comparers
 {
-    public class SynonymComparer : IComparer<SynonymModel>
+    public class SynonymComparer : IModelComparer<SynonymModel>
     {
         public IEnumerable<IDifference> Compare(SynonymModel? lft, SynonymModel? rgt)
         {

@@ -26,7 +26,7 @@ namespace DacpacDiff.Mssql
 
             var sqlHead = new StringBuilder();
 
-            sqlHead.AppendLine($@"-- Delta upgrade from {leftFileName} to {rightFileName}
+            sqlHead.AppendLine($@"-- Delta upgrade from {rightFileName} to {leftFileName}
 -- Generated {DateTime.UtcNow}
 --
 -- Changes ({objCount}):");

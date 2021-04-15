@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace DacpacDiff.Comparer.Comparers
 {
-    public class FieldComparer : IComparer<FieldModel>
+    public class FieldComparer : IModelComparer<FieldModel>
     {
         public IEnumerable<IDifference> Compare(FieldModel? lft, FieldModel? rgt)
         {

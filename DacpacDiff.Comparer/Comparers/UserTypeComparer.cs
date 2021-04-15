@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace DacpacDiff.Comparer.Comparers
 {
-    public class UserTypeComparer : IComparer<UserTypeModel>
+    public class UserTypeComparer : IModelComparer<UserTypeModel>
     {
         public IEnumerable<IDifference> Compare(UserTypeModel? lft, UserTypeModel? rgt)
         {

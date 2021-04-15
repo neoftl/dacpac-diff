@@ -6,11 +6,11 @@ using System.Linq;
 
 namespace DacpacDiff.Comparer.Comparers
 {
-    public class TableComparer : IComparer<TableModel>
+    public class TableComparer : IModelComparer<TableModel>
     {
-        private readonly IComparerFactory _comparerFactory;
+        private readonly IModelComparerFactory _comparerFactory;
 
-        public TableComparer(IComparerFactory comparerFactory)
+        public TableComparer(IModelComparerFactory comparerFactory)
         {
             _comparerFactory = comparerFactory;
         }

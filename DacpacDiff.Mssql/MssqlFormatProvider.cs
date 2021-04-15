@@ -3,7 +3,6 @@ using DacpacDiff.Core.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using IFormatProvider = DacpacDiff.Core.IFormatProvider;
 
 namespace DacpacDiff.Mssql
@@ -20,11 +19,12 @@ namespace DacpacDiff.Mssql
             var sqlFormatters = GetType().Assembly.GetTypes()
                 .Where(t => !t.IsAbstract && typeof(ISqlFormatter).IsAssignableFrom(t))
                 .ToArray();
-            _sqlFormatters.Merge(sqlFormatters, t => getFormattableTypeFromConstructor(t.GetConstructors()), t => (f) => Activator.CreateInstance(t, new object[] { f }) as ISqlFormatter ?? throw new NullReferenceException());
+            _sqlFormatters.Merge(sqlFormatters, getFormattableType, t => (f) => Activator.CreateInstance(t, new object[] { f }) as ISqlFormatter ?? throw new NullReferenceException());
 
-            static Type getFormattableTypeFromConstructor(ConstructorInfo[] constructors)
+            static Type getFormattableType(Type t)
             {
-                return constructors.Where(c => c.IsPublic)
+                return t.GetConstructors()
+                    .Where(c => c.IsPublic)
                     .Select(c => c.GetParameters())
                     .Where(p => p.Length == 1)
                     .Single(p => typeof(ISqlFormattable).IsAssignableFrom(p[0].ParameterType))

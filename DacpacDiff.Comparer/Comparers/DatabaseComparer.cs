@@ -7,11 +7,11 @@ using System.Linq;
 
 namespace DacpacDiff.Comparer.Comparers
 {
-    public class DatabaseComparer : IComparer<DatabaseModel>
+    public class DatabaseComparer : IModelComparer<DatabaseModel>
     {
-        private readonly IComparerFactory _comparerFactory;
+        private readonly IModelComparerFactory _comparerFactory;
 
-        public DatabaseComparer(IComparerFactory comparerFactory)
+        public DatabaseComparer(IModelComparerFactory comparerFactory)
         {
             _comparerFactory = comparerFactory;
         }

@@ -32,26 +32,26 @@ namespace DacpacDiff.Comparer.Comparers
             (a, d) => d is DiffSynonymCreate,
         };
 
-        private readonly IComparerFactory _comparerFactory;
+        private readonly IModelComparerFactory _comparerFactory;
 
-        public SchemeComparer(IComparerFactory comparerFactory)
+        public SchemeComparer(IModelComparerFactory comparerFactory)
         {
             _comparerFactory = comparerFactory;
         }
 
-        public IEnumerable<ISqlFormattable> Compare(SchemeModel leftScheme, SchemeModel rightScheme)
+        public IEnumerable<ISqlFormattable> Compare(SchemeModel lft, SchemeModel rgt)
         {
-            if (leftScheme.Databases.Count > 1)
+            if (lft.Databases.Count > 1)
             {
                 throw new NotSupportedException("DacpacDiff does not yet support multiple databases per scheme");
             }
-            var leftDb = leftScheme.Databases.Values.Single();
+            var leftDb = lft.Databases.Values.Single();
 
-            if (rightScheme.Databases.Count > 1)
+            if (rgt.Databases.Count > 1)
             {
                 throw new NotSupportedException("DacpacDiff does not yet support multiple databases per scheme");
             }
-            var rightDb = rightScheme.Databases.Values.Single();
+            var rightDb = rgt.Databases.Values.Single();
 
             // Produce diffs in execution order
             var diffs = _comparerFactory.GetComparer<DatabaseModel>()
