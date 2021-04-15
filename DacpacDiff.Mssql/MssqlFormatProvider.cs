@@ -1,5 +1,4 @@
-﻿using DacpacDiff.Core.Diff;
-using DacpacDiff.Core.Output;
+﻿using DacpacDiff.Core.Output;
 using DacpacDiff.Core.Utility;
 using System;
 using System.Collections.Generic;
@@ -13,36 +12,36 @@ namespace DacpacDiff.Mssql
     {
         public string FormatName => "mssql";
 
-        private readonly IDictionary<Type, Func<IDifference, IDiffFormatter>> _diffFormatters = new Dictionary<Type, Func<IDifference, IDiffFormatter>>();
+        private readonly IDictionary<Type, Func<ISqlFormattable, ISqlFormatter>> _sqlFormatters = new Dictionary<Type, Func<ISqlFormattable, ISqlFormatter>>();
 
         public MssqlFormatProvider()
         {
-            // Find all diff formatters
-            var diffFormatters = GetType().Assembly.GetTypes()
-                .Where(t => !t.IsAbstract && typeof(IDiffFormatter).IsAssignableFrom(t))
+            // Find all formatters
+            var sqlFormatters = GetType().Assembly.GetTypes()
+                .Where(t => !t.IsAbstract && typeof(ISqlFormatter).IsAssignableFrom(t))
                 .ToArray();
-            _diffFormatters.Merge(diffFormatters, t => getDiffTypeFromConstructor(t.GetConstructors()), t => (d) => Activator.CreateInstance(t, new object[] { d }) as IDiffFormatter ?? throw new NullReferenceException());
+            _sqlFormatters.Merge(sqlFormatters, t => getFormattableTypeFromConstructor(t.GetConstructors()), t => (f) => Activator.CreateInstance(t, new object[] { f }) as ISqlFormatter ?? throw new NullReferenceException());
 
-            static Type getDiffTypeFromConstructor(ConstructorInfo[] constructors)
+            static Type getFormattableTypeFromConstructor(ConstructorInfo[] constructors)
             {
                 return constructors.Where(c => c.IsPublic)
                     .Select(c => c.GetParameters())
                     .Where(p => p.Length == 1)
-                    .Single(p => typeof(IDifference).IsAssignableFrom(p[0].ParameterType))
+                    .Single(p => typeof(ISqlFormattable).IsAssignableFrom(p[0].ParameterType))
                     [0].ParameterType;
             }
         }
 
-        public IFileFormat GetOutputGenerator() => new MssqlFileFormat(this);
+        public ISqlFileBuilder GetSqlFileBuilder() => new MssqlFileBuilder(this);
 
-        public IDiffFormatter GetDiffFormatter(IDifference diff)
+        public ISqlFormatter GetSqlFormatter(ISqlFormattable sqlObj)
         {
-            if (_diffFormatters.TryGetValue(diff.GetType(), out var formatter))
+            if (_sqlFormatters.TryGetValue(sqlObj.GetType(), out var formatter))
             {
-                return formatter(diff);
+                return formatter(sqlObj);
             }
 
-            throw new NotImplementedException($"No diff formatter registered for diff type: {diff.GetType().FullName}");
+            throw new NotImplementedException($"No SQL formatter registered for type: {sqlObj.GetType().FullName}");
         }
     }
 }

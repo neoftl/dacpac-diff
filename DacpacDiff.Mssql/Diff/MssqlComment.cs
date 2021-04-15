@@ -1,20 +1,18 @@
-﻿using DacpacDiff.Core.Diff;
-using DacpacDiff.Core.Output;
+﻿using DacpacDiff.Core.Output;
 using System;
-using System.Text;
 
 namespace DacpacDiff.Mssql.Diff
 {
-    public class MssqlComment : IDiffFormatter
+    public class MssqlComment : ISqlFormatter
     {
-        private readonly DiffComment _diff;
+        private readonly SqlComment _diff;
 
-        public MssqlComment(DiffComment diff)
+        public MssqlComment(SqlComment diff)
         {
             _diff = diff ?? throw new ArgumentNullException(nameof(diff));
         }
 
-        public StringBuilder Format(StringBuilder sb, bool checkForDataLoss, bool prettyPrint)
+        public void Format(ISqlFileBuilder sb)
         {
             if (_diff.Comment.Length > 0)
             {
@@ -25,7 +23,6 @@ namespace DacpacDiff.Mssql.Diff
                 }
                 sb.AppendLine(res);
             }
-            return sb;
         }
 
         public override string ToString() => _diff.Comment;

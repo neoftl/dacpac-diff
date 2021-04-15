@@ -1,15 +1,15 @@
 ﻿using DacpacDiff.Core.Diff;
-using System.Text;
+using DacpacDiff.Core.Output;
 
 namespace DacpacDiff.Mssql.Diff
 {
-    public class MssqlTableCheckDrop : BaseMssqlDiffBlock<DiffTableCheckDrop>
+    public class MssqlDiffTableCheckDrop : BaseMssqlDiffBlock<DiffTableCheckDrop>
     {
-        public MssqlTableCheckDrop(DiffTableCheckDrop diff)
+        public MssqlDiffTableCheckDrop(DiffTableCheckDrop diff)
             : base(diff)
         { }
 
-        protected override void GetFormat(StringBuilder sb, bool checkForDataLoss, bool prettyPrint)
+        protected override void GetFormat(ISqlFileBuilder sb)
         {
             if (_diff.TableCheck.IsSystemNamed)
             {

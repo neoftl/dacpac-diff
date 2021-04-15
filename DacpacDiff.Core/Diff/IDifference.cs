@@ -1,11 +1,10 @@
 ﻿using DacpacDiff.Core.Model;
+using DacpacDiff.Core.Output;
 
 namespace DacpacDiff.Core.Diff
 {
-    public interface IDifference
+    public interface IDifference : ISqlFormattable
     {
         IModel? Model { get; }
-        string? Title { get; }
-        string Name { get; }
     }
 }

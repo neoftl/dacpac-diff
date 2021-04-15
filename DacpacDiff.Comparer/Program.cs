@@ -67,7 +67,7 @@ Parser.Default.ParseArguments<Options>(args)
         var rightVer = rightScheme.GetDatabaseVersion();
 
         // Output
-        var outputFormat = formatProvider.GetOutputGenerator();
+        var outputFormat = formatProvider.GetSqlFileBuilder();
         var result = outputFormat.Generate(leftScheme.Name, rightScheme.Name, rightVer, diffs, !o.DisableDatalossCheck, !o.PrettyPrint);
 
         if (outputFile != null)

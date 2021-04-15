@@ -1,19 +1,19 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
+using DacpacDiff.Core.Output;
 using System;
-using System.Text;
 
 namespace DacpacDiff.Mssql.Diff
 {
-    public class MssqlObjectDrop : BaseMssqlDiffBlock<DiffObjectDrop>
+    public class MssqlDiffObjectDrop : BaseMssqlDiffBlock<DiffObjectDrop>
     {
         private const string MOD_DEF_PATTERN = @"(?i)ON\s+((?:\[[^\]]+\]\s*\.|\w+\s*\.)?\s*(?:\[[^\]]+\]|\w+))\s*\(";
 
-        public MssqlObjectDrop(DiffObjectDrop diff)
+        public MssqlDiffObjectDrop(DiffObjectDrop diff)
             : base(diff)
         { }
 
-        protected override void GetFormat(StringBuilder sb, bool checkForDataLoss, bool prettyPrint)
+        protected override void GetFormat(ISqlFileBuilder sb)
         {
             if (_diff.Type == DiffObjectDrop.ObjectType.INDEX && _diff.Model is ModuleModel idx)
             {

@@ -1,5 +1,4 @@
-﻿using DacpacDiff.Core.Diff;
-using DacpacDiff.Core.Output;
+﻿using DacpacDiff.Core.Output;
 
 namespace DacpacDiff.Core
 {
@@ -7,7 +6,7 @@ namespace DacpacDiff.Core
     {
         string FormatName { get; }
 
-        IDiffFormatter GetDiffFormatter(IDifference diff);
-        IFileFormat GetOutputGenerator();
+        ISqlFormatter GetSqlFormatter(ISqlFormattable sqlObj);
+        ISqlFileBuilder GetSqlFileBuilder();
     }
 }

@@ -1,6 +1,4 @@
-﻿using DacpacDiff.Core.Diff;
-using DacpacDiff.Core.Output;
-using DacpacDiff.Core.Utility;
+﻿using DacpacDiff.Core.Output;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,77 +10,65 @@ namespace DacpacDiff.Mssql
     /// <summary>
     /// Converts a set of diffs to valid MSSQL
     /// </summary>
-    public class MssqlFileFormat : IFileFormat
+    public class MssqlFileBuilder : BaseSqlFileBuilder
     {
         private readonly IFormatProvider _formatProvider;
 
-        public MssqlFileFormat(IFormatProvider formatProvider)
+        public MssqlFileBuilder(IFormatProvider formatProvider)
         {
             _formatProvider = formatProvider;
         }
 
-        public static string Flatten(string sql) => Flatten(sql, true);
-        public static string Flatten(string sql, bool flat)
+        public override string Generate(string leftFileName, string rightFileName, string targetVersion, IEnumerable<ISqlFormattable> objs)
         {
-            return flat ? sql.Replace(Environment.NewLine, " ").Replace("  ", " ").Replace("  ", " ").Replace("  ", " ") : sql;
-        }
-
-        public string Generate(string leftFileName, string rightFileName, string targetVersion, IEnumerable<IDifference> diffs, bool withDataLossCheck, bool flat = true)
-        {
-            var diffCount = diffs.Count(d => (d.Title?.Length ?? 0) > 0);
-            var countMag = 1 + (int)Math.Log10(diffCount);
+            var objCount = objs.Count(d => (d.Title?.Length ?? 0) > 0);
+            var countMag = 1 + (int)Math.Log10(objCount);
 
             var sqlHead = new StringBuilder();
-            var sqlBody = new StringBuilder();
 
-            sqlHead.Append(getScriptHead(leftFileName, rightFileName, diffs));
-            sqlBody.Append(getScriptStart(targetVersion));
+            sqlHead.Append($@"-- Delta upgrade from {leftFileName} to {rightFileName}
+-- Generated {DateTime.UtcNow}
+--
+-- Changes ({objCount}):
+");
+
+            addScriptStart(targetVersion);
 
             var count = 0;
-            foreach (var diff in diffs)
+            foreach (var diff in objs)
             {
-                var diffFormatter = _formatProvider.GetDiffFormatter(diff);
+                var diffFormatter = _formatProvider.GetSqlFormatter(diff);
 
                 if ((diff.Title?.Length ?? 0) == 0)
                 {
-                    diffFormatter.Format(sqlBody, withDataLossCheck, !flat)
-                        .EnsureLine();
+                    diffFormatter.Format(this);
+                    EnsureLine();
                     continue;
                 }
 
                 var diffNum = $"[{(++count).ToString("D" + countMag)}] ";
-                var progress = (double)(99.99 / diffCount) * count;
+                var progress = (double)(99.99 / objCount) * count;
 
                 sqlHead.Append("-- ").Append(diffNum)
                     .Append(diff.Title).Append(": ").Append(diff.Name).AppendLine()
                     .AppendLine();
-                sqlBody.Append($"RAISERROR('> ").Append(diffNum)
+                Append($"RAISERROR('> ").Append(diffNum)
                     .Append(diff.Title).Append(": ").Append(diff.Name)
                     .AppendFormat(" ({0,5}%)", progress.ToString("0.00"))
                     .Append("', 0, 1) WITH NOWAIT; ");
 
-                diffFormatter.Format(sqlBody, withDataLossCheck, !flat)
-                    .EnsureLine();
+                diffFormatter.Format(this);
+                EnsureLine();
             }
 
-            sqlHead.Append(sqlBody)
-                .Append(getScriptFoot());
+            _sql.Insert(0, sqlHead.ToString());
+            addScriptFoot();
             return sqlHead.ToString();
         }
 
-        private static string getScriptHead(string leftFileName, string rightFileName, IEnumerable<IDifference> diffs)
+        private void addScriptStart(string targetVersion)
         {
-            var diffCount = diffs.Count(d => (d.Title?.Length ?? 0) > 0);
-            return $@"-- Delta upgrade from {leftFileName} to {rightFileName}
--- Generated {DateTime.UtcNow}
---
--- Changes ({diffCount}):
-";
-        }
-
-        private static string getScriptStart(string targetVersion)
-        {
-            return $@"--
+            AppendLine($@"--
 
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -105,13 +91,12 @@ IF (@@TRANCOUNT <> 0) BEGIN
     SET NOEXEC ON;
 END
 BEGIN TRAN;
-GO
-";
+GO");
         }
 
-        private static string getScriptFoot()
+        private void addScriptFoot()
         {
-            return $@"
+            AppendLine($@"
 -- Complete
 GO
 IF (@@ERROR <> 0) BEGIN
@@ -128,7 +113,7 @@ GO
 
 RAISERROR('Complete', 0, 1) WITH NOWAIT;
 SELECT * FROM [dbo].[tfn_DatabaseVersion]();
-SET NOEXEC OFF;";
+SET NOEXEC OFF;");
         }
     }
 }

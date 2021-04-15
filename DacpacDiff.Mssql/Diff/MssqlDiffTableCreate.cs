@@ -1,29 +1,29 @@
 ﻿using DacpacDiff.Core.Diff;
+using DacpacDiff.Core.Output;
 using System;
 using System.Linq;
-using System.Text;
 
 namespace DacpacDiff.Mssql.Diff
 {
-    public class MssqlTableCreate : BaseMssqlDiffBlock<DiffTableCreate>
+    public class MssqlDiffTableCreate : BaseMssqlDiffBlock<DiffTableCreate>
     {
-        public MssqlTableCreate(DiffTableCreate diff)
+        public MssqlDiffTableCreate(DiffTableCreate diff)
             : base(diff)
         { }
 
-        protected override void GetFormat(StringBuilder sb, bool checkForDataLoss, bool prettyPrint)
+        protected override void GetFormat(ISqlFileBuilder sb)
         {
             sb.AppendLine($"CREATE TABLE {_diff.Table.FullName}")
                 .AppendLine("(");
 
+            var first = true;
             foreach (var fld in _diff.Table.Fields.OrderBy(f => f.Order))
             {
+                sb.AppendIf("," + Environment.NewLine, !first);
+                first = false;
+
                 var ln = fld.GetTableFieldSql();
-                sb.AppendLine($"    {ln},");
-            }
-            if (_diff.Table.Fields.Length > 0)
-            {
-                sb.Remove(sb.Length - 3, 3);
+                sb.Append($"    {ln}");
             }
 
             if (_diff.Table.PrimaryKey.Length > 0)
