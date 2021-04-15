@@ -1,5 +1,6 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Output;
+using System;
 using System.Text;
 
 namespace DacpacDiff.Mssql.Diff
@@ -10,7 +11,7 @@ namespace DacpacDiff.Mssql.Diff
 
         public MssqlComment(DiffComment diff)
         {
-            _diff = diff;
+            _diff = diff ?? throw new ArgumentNullException(nameof(diff));
         }
 
         public StringBuilder Format(StringBuilder sb, bool checkForDataLoss, bool prettyPrint)
@@ -26,5 +27,7 @@ namespace DacpacDiff.Mssql.Diff
             }
             return sb;
         }
+
+        public override string ToString() => _diff.Comment;
     }
 }

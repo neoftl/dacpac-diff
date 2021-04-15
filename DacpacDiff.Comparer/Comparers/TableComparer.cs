@@ -20,7 +20,7 @@ namespace DacpacDiff.Comparer.Comparers
             var diffs = new List<IDifference>();
 
             // May be a drop/create
-            if (lft == null)
+            if (lft is null)
             {
                 // TODO: drop refs
                 // TODO: drop indexes?
@@ -31,7 +31,7 @@ namespace DacpacDiff.Comparer.Comparers
                 diffs.Add(new DiffObjectDrop(rgt));
                 return diffs.ToArray();
             }
-            if (rgt == null)
+            if (rgt is null)
             {
                 diffs.Add(new DiffTableCreate(lft));
                 diffs.AddRange(lft.Fields.Where(f => f.HasReference).Select(f => new DiffRefCreate(f)));

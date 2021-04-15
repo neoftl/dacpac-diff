@@ -10,10 +10,10 @@ namespace DacpacDiff.Core.Model
 
         public DatabaseModel Db { get; private set; }
         public string Name { get; private set; }
-        public IDictionary<string, ModuleModel> Modules { get; set; }
-        public IDictionary<string, SynonymModel> Synonyms { get; set; }
-        public IDictionary<string, TableModel> Tables { get; set; }
-        public IDictionary<string, UserTypeModel> UserTypes { get; set; }
+        public IDictionary<string, ModuleModel> Modules { get; } = new Dictionary<string, ModuleModel>();
+        public IDictionary<string, SynonymModel> Synonyms { get; } = new Dictionary<string, SynonymModel>();
+        public IDictionary<string, TableModel> Tables { get; } = new Dictionary<string, TableModel>();
+        public IDictionary<string, UserTypeModel> UserTypes { get; } = new Dictionary<string, UserTypeModel>();
 
         public SchemaModel(DatabaseModel db, string name)
         {

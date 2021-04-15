@@ -14,10 +14,5 @@ namespace DacpacDiff.Core.Diff
         {
             Schema = schema;
         }
-
-        public override string ToString()
-        {
-            return $"CREATE SCHEMA {Name} AUTHORIZATION [dbo]";
-        }
     }
 }

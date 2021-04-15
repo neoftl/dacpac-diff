@@ -55,8 +55,8 @@ namespace DacpacDiff.Mssql
 
                 sqlHead.Append("-- ").Append(diffNum)
                     .Append(diff.Title).Append(": ").Append(diff.Name).AppendLine()
-                    .AppendLine()
-                    .Append($"RAISERROR('> ").Append(diffNum)
+                    .AppendLine();
+                sqlBody.Append($"RAISERROR('> ").Append(diffNum)
                     .Append(diff.Title).Append(": ").Append(diff.Name)
                     .AppendFormat(" ({0,5}%)", progress.ToString("0.00"))
                     .Append("', 0, 1) WITH NOWAIT; ");

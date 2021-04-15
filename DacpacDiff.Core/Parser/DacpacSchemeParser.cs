@@ -62,14 +62,13 @@ namespace DacpacDiff.Core.Parser
 
             // Synonyms
             var els = rootXml.Find("Element", ("Type", a => a == "SqlSynonym"), ("Name", a => a?.StartsWith($"[{schema.Name}]") == true));
-            schema.Synonyms = els.Select(e => getSynonym(schema, e)).ToDictionary(t => t.Name);
+            schema.Synonyms.Merge(els.Select(e => getSynonym(schema, e)), t => t.Name);
 
             // Tables
             els = rootXml.Find("Element", ("Type", a => a == "SqlTable"), ("Name", a => a?.StartsWith($"[{schema.Name}]") == true));
-            schema.Tables = els.Select(e => getTable(schema, e))
+            schema.Tables.Merge(els.Select(e => getTable(schema, e))
                 .Where(t => t is not null)
-                .Cast<TableModel>()
-                .ToDictionary(t => t.Name);
+                .Cast<TableModel>(), t => t.Name);
 
             // Index
             els = rootXml.Find("Element", ("Type", a => a == "SqlIndex"), ("Name", a => a?.StartsWith($"[{schema.Name}]") == true));

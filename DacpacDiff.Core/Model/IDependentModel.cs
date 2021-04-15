@@ -2,6 +2,6 @@
 {
     public interface IDependentModel
     {
-        string[] Dependents { get; set; }
+        string[]? Dependents { get; set; }
     }
 }

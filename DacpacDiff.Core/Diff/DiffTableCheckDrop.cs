@@ -15,14 +15,5 @@ namespace DacpacDiff.Core.Diff
         {
             TableCheck = tableCheck ?? throw new ArgumentNullException(nameof(tableCheck));
         }
-
-        public override string ToString()
-        {
-            if (TableCheck.IsSystemNamed)
-            {
-                return $"DECLARE @DropConstraintSql VARCHAR(MAX) = (SELECT TOP 1 CONCAT('ALTER TABLE {TableCheck.Table.FullName} DROP CONSTRAINT [', [name], ']') FROM sys.check_constraints WHERE [parent_object_id] = OBJECT_ID('{TableCheck.Table.FullName}') AND [type] = 'C' AND [definition] = '{TableCheck.Definition}' AND [is_system_named] = 1); EXEC (@DropConstraintSql)";
-            }
-            return $"ALTER TABLE {TableCheck.Table.FullName} DROP CONSTRAINT [{TableCheck.Name}]";
-        }
     }
 }
