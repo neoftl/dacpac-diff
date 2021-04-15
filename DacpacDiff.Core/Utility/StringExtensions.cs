@@ -6,12 +6,11 @@ namespace DacpacDiff.Core.Utility
     {
         public static string ReplaceAll(this string input, string oldValue, string newValue)
         {
-            string result;
-            do
+            while (input.Contains(oldValue))
             {
-                result = input.Replace(oldValue, newValue);
-            } while (result != input);
-            return result;
+                input = input.Replace(oldValue, newValue);
+            }
+            return input;
         }
 
         public static bool TryMatch(this string input, string pattern, out Match match)

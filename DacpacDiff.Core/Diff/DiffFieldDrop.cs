@@ -15,15 +15,6 @@ namespace DacpacDiff.Core.Diff
             Field = field;
         }
 
-        public override string ToString()
-        {
-            var sql = $"ALTER TABLE [{Field.Table.Schema.Name}].[{Field.Table.Name}] DROP COLUMN [{Field.Name}]";
-
-            // TODO: ref
-
-            return sql;
-        }
-
         public bool GetDataLossTable(out string tableName)
         {
             tableName = Field.Table.FullName;

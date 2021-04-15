@@ -14,16 +14,15 @@ namespace DacpacDiff.Mssql.Diff
         protected override void GetFormat(ISqlFileBuilder sb)
         {
             sb.AppendLine($"CREATE TABLE {_diff.Table.FullName}")
-                .AppendLine("(");
+                .Append("(");
 
             var first = true;
             foreach (var fld in _diff.Table.Fields.OrderBy(f => f.Order))
             {
-                sb.AppendIf("," + Environment.NewLine, !first);
+                sb.AppendIf(",", !first)
+                    .AppendLine()
+                    .Append("    ").Append(fld.GetTableFieldSql());
                 first = false;
-
-                var ln = fld.GetTableFieldSql();
-                sb.Append($"    {ln}");
             }
 
             if (_diff.Table.PrimaryKey.Length > 0)
@@ -35,14 +34,10 @@ namespace DacpacDiff.Mssql.Diff
             if (_diff.Table.Temporality != null)
             {
                 sb.AppendLine(",")
-                    .Append($"    PERIOD FOR SYSTEM_TIME ([{_diff.Table.Temporality.PeriodFieldFrom}], [{_diff.Table.Temporality.PeriodFieldTo}])")
-                    .AppendLine()
-                    .Append(") WITH (SYSTEM_VERSIONING = ON");
-                if ((_diff.Table.Temporality.HistoryTable?.Length ?? 0) > 0)
-                {
-                    sb.Append($" (HISTORY_TABLE = {_diff.Table.Temporality.HistoryTable})");
-                }
-                sb.Append(')');
+                    .AppendLine($"    PERIOD FOR SYSTEM_TIME ([{_diff.Table.Temporality.PeriodFieldFrom}], [{_diff.Table.Temporality.PeriodFieldTo}])")
+                    .Append(") WITH (SYSTEM_VERSIONING = ON")
+                    .AppendIf($" (HISTORY_TABLE = {_diff.Table.Temporality.HistoryTable})", (_diff.Table.Temporality.HistoryTable?.Length ?? 0) > 0)
+                    .Append(')');
             }
             else
             {

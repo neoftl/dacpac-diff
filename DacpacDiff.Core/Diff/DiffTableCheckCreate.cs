@@ -14,14 +14,5 @@ namespace DacpacDiff.Core.Diff
         {
             TableCheck = tableCheck;
         }
-
-        public override string ToString()
-        {
-            if (TableCheck.IsSystemNamed)
-            {
-                return $"ALTER TABLE [{TableCheck.Table.Schema.Name}].[{TableCheck.Table.Name}] ADD CHECK {TableCheck.Definition}";
-            }
-            return $"ALTER TABLE [{TableCheck.Table.Schema.Name}].[{TableCheck.Table.Name}] ADD CONSTRAINT [{TableCheck.Name}] CHECK {TableCheck.Definition}";
-        }
     }
 }

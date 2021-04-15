@@ -40,6 +40,7 @@ namespace DacpacDiff.Core.Model
             return this;
         }
 
+        // TODO: To MSSQL library
         public string GetAddSql()
         {
             if (!IsSystemNamed)
@@ -49,6 +50,7 @@ namespace DacpacDiff.Core.Model
             return $"ALTER TABLE {Table.FullName} WITH NOCHECK ADD CONSTRAINT [{Name}] FOREIGN KEY ([{Field}]) REFERENCES {TargetTable} ([{TargetField}])";
         }
 
+        // TODO: To MSSQL library
         public string GetDropSql()
         {
             if (!IsSystemNamed || (Name?.Length ?? 0) == 0)

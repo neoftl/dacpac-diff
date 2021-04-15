@@ -15,10 +15,5 @@ namespace DacpacDiff.Core.Diff
         {
             Field = fld ?? throw new ArgumentNullException(nameof(fld));
         }
-
-        public override string ToString()
-        {
-            return new RefModel(Field).GetAddSql();
-        }
     }
 }

@@ -23,38 +23,5 @@ namespace DacpacDiff.Core.Diff
                 }
             }
         }
-
-        public override string ToString()
-        {
-            var sql = new StringBuilder();
-
-            if (UserType.Type == "TABLE")
-            {
-                sql.Append("CREATE TYPE ")
-                    .Append(UserType.FullName)
-                    .Append(" AS TABLE\r\n")
-                    .Append('(');
-
-                var first = true;
-                foreach (var fld in UserType.Fields)
-                {
-                    sql.Append(first ? "\r\n" : ",\r\n")
-                        .Append("    ")
-                        .Append(fld.GetTableSql());
-                    first = false;
-                }
-
-                sql.Append("\r\n)");
-            }
-            else
-            {
-                sql.Append("CREATE TYPE ")
-                    .Append(UserType.FullName)
-                    .Append(" FROM ")
-                    .Append(UserType.Type);
-            }
-
-            return sql.ToString();
-        }
     }
 }

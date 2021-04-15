@@ -26,11 +26,10 @@ namespace DacpacDiff.Mssql
 
             var sqlHead = new StringBuilder();
 
-            sqlHead.Append($@"-- Delta upgrade from {leftFileName} to {rightFileName}
+            sqlHead.AppendLine($@"-- Delta upgrade from {leftFileName} to {rightFileName}
 -- Generated {DateTime.UtcNow}
 --
--- Changes ({objCount}):
-");
+-- Changes ({objCount}):");
 
             addScriptStart(targetVersion);
 
@@ -50,9 +49,8 @@ namespace DacpacDiff.Mssql
                 var progress = (double)(99.99 / objCount) * count;
 
                 sqlHead.Append("-- ").Append(diffNum)
-                    .Append(diff.Title).Append(": ").Append(diff.Name).AppendLine()
-                    .AppendLine();
-                Append($"RAISERROR('> ").Append(diffNum)
+                    .Append(diff.Title).Append(": ").Append(diff.Name).AppendLine();
+                AppendLine().Append($"RAISERROR('> ").Append(diffNum)
                     .Append(diff.Title).Append(": ").Append(diff.Name)
                     .AppendFormat(" ({0,5}%)", progress.ToString("0.00"))
                     .Append("', 0, 1) WITH NOWAIT; ");
@@ -61,28 +59,29 @@ namespace DacpacDiff.Mssql
                 EnsureLine();
             }
 
-            _sql.Insert(0, sqlHead.ToString());
+            _sql.Insert(0, sqlHead.AppendLine("--").AppendLine().ToString());
+
             addScriptFoot();
-            return sqlHead.ToString();
+            return _sql.ToString();
         }
 
         private void addScriptStart(string targetVersion)
         {
-            AppendLine($@"--
-
-SET NOCOUNT ON;
+            AppendLine($@"SET NOCOUNT ON;
 SET XACT_ABORT ON;
 SET NOEXEC OFF;
 SET QUOTED_IDENTIFIER ON;
 GO
+
+-- Pre-flight checks
 DECLARE @CurVersion VARCHAR(MAX)
 IF (object_id('[dbo].[tfn_DatabaseVersion]') IS NULL) BEGIN
-	SET @CurVersion = '00000000.0000'
+	SET @CurVersion = '(unknown)'
 END ELSE BEGIN
 	SELECT @CurVersion = [BuildNumber] FROM [dbo].tfn_DatabaseVersion()
 END
 IF (@CurVersion <> '{targetVersion}') BEGIN
-    DECLARE @M NVARCHAR(MAX) = CONCAT('Failed: Target version (', @CurVersion, ') does not match expected: {targetVersion}'); RAISERROR(@M, 0, 1) WITH NOWAIT;
+    DECLARE @M NVARCHAR(MAX) = CONCAT('Failed: Current version ', @CurVersion, ' does not match expected: {targetVersion}'); RAISERROR(@M, 0, 1) WITH NOWAIT;
     SET NOEXEC ON;
 END
 GO

@@ -83,6 +83,7 @@ namespace DacpacDiff.Core.Model
             return field.DefaultName == DefaultName;
         }
 
+        // TODO: To MSSQL library
         public string ToDefinition()
         {
             var sql = new StringBuilder($"[{Name}]");
@@ -144,6 +145,7 @@ namespace DacpacDiff.Core.Model
             return sql.ToString();
         }
 
+        // TODO: To MSSQL library
         public string GetTableFieldSql()
         {
             var sql = new StringBuilder($"[{Name}]");
@@ -195,6 +197,7 @@ namespace DacpacDiff.Core.Model
             return sql.ToString();
         }
 
+        // TODO: To MSSQL library
         public string GetAlterSql(bool isCurrentlyNotNullable = false)
         {
             var sql = new StringBuilder($"[{Name}]");

@@ -21,6 +21,7 @@ namespace DacpacDiff.Core.Model
             return this;
         }
 
+        // TODO: To MSSQL library
         public string GetTableSql()
         {
             var sql = new StringBuilder($"[{Name}]");

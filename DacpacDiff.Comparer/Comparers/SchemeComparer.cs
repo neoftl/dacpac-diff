@@ -1,5 +1,6 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
+using DacpacDiff.Core.Output;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,7 +39,7 @@ namespace DacpacDiff.Comparer.Comparers
             _comparerFactory = comparerFactory;
         }
 
-        public IEnumerable<IDifference> Compare(SchemeModel leftScheme, SchemeModel rightScheme)
+        public IEnumerable<ISqlFormattable> Compare(SchemeModel leftScheme, SchemeModel rightScheme)
         {
             if (leftScheme.Databases.Count > 1)
             {
@@ -101,9 +102,9 @@ namespace DacpacDiff.Comparer.Comparers
             };
         }
 
-        public static IEnumerable<IDifference> OrderDiffsByDependency(IEnumerable<IDifference> diffs)
+        public static IEnumerable<ISqlFormattable> OrderDiffsByDependency(IEnumerable<IDifference> diffs)
         {
-            var result = new List<IDifference>();
+            var result = new List<ISqlFormattable>();
             var remain = diffs
                 .Where(d => !string.IsNullOrWhiteSpace(d.ToString())) // TODO
                 .ToList();
@@ -120,7 +121,7 @@ namespace DacpacDiff.Comparer.Comparers
                         break;
                     }
 
-                    result.Add(new Comment { Comment = $"{Environment.NewLine}L{partL}R{partR} ({matches.Length} | Rem {remain.Count})" });
+                    result.Add(new SqlComment { Comment = $"{Environment.NewLine}L{partL}R{partR} ({matches.Length} | Rem {remain.Count})" });
                     result.AddRange(matches);
                     remain.RemoveAll(d => matches.Any(m => m == d));
                     ++partR;

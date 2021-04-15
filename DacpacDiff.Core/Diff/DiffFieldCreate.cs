@@ -14,21 +14,5 @@ namespace DacpacDiff.Core.Diff
         {
             Field = field;
         }
-
-        public override string ToString()
-        {
-            var sql = $"ALTER TABLE [{Field.Table.Schema.Name}].[{Field.Table.Name}] ADD {Field.GetAlterSql()}";
-
-            if (!Field.Nullable && !Field.HasDefault)
-            {
-                return sql + " -- NOTE: Cannot create NOT NULL column";
-            }
-
-            // TODO: ref
-            // TODO: default
-            // TODO: unique
-
-            return sql;
-        }
     }
 }

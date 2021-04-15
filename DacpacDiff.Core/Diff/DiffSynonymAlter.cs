@@ -14,12 +14,5 @@ namespace DacpacDiff.Core.Diff
         {
             Synonym = synonym;
         }
-
-        public override string ToString()
-        {
-            return $"DROP SYNONYM {Name}\r\n"
-                + "GO\r\n"
-                + $"CREATE SYNONYM {Name} FOR {Synonym.BaseObject}";
-        }
     }
 }

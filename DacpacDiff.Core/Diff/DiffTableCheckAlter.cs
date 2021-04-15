@@ -16,12 +16,5 @@ namespace DacpacDiff.Core.Diff
             LeftTableCheck = leftTableCheck;
             RightTableCheck = rightTableCheck;
         }
-
-        public override string ToString()
-        {
-            return $"ALTER TABLE [{RightTableCheck.Table.Schema.Name}].[{RightTableCheck.Table.Name}] DROP CONSTRAINT [{RightTableCheck.Name}]\r\n"
-                + "GO\r\n"
-                + $"ALTER TABLE [{LeftTableCheck.Table.Schema.Name}].[{LeftTableCheck.Table.Name}] ADD CONSTRAINT [{LeftTableCheck.Name}] CHECK {LeftTableCheck.Definition}";
-        }
     }
 }
