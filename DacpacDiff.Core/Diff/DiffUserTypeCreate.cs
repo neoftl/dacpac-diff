@@ -1,5 +1,4 @@
 ﻿using DacpacDiff.Core.Model;
-using System.Text;
 
 namespace DacpacDiff.Core.Diff
 {
@@ -14,14 +13,6 @@ namespace DacpacDiff.Core.Diff
         public DiffUserTypeCreate(UserTypeModel utype)
         {
             UserType = utype;
-
-            if (utype.Type == "TABLE")
-            {
-                foreach (var fld in utype.Fields)
-                {
-                    fld.SetState(utype, null);
-                }
-            }
         }
     }
 }

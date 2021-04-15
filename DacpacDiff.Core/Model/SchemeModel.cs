@@ -6,8 +6,13 @@ namespace DacpacDiff.Core.Model
 {
     public class SchemeModel : IModel
     {
-        public string Name { get; init; } = string.Empty;
+        public string Name { get; }
         public IDictionary<string, DatabaseModel> Databases { get; } = new Dictionary<string, DatabaseModel>();
+
+        public SchemeModel(string name)
+        {
+            Name = name;
+        }
 
         public string GetDatabaseVersion()
         {

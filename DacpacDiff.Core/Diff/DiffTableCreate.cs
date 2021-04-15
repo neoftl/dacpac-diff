@@ -1,5 +1,4 @@
 ﻿using DacpacDiff.Core.Model;
-using System;
 
 namespace DacpacDiff.Core.Diff
 {
@@ -14,11 +13,6 @@ namespace DacpacDiff.Core.Diff
         public DiffTableCreate(TableModel table)
         {
             Table = table;
-
-            foreach (var fld in table.Fields ?? Array.Empty<FieldModel>())
-            {
-                fld.SetState(table, null);
-            }
         }
     }
 }

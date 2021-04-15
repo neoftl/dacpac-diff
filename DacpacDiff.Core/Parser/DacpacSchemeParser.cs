@@ -18,21 +18,16 @@ namespace DacpacDiff.Core.Parser
                 return null;
             }
 
-            var db = new DatabaseModel
-            {
-                Name = "database" // TODO
-            };
+            var db = new DatabaseModel("database"); // TODO
 
             // Parse model
-            var schemasXml = modelXml.Find("Element", ("Type", "SqlSchema"));
-            db.Schemas = schemasXml.Select(e => getSchema(db, modelXml, e.Attribute("Name")?.Value.Trim('[', ']') ?? string.Empty))
-                .Union(new[] { getSchema(db, modelXml, "dbo") })
-                .ToDictionary(s => s.Name);
+            var schemaNames = modelXml.Find("Element", ("Type", "SqlSchema"))
+                .Select(e => getName(e))
+                .Union(new[] { "dbo" }) // Always has "dbo" schema
+                .ToArray();
+            db.Schemas.Merge(schemaNames.Select(s => getSchema(db, modelXml, s)), s => s.Name);
 
-            var scheme = new SchemeModel
-            {
-                Name = Path.GetFileNameWithoutExtension(filename)
-            };
+            var scheme = new SchemeModel(Path.GetFileNameWithoutExtension(filename));
             scheme.Databases[db.Name] = db;
             return scheme;
         }
@@ -61,21 +56,21 @@ namespace DacpacDiff.Core.Parser
             // TODO: UserTypes (SqlTableType, ...)
 
             // Synonyms
-            var els = rootXml.Find("Element", ("Type", a => a == "SqlSynonym"), ("Name", a => a?.StartsWith($"[{schema.Name}]") == true));
+            var els = rootXml.Find("Element", ("Type", a => a == "SqlSynonym"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
             schema.Synonyms.Merge(els.Select(e => getSynonym(schema, e)), t => t.Name);
 
             // Tables
-            els = rootXml.Find("Element", ("Type", a => a == "SqlTable"), ("Name", a => a?.StartsWith($"[{schema.Name}]") == true));
+            els = rootXml.Find("Element", ("Type", a => a == "SqlTable"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
             schema.Tables.Merge(els.Select(e => getTable(schema, e))
                 .Where(t => t is not null)
                 .Cast<TableModel>(), t => t.Name);
 
             // Index
-            els = rootXml.Find("Element", ("Type", a => a == "SqlIndex"), ("Name", a => a?.StartsWith($"[{schema.Name}]") == true));
+            els = rootXml.Find("Element", ("Type", a => a == "SqlIndex"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
             var indexes = els.Select(e => getIndex(schema, e)).ToArray();
 
             // Function
-            els = rootXml.Find("Element", ("Type", a => a == "SqlScalarFunction" || a == "SqlInlineTableValuedFunction" || a == "SqlMultiStatementTableValuedFunction"), ("Name", a => a?.StartsWith($"[{schema.Name}]") == true));
+            els = rootXml.Find("Element", ("Type", a => a == "SqlScalarFunction" || a == "SqlInlineTableValuedFunction" || a == "SqlMultiStatementTableValuedFunction"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
             var funcs = els.Select(e => getFunction(schema, e)).ToArray();
 
             // Sequence: SqlSequence
@@ -83,15 +78,15 @@ namespace DacpacDiff.Core.Parser
             // TODO
 
             // Stored Procedure
-            els = rootXml.Find("Element", ("Type", a => a == "SqlProcedure"), ("Name", a => a?.StartsWith($"[{schema.Name}]") == true));
+            els = rootXml.Find("Element", ("Type", a => a == "SqlProcedure"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
             var procs = els.Select(e => getProcedure(schema, e)).ToArray();
 
             // Trigger: SqlDmlTrigger
-            els = rootXml.Find("Element", ("Type", a => a == "SqlDmlTrigger"), ("Name", a => a?.StartsWith($"[{schema.Name}]") == true));
+            els = rootXml.Find("Element", ("Type", a => a == "SqlDmlTrigger"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
             var trigs = els.Select(e => getTrigger(schema, e)).ToArray();
 
             // View
-            els = rootXml.Find("Element", ("Type", a => a == "SqlView"), ("Name", a => a?.StartsWith($"[{schema.Name}]") == true));
+            els = rootXml.Find("Element", ("Type", a => a == "SqlView"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
             var views = els.Select(e => getView(schema, e)).ToArray();
 
             schema.Modules.Merge(indexes, m => m.Name)
@@ -104,11 +99,31 @@ namespace DacpacDiff.Core.Parser
             return schema;
         }
 
+        private static string getName(XElement? el, string? prefix = null)
+        {
+            var name = el?.Attribute("Name")?.Value ?? string.Empty;
+            if (name.Length > 0 && prefix is not null)
+            {
+                if (name.StartsWith($"[{prefix}].", StringComparison.OrdinalIgnoreCase))
+                {
+                    name = name[(prefix.Length + 3)..];
+                }
+                else if (name.StartsWith($"{prefix}.", StringComparison.OrdinalIgnoreCase))
+                {
+                    name = name[(prefix.Length + 1)..];
+                }
+            }
+
+            return (name.Length > 2 && name[0] == '[' && name[^1] == ']')
+                ? name[1..^1]
+                : name;
+        }
+
         private static string getSqlType(XElement el)
         {
-            var sqltype = el.Find("Relationship", ("Name", "Type")).First()
+            var sqltype = getName(el.Find("Relationship", ("Name", "Type")).First()
                 .Element("Entry")?
-                .Element("References")?.Attribute("Name")?.Value.Trim('[', ']') ?? string.Empty;
+                .Element("References"));
 
             var len = el.Find("Property", ("Name", "Length")).FirstOrDefault()?.Attribute("Value")?.Value;
             if (len is not null)
@@ -138,7 +153,7 @@ namespace DacpacDiff.Core.Parser
             {
                 Type = ModuleModel.ModuleType.FUNCTION,
                 Schema = schema,
-                Name = funcXml.Attribute("Name")?.Value[(schema.Name.Length + 3)..].Trim('[', ']'),
+                Name = getName(funcXml, schema.Name),
                 //ExecuteAs
                 //Dependents?
             };
@@ -165,7 +180,7 @@ namespace DacpacDiff.Core.Parser
                     def += $"\r\n) RETURN {retvar} TABLE (";
 
                     var colsXml = funcXml.Find("Relationship", ("Name", "Columns")).First().Find(true, "Element", ("Type", a => a == "SqlSimpleColumn" || a == "SqlComputedColumn"));
-                    var tbl = new TableModel { Schema = schema, Name = func.Name };
+                    var tbl = new TableModel(schema, func.Name);
                     var fields = colsXml.Select(e => toField(tbl, 0, e)).ToArray();
                     var colStr = string.Join(", ", fields.Select(f => $"[{f.Name}] {f.Type}" + (!f.Nullable ? " NOT NULL" : "")).ToArray());
 
@@ -187,15 +202,15 @@ namespace DacpacDiff.Core.Parser
 
         private static ModuleModel getIndex(SchemaModel schema, XElement indexXml)
         {
-            var target = indexXml.Find("Relationship", ("Name", "IndexedObject")).Single()
+            var target = getName(indexXml.Find("Relationship", ("Name", "IndexedObject")).Single()
                 .Element("Entry")?
-                .Element("References")?.Attribute("Name")?.Value ?? string.Empty;
+                .Element("References"));
 
             var idx = new ModuleModel
             {
                 Type = ModuleModel.ModuleType.INDEX,
                 Schema = schema,
-                Name = indexXml.Attribute("Name")?.Value[(target.Length + 1)..].Trim('[', ']'),
+                Name = getName(indexXml, target),
                 // TODO: system named
                 //Dependents?
             };
@@ -215,12 +230,12 @@ namespace DacpacDiff.Core.Parser
                 .Element("Entry")?
                 .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
                 .SelectMany(e => e.Find("Relationship", ("Name", "Column")))
-                .Select(e => e.Element("Entry")?.Element("References")?.Attribute("Name")?.Value[(target.Length + 1)..])
+                .Select(e => getName(e.Element("Entry")?.Element("References"), target))
                 .ToArray();
             def += "(" + string.Join(", ", cols ?? Array.Empty<string?>()) + ")";
 
             var includes = indexXml.Find("Relationship", ("Name", "IncludedColumns"))
-                .SelectMany(e => e.Elements("Entry").Select(r => r.Element("References")?.Attribute("Name")?.Value[(target.Length + 1)..]))
+                .SelectMany(e => e.Elements("Entry").Select(r => getName(r.Element("References"), target)))
                 .ToArray();
             if (includes.Length > 0)
             {
@@ -245,7 +260,7 @@ namespace DacpacDiff.Core.Parser
 
         private static string toArg(XElement a)
         {
-            var name = a.Attribute("Name")?.Value.Split('.')[^1].Trim('[', ']');
+            var name = getName(a).Split('.')[^1].Trim('[', ']');
             var typeXml = a.Find(true, "Element", ("Type", p => p == "SqlTypeSpecifier" || p == "SqlXmlTypeSpecifier")).First();
             var arg = $"{name} {getSqlType(typeXml)}";
 
@@ -274,7 +289,7 @@ namespace DacpacDiff.Core.Parser
             {
                 Type = ModuleModel.ModuleType.PROCEDURE,
                 Schema = schema,
-                Name = procXml.Attribute("Name")?.Value[(schema.Name.Length + 3)..].Trim('[', ']'),
+                Name = getName(procXml, schema.Name),
                 // TODO: ExecuteAs
                 //Dependents?
             };
@@ -298,31 +313,29 @@ namespace DacpacDiff.Core.Parser
 
         private static SynonymModel getSynonym(SchemaModel schema, XElement synXml)
         {
-            var syn = new SynonymModel
-            {
-                Schema = schema,
-                Name = synXml.Attribute("Name")?.Value[(schema.Name.Length + 3)..].Trim('[', ']'),
-                BaseObject = synXml.Find("Property", ("Name", "ForObjectScript")).First().Element("Value")?.Value,
-                //Dependents?
-            };
+            var syn = new SynonymModel(
+                schema: schema,
+                name: getName(synXml, schema.Name),
+                baseObject: synXml.Find("Property", ("Name", "ForObjectScript")).First().Element("Value")?.Value ?? string.Empty
+            //Dependents?
+            );
 
             return syn;
         }
 
         private static TableModel? getTable(SchemaModel schema, XElement tableXml)
         {
-            var table = new TableModel
-            {
-                Schema = schema,
-                Name = tableXml.Attribute("Name")?.Value[(schema.Name.Length + 3)..].Trim('[', ']'),
+            var table = new TableModel(
+                schema: schema,
+                name: getName(tableXml, schema.Name)
+            );
 
-                // TODO: IsPrimaryKeyUnclustered
-                // TODO: PrimaryKey
-                // TODO: Checks
-                // TODO: Refs
+            // TODO: IsPrimaryKeyUnclustered
+            // TODO: PrimaryKey
+            // TODO: Checks
+            // TODO: Refs
 
-                //Dependents?
-            };
+            //Dependents?
 
             // Ignore history tables (handled by current)
             if (tableXml.Find("Property", ("Name", "IsAutoGeneratedHistoryTable"), ("Value", "True")).Any())
@@ -336,7 +349,7 @@ namespace DacpacDiff.Core.Parser
 
             // Fields
             var idx = 0;
-            var colsXml = tableXml.Find(true, "Element", ("Type", a => a == "SqlSimpleColumn" || a == "SqlComputedColumn"), ("Name", a => a.StartsWith(table.FullName)));
+            var colsXml = tableXml.Find(true, "Element", ("Type", a => a == "SqlSimpleColumn" || a == "SqlComputedColumn"), ("Name", a => a?.StartsWith(table.FullName, StringComparison.OrdinalIgnoreCase) == true));
             table.Fields = colsXml.Select(e => toField(table, idx++, e)).ToArray();
 
             // Temporality
@@ -345,9 +358,9 @@ namespace DacpacDiff.Core.Parser
             {
                 table.Temporality = new TemporalityModel
                 {
-                    HistoryTable = temporalXml.Element("Entry")?.Element("References")?.Attribute("Name")?.Value,
-                    PeriodFieldFrom = colsXml.FirstOrDefault(e => e.Find("Property", ("Name", "GeneratedAlwaysType"), ("Value", "1")).Any())?.Attribute("Name")?.Value[(table.FullName.Length + 1)..].Trim('[', ']'),
-                    PeriodFieldTo = colsXml.FirstOrDefault(e => e.Find("Property", ("Name", "GeneratedAlwaysType"), ("Value", "2")).Any())?.Attribute("Name")?.Value[(table.FullName.Length + 1)..].Trim('[', ']'),
+                    HistoryTable = temporalXml.Element("Entry")?.Element("References")?.Attribute("Name")?.Value ?? string.Empty,
+                    PeriodFieldFrom = getName(colsXml.FirstOrDefault(e => e.Find("Property", ("Name", "GeneratedAlwaysType"), ("Value", "1")).Any()), table.FullName),
+                    PeriodFieldTo = getName(colsXml.FirstOrDefault(e => e.Find("Property", ("Name", "GeneratedAlwaysType"), ("Value", "2")).Any()), table.FullName),
                 };
             }
 
@@ -360,13 +373,13 @@ namespace DacpacDiff.Core.Parser
             {
                 Type = ModuleModel.ModuleType.INDEX,
                 Schema = schema,
-                Name = trigXml.Attribute("Name")?.Value[(schema.Name.Length + 3)..].Trim('[', ']'),
+                Name = getName(trigXml, schema.Name)
                 //Dependents?
             };
 
-            var target = trigXml.Find("Relationship", ("Name", "Parent")).Single()
+            var target = getName(trigXml.Find("Relationship", ("Name", "Parent")).Single()
                 .Element("Entry")?
-                .Element("References")?.Attribute("Name")?.Value;
+                .Element("References"));
 
             var def = $"CREATE TRIGGER {trig.FullName} ON {target} ";
 
@@ -400,7 +413,7 @@ namespace DacpacDiff.Core.Parser
             {
                 Type = ModuleModel.ModuleType.VIEW,
                 Schema = schema,
-                Name = viewXml.Attribute("Name")?.Value[(schema.Name.Length + 3)..].Trim('[', ']'),
+                Name = getName(viewXml, schema.Name),
                 //Dependents?
             };
 
@@ -413,11 +426,12 @@ namespace DacpacDiff.Core.Parser
 
         private static FieldModel toField(TableModel table, int ord, XElement colXml)
         {
-            var field = new FieldModel
+            var field = new FieldModel(
+                table: table,
+                name: getName(colXml, table.FullName)
+            )
             {
-                Table = table,
                 Identity = colXml.Attribute("IsIdentity")?.Value.ToLower() == "true",
-                Name = colXml.Attribute("Name")?.Value[(table.FullName.Length + 1)..].Trim('[', ']'),
                 Order = ord,
                 Nullable = colXml.Attribute("IsNullable")?.Value.ToLower() != "false",
 

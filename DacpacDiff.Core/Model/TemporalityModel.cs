@@ -2,6 +2,8 @@
 {
     public class TemporalityModel : IModel
     {
+        public static readonly TemporalityModel Empty = new TemporalityModel();
+
         public string Name { get; set; }
         public string? PeriodFieldFrom { get; set; }
         public string? HistoryTable { get; set; }

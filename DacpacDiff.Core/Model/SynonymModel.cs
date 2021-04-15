@@ -2,17 +2,23 @@
 {
     public class SynonymModel : IModel<SynonymModel, SchemaModel>, IDependentModel, IModelInSchema
     {
-        public SchemaModel Schema { get; set; } = SchemaModel.Empty;
-        public string Name { get; set; }
+        public SchemaModel Schema { get; }
+        public string Name { get; }
         public string FullName => $"[{Schema.Name}].[{Name}]";
-        public string? BaseObject { get; set; }
+        public string BaseObject { get; }
         public string[] Dependents { get; set; }
-
-        public SynonymModel SetState(SchemaModel schema, string name)
+        
+        private SynonymModel()
+        {
+            Schema = SchemaModel.Empty;
+            Name = string.Empty;
+            BaseObject = string.Empty;
+        }
+        public SynonymModel(SchemaModel schema, string name, string baseObject)
         {
             Schema = schema;
             Name = name;
-            return this;
+            BaseObject = baseObject;
         }
     }
 }

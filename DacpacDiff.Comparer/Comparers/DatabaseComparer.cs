@@ -26,7 +26,7 @@ namespace DacpacDiff.Comparer.Comparers
                 .Distinct();
             var schCompr = _comparerFactory.GetComparer<SchemaModel>();
             var diffs1 = keys.SelectMany(k =>
-                schCompr.Compare(lft?.Schemas?.Get(k)?.SetState(lft, k), rgt?.Schemas?.Get(k)?.SetState(rgt, k)) ?? Array.Empty<IDifference>()
+                schCompr.Compare(lft?.Schemas?.Get(k), rgt?.Schemas?.Get(k))
             );
 
             return diffs1.ToArray();

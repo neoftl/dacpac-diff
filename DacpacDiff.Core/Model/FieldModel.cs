@@ -8,7 +8,7 @@ namespace DacpacDiff.Core.Model
     {
         public static readonly FieldModel Empty = new FieldModel();
 
-        public TableModel Table { get; set; } = TableModel.Empty;
+        public TableModel Table { get; }
         public string Name { get; set; }
         public string Type { get; set; }
         public string? Computation { get; set; }
@@ -36,17 +36,14 @@ namespace DacpacDiff.Core.Model
 
         public string[] Dependents { get; set; }
 
-        public FieldModel SetState(TableModel table, string name)
+        private FieldModel()
+        {
+            Table = TableModel.Empty;
+        }
+        public FieldModel(TableModel table, string name)
         {
             Table = table;
-
-            if (Table.Temporality?.PeriodFieldFrom == Name || Table.Temporality?.PeriodFieldTo == Name)
-            {
-                Nullable = true;
-                DefaultConstraint = null;
-            }
-
-            return this;
+            Name = name;
         }
 
         public bool IsDefaultMatch(FieldModel field)

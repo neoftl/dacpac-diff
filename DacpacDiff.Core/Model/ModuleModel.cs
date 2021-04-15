@@ -20,14 +20,7 @@
         public string Definition { get; set; }
         public string ExecuteAs { get; set; }
         public string[] Dependents { get; set; }
-
-        public ModuleModel SetState(SchemaModel schema, string name)
-        {
-            Schema = schema;
-            Name = name;
-            return this;
-        }
-
+        
         public static string ScrubDefinition(string def)
         {
             return def.Replace(" ", "")

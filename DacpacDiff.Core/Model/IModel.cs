@@ -9,6 +9,5 @@
         where TModel : IModel
         where TParent : IModel
     {
-        TModel SetState(TParent parent, string name);
     }
 }

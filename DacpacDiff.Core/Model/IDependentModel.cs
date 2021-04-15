@@ -1,7 +1,7 @@
 ﻿namespace DacpacDiff.Core.Model
 {
-    public interface IDependentModel
+    public interface IDependentModel : IModel
     {
-        string[]? Dependents { get; set; }
+        string[] Dependents { get; set; }
     }
 }

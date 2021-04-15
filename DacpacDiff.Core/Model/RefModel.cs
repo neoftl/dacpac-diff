@@ -4,7 +4,7 @@ namespace DacpacDiff.Core.Model
 {
     public class RefModel : IModel<RefModel, TableModel>, IEquatable<RefModel>
     {
-        public static readonly RefModel Empty = new RefModel(FieldModel.Empty);
+        public static readonly RefModel Empty = new RefModel();
 
         public TableModel Table { get; private set; } = TableModel.Empty;
         public string Name { get; set; }
@@ -14,6 +14,13 @@ namespace DacpacDiff.Core.Model
         public string TargetTable { get; }
         public string TargetField { get; }
 
+        private RefModel()
+        {
+            Name = string.Empty;
+            Field = string.Empty;
+            TargetTable = string.Empty;
+            TargetField = string.Empty;
+        }
         public RefModel(RefModel tref)
         {
             Table = tref.Table;
@@ -26,18 +33,11 @@ namespace DacpacDiff.Core.Model
         public RefModel(FieldModel field)
         {
             Table = field.Table;
-            Name = field.Ref.Name;
-            IsSystemNamed = field.Ref.IsSystemNamed;
+            Name = field.Ref?.Name ?? string.Empty;
+            IsSystemNamed = field.Ref?.IsSystemNamed == true;
             Field = field.Name;
-            TargetTable = field.Ref.TargetTable;
-            TargetField = field.Ref.TargetField;
-        }
-
-        public RefModel SetState(TableModel table, string name)
-        {
-            Table = table;
-            Name = name;
-            return this;
+            TargetTable = field.Ref?.TargetTable ?? string.Empty;
+            TargetField = field.Ref?.TargetField ?? string.Empty;
         }
 
         // TODO: To MSSQL library

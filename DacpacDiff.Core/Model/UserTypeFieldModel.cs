@@ -4,7 +4,7 @@ namespace DacpacDiff.Core.Model
 {
     public class UserTypeFieldModel : IModel<UserTypeFieldModel, UserTypeModel>
     {
-        public UserTypeModel UserType { get; set; } = UserTypeModel.Empty;
+        public UserTypeModel UserType { get; }
         public string Name { get; set; }
         public string Type { get; set; }
         public string Computation { get; set; }
@@ -15,10 +15,12 @@ namespace DacpacDiff.Core.Model
         public bool Identity { get; set; }
         public bool IsPrimaryKey { get; set; }
 
-        public UserTypeFieldModel SetState(UserTypeModel userType, string name)
+        private UserTypeFieldModel()
+        {
+        }
+        public UserTypeFieldModel(UserTypeModel userType)
         {
             UserType = userType;
-            return this;
         }
 
         // TODO: To MSSQL library

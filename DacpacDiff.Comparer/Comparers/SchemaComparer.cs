@@ -48,8 +48,8 @@ namespace DacpacDiff.Comparer.Comparers
             var modCompr = _comparerFactory.GetComparer<ModuleModel>();
             var diffs = keys.SelectMany(k =>
             {
-                var rightMod = rightModules?.Get(k)?.SetState(rgt, k);
-                return modCompr.Compare(lft?.Modules?.Get(k)?.SetState(lft, k), rightMod) ?? Array.Empty<IDifference>();
+                var rightMod = rightModules?.Get(k);
+                return modCompr.Compare(lft?.Modules?.Get(k), rightMod);
             });
             result.AddRange(diffs);
 
@@ -59,7 +59,7 @@ namespace DacpacDiff.Comparer.Comparers
                 .Distinct();
             var synCompr = _comparerFactory.GetComparer<SynonymModel>();
             diffs = keys.SelectMany(k =>
-                synCompr.Compare(lft?.Synonyms?.Get(k)?.SetState(lft, k), rightSynonyms.Get(k)?.SetState(rgt, k)) ?? Array.Empty<IDifference>()
+                synCompr.Compare(lft?.Synonyms?.Get(k), rightSynonyms.Get(k))
             );
             result.AddRange(diffs);
 
@@ -69,7 +69,7 @@ namespace DacpacDiff.Comparer.Comparers
                 .Distinct();
             var tblCompr = _comparerFactory.GetComparer<TableModel>();
             diffs = keys.SelectMany(k =>
-                tblCompr.Compare(lft?.Tables?.Get(k)?.SetState(lft, k), rgt?.Tables?.Get(k)?.SetState(rgt, k)) ?? Array.Empty<IDifference>()
+                tblCompr.Compare(lft?.Tables?.Get(k), rgt?.Tables?.Get(k))
             );
             result.AddRange(diffs);
 
@@ -79,7 +79,7 @@ namespace DacpacDiff.Comparer.Comparers
                 .Distinct();
             var utCompr = _comparerFactory.GetComparer<UserTypeModel>();
             diffs = keys.SelectMany(k =>
-                utCompr.Compare(lft?.UserTypes?.Get(k)?.SetState(lft, k), rgt?.UserTypes?.Get(k)?.SetState(rgt, k)) ?? Array.Empty<IDifference>()
+                utCompr.Compare(lft?.UserTypes?.Get(k), rgt?.UserTypes?.Get(k))
             );
             result.AddRange(diffs);
 

@@ -1,18 +1,19 @@
-﻿using System;
-
-namespace DacpacDiff.Core.Model
+﻿namespace DacpacDiff.Core.Model
 {
     public class TableCheckModel : IModel<TableCheckModel, TableModel>
     {
-        public TableModel Table { get; set; } = TableModel.Empty;
+        public TableModel Table { get; }
         public string Name { get; set; }
         public bool IsSystemNamed { get; set; }
         public string Definition { get; set; }
 
-        public TableCheckModel SetState(TableModel table, string name)
+        private TableCheckModel()
         {
-            Table = table ?? throw new ArgumentNullException(nameof(table));
-            return this;
+            Table = TableModel.Empty;
+        }
+        public TableCheckModel(TableModel table)
+        {
+            Table = table;
         }
     }
 }

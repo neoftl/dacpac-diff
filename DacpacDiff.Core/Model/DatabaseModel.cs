@@ -8,10 +8,19 @@ namespace DacpacDiff.Core.Model
         public static readonly DatabaseModel Empty = new DatabaseModel();
 
         public string Name { get; set; }
-        public string Version { get; set; } // Database version (for reference only)
-        public object Users { get; set; }
-        public object Logins { get; set; }
-        public IDictionary<string, SchemaModel> Schemas { get; set; }
+        public string? Version { get; set; } // Database version (for reference only)
+        public object? Users { get; set; } // TODO
+        public object? Logins { get; set; } // TODO
+        public IDictionary<string, SchemaModel> Schemas { get; } = new Dictionary<string, SchemaModel>();
+
+        private DatabaseModel()
+        {
+            Name = string.Empty;
+        }
+        public DatabaseModel(string name)
+        {
+            Name = name;
+        }
 
         public IModel? Get(string fullName)
         {

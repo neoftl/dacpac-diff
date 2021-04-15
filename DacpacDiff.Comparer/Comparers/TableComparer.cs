@@ -46,14 +46,11 @@ namespace DacpacDiff.Comparer.Comparers
             var fldCompr = _comparerFactory.GetComparer<FieldModel>();
             foreach (var fldL in lft.Fields ?? Array.Empty<FieldModel>())
             {
-                fldL.SetState(lft, null);
                 var fldR = rgt.Fields?.FirstOrDefault(f => f.Name == fldL.Name);
-                fldR?.SetState(rgt, null);
                 diffs.AddRange(fldCompr.Compare(fldL, fldR) ?? Array.Empty<IDifference>());
             }
             foreach (var fldR in rgt.Fields ?? Array.Empty<FieldModel>())
             {
-                fldR.SetState(rgt, null);
                 if (!(lft.Fields?.Any(f => f.Name == f.Name) ?? false))
                 {
                     diffs.AddRange(fldCompr.Compare(null, fldR) ?? Array.Empty<IDifference>());
@@ -65,14 +62,11 @@ namespace DacpacDiff.Comparer.Comparers
             var chkCompr = _comparerFactory.GetComparer<TableCheckModel>();
             foreach (var chkL in lft.Checks ?? Array.Empty<TableCheckModel>())
             {
-                chkL.SetState(lft, null);
                 var fldR = rgt.Checks?.FirstOrDefault(c => c.Name == chkL.Name);
-                fldR?.SetState(rgt, null);
                 diffs.AddRange(chkCompr.Compare(chkL, fldR) ?? Array.Empty<IDifference>());
             }
             foreach (var chkR in rgt.Checks ?? Array.Empty<TableCheckModel>())
             {
-                chkR.SetState(rgt, null);
                 if (!(lft.Checks?.Any(c => c.Name == chkR.Name) ?? false))
                 {
                     diffs.AddRange(chkCompr.Compare(null, chkR) ?? Array.Empty<IDifference>());

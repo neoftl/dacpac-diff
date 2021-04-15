@@ -21,13 +21,6 @@ namespace DacpacDiff.Core.Model
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
-        public SchemaModel SetState(DatabaseModel db, string name)
-        {
-            Db = db ?? throw new ArgumentNullException(nameof(db));
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            return this;
-        }
-
         /// <summary>
         /// Get any object type from this schema by name.
         /// Returns null if no match.
