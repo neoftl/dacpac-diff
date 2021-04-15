@@ -1,4 +1,5 @@
 ﻿using DacpacDiff.Core.Diff;
+using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Output;
 
 namespace DacpacDiff.Mssql.Diff
@@ -9,15 +10,30 @@ namespace DacpacDiff.Mssql.Diff
             : base(diff)
         { }
 
+        private static void appendFieldSql(FieldModel fld, ISqlFileBuilder sb)
+        {
+            sb.Append($"[{fld.Name}]");
+
+            if ((fld.Computation?.Length ?? 0) > 0)
+            {
+                sb.Append($" AS {fld.Computation}");
+                return;
+            }
+
+            sb.Append($" {fld.Type}")
+                .AppendIf($" DEFAULT{fld.DefaultValue}", fld.HasDefault)
+                .AppendIf(" NOT ", !fld.Nullable && fld.HasDefault).Append("NULL");
+        }
+
         protected override void GetFormat(ISqlFileBuilder sb)
         {
             // TODO: ref
-            // TODO: default
             // TODO: unique
 
             var fld = _diff.Field;
-            sb.Append($"ALTER TABLE {fld.Table.FullName} ADD COLUMN [{fld.GetAlterSql()}]")
-                .AppendIf(" -- NOTE: Cannot create NOT NULL column", !fld.Nullable && !fld.HasDefault)
+            sb.Append($"ALTER TABLE {fld.Table.FullName} ADD COLUMN ");
+            appendFieldSql(fld, sb);
+            sb.AppendIf(" -- NOTE: Cannot create NOT NULL column", !fld.Nullable && !fld.HasDefault)
                 .AppendLine();
         }
     }

@@ -1,5 +1,6 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
+using System;
 using System.Collections.Generic;
 
 namespace DacpacDiff.Comparer.Comparers
@@ -11,6 +12,11 @@ namespace DacpacDiff.Comparer.Comparers
             var diffs = new List<IDifference>();
             if (lft is null)
             {
+                if (rgt is null)
+                {
+                    return Array.Empty<IDifference>();
+                }
+
                 diffs.Add(new DiffObjectDrop(rgt));
                 return diffs.ToArray();
             }

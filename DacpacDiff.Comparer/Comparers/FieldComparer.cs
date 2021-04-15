@@ -27,9 +27,11 @@ namespace DacpacDiff.Comparer.Comparers
 
             fixFieldRef(lft);
             fixFieldRef(rgt);
+            
+            // TODO: If field has dependencies (constraint, index, etc.), drop first then recreate
 
             // Change field
-            if (ModuleModel.ScrubDefinition(lft.ToDefinition()) != ModuleModel.ScrubDefinition(rgt.ToDefinition()))
+            if (!lft.Equals(rgt))
             {
                 return new[] { new DiffFieldAlter(lft, rgt) };
             }

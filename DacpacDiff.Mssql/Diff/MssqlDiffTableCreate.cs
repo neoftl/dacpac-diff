@@ -1,4 +1,5 @@
 ﻿using DacpacDiff.Core.Diff;
+using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Output;
 using System;
 using System.Linq;
@@ -11,6 +12,38 @@ namespace DacpacDiff.Mssql.Diff
             : base(diff)
         { }
 
+        private static void appendFieldSql(FieldModel fld, ISqlFileBuilder sb)
+        {
+            sb.Append($"[{fld.Name}]");
+
+            if ((fld.Computation?.Length ?? 0) > 0)
+            {
+                sb.Append($" AS {fld.Computation}");
+            }
+            else
+            {
+                sb.Append($" {fld.Type}");
+
+                if (fld.Table.Temporality?.PeriodFieldFrom == fld.Name)
+                {
+                    sb.Append(" GENERATED ALWAYS AS ROW START");
+                    return;
+                }
+                if (fld.Table.Temporality?.PeriodFieldTo == fld.Name)
+                {
+                    sb.Append(" GENERATED ALWAYS AS ROW END");
+                    return;
+                }
+
+                sb.Append(fld.Nullable ? " NULL" : " NOT NULL")
+                    .AppendIf($" DEFAULT{fld.DefaultValue}", fld.HasDefault)
+                    .AppendIf(" PRIMARY KEY", fld.Table.PrimaryKey.Length == 1 && fld.Table.PrimaryKey[0] == fld.Name)
+                    .AppendIf(" IDENTITY(1,1)", fld.Identity);
+            }
+
+            sb.AppendIf(" UNIQUE", (fld.Unique?.Length ?? 0) > 0);
+        }
+
         protected override void GetFormat(ISqlFileBuilder sb)
         {
             sb.AppendLine($"CREATE TABLE {_diff.Table.FullName}")
@@ -21,7 +54,8 @@ namespace DacpacDiff.Mssql.Diff
             {
                 sb.AppendIf(",", !first)
                     .AppendLine()
-                    .Append("    ").Append(fld.GetTableFieldSql());
+                    .Append("    ");
+                appendFieldSql(fld, sb);
                 first = false;
             }
 

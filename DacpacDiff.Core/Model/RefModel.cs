@@ -40,26 +40,6 @@ namespace DacpacDiff.Core.Model
             TargetField = field.Ref?.TargetField ?? string.Empty;
         }
 
-        // TODO: To MSSQL library
-        public string GetAddSql()
-        {
-            if (!IsSystemNamed)
-            {
-                return $"ALTER TABLE {Table.FullName} WITH NOCHECK ADD FOREIGN KEY ([{Field}]) REFERENCES {TargetTable} ([{TargetField}])";
-            }
-            return $"ALTER TABLE {Table.FullName} WITH NOCHECK ADD CONSTRAINT [{Name}] FOREIGN KEY ([{Field}]) REFERENCES {TargetTable} ([{TargetField}])";
-        }
-
-        // TODO: To MSSQL library
-        public string GetDropSql()
-        {
-            if (!IsSystemNamed || (Name?.Length ?? 0) == 0)
-            {
-                return $"DECLARE @DropConstraintSql VARCHAR(MAX) = (SELECT CONCAT('ALTER TABLE {Table.FullName} DROP CONSTRAINT [', FK.[name], ']') FROM sys.foreign_keys FK JOIN sys.foreign_key_columns KC ON KC.[constraint_object_id] = FK.[object_id] JOIN sys.columns C ON C.[object_id] = FK.[parent_object_id] AND C.[column_id] = KC.[parent_column_id] WHERE FK.[parent_object_id] = OBJECT_ID('{Table.FullName}') AND FK.[type] = 'F' AND C.[name] = '{Field}'); EXEC (@DropConstraintSql)";
-            }
-            return $"ALTER TABLE {Table.FullName} DROP CONSTRAINT [{Name}]";
-        }
-
         public bool Equals(RefModel? rgt)
         {
             return Field == rgt?.Field
@@ -68,11 +48,7 @@ namespace DacpacDiff.Core.Model
                 && TargetField == rgt.TargetField
                 && (!IsSystemNamed ? !rgt.IsSystemNamed : Name == rgt.Name);
         }
-
-        public override bool Equals(object? obj)
-        {
-            return Equals(obj as RefModel);
-        }
+        public override bool Equals(object? obj) => Equals(obj as RefModel);
 
         public override int GetHashCode()
         {

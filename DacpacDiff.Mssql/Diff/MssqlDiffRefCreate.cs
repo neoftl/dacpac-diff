@@ -1,5 +1,4 @@
 ﻿using DacpacDiff.Core.Diff;
-using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Output;
 
 namespace DacpacDiff.Mssql.Diff
@@ -12,7 +11,15 @@ namespace DacpacDiff.Mssql.Diff
 
         protected override void GetFormat(ISqlFileBuilder sb)
         {
-            sb.AppendLine(new RefModel(_diff.Field).GetAddSql());
+            var fref = _diff.Field.Ref;
+            if (fref is null)
+            {
+                return;
+            }
+
+            sb.Append($"ALTER TABLE {fref.Table.FullName} WITH NOCHECK ADD ")
+                .AppendIf($"CONSTRAINT [{fref.Name}] FOREIGN KEY ([{fref.Field}]) ", fref.IsSystemNamed)
+                .AppendLine($"FOREIGN KEY ([{fref.Field}]) REFERENCES {fref.TargetTable} ([{fref.TargetField}])");
         }
     }
 }

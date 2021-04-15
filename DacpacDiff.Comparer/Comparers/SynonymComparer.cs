@@ -1,5 +1,6 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
+using System;
 using System.Collections.Generic;
 
 namespace DacpacDiff.Comparer.Comparers
@@ -9,11 +10,16 @@ namespace DacpacDiff.Comparer.Comparers
         public IEnumerable<IDifference> Compare(SynonymModel? lft, SynonymModel? rgt)
         {
             // May be a drop/create
-            if (lft == null)
+            if (lft is null)
             {
+                if (rgt is null)
+                {
+                    return Array.Empty<IDifference>();
+                }
+
                 return new[] { new DiffObjectDrop(rgt) };
             }
-            if (rgt == null)
+            if (rgt is null)
             {
                 return new[] { new DiffSynonymCreate(lft) };
             }
@@ -24,7 +30,7 @@ namespace DacpacDiff.Comparer.Comparers
                 return new[] { new DiffSynonymAlter(lft) };
             }
 
-            return System.Array.Empty<IDifference>();
+            return Array.Empty<IDifference>();
         }
     }
 }

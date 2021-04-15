@@ -1,4 +1,6 @@
-﻿namespace DacpacDiff.Core.Model
+﻿using System;
+
+namespace DacpacDiff.Core.Model
 {
     public class SynonymModel : IModel<SynonymModel, SchemaModel>, IDependentModel, IModelInSchema
     {
@@ -6,7 +8,7 @@
         public string Name { get; }
         public string FullName => $"[{Schema.Name}].[{Name}]";
         public string BaseObject { get; }
-        public string[] Dependents { get; set; }
+        public string[] Dependents { get; set; } = Array.Empty<string>();
         
         private SynonymModel()
         {

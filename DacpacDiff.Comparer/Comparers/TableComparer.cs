@@ -22,6 +22,11 @@ namespace DacpacDiff.Comparer.Comparers
             // May be a drop/create
             if (lft is null)
             {
+                if (rgt is null)
+                {
+                    return Array.Empty<IDifference>();
+                }
+
                 // TODO: drop refs
                 // TODO: drop indexes?
 

@@ -437,8 +437,6 @@ namespace DacpacDiff.Core.Parser
 
                 //Computation,
                 //DefaultConstraint,
-                //DefaultName,
-                //DefaultValue,
                 //Dependents,
                 //Ref,
                 //RefName,

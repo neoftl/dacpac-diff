@@ -1,4 +1,5 @@
 ﻿using DacpacDiff.Core.Diff;
+using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Output;
 
 namespace DacpacDiff.Mssql.Diff
@@ -8,6 +9,26 @@ namespace DacpacDiff.Mssql.Diff
         public MssqlDiffUserTypeCreate(DiffUserTypeCreate diff)
             : base(diff)
         { }
+        
+        private static void appendFieldSql(UserTypeFieldModel fld, ISqlFileBuilder sb)
+        {
+            sb.Append($"[{fld.Name}]");
+
+            if ((fld.Computation?.Length ?? 0) > 0)
+            {
+                sb.Append($" AS {fld.Computation}");
+            }
+            else
+            {
+                sb.Append($" {fld.Type}")
+                    .Append(fld.Nullable ? " NULL" : " NOT NULL ")
+                    .AppendIf($" DEFAULT{fld.Default}", (fld.Default?.Length ?? 0) > 0)
+                    .AppendIf(" PRIMARY KEY", fld.IsPrimaryKey)
+                    .AppendIf(" IDENTITY(1,1)", fld.Identity);
+            }
+
+            sb.AppendIf(" UNIQUE", (fld.Unique?.Length ?? 0) > 0);
+        }
 
         protected override void GetFormat(ISqlFileBuilder sb)
         {
@@ -25,7 +46,8 @@ namespace DacpacDiff.Mssql.Diff
             {
                 sb.AppendIf(",", first)
                     .AppendLine()
-                    .Append("    ").Append(fld.GetTableSql());
+                    .Append("    ");
+                appendFieldSql(fld, sb);
                 first = false;
             }
 

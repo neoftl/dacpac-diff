@@ -1,28 +1,27 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System;
 
 namespace DacpacDiff.Core.Model
 {
-    public class FieldModel : IModel<FieldModel, TableModel>, IDependentModel
+    public class FieldModel : IModel<FieldModel, TableModel>, IDependentModel, IEquatable<FieldModel>
     {
         public static readonly FieldModel Empty = new FieldModel();
 
         public TableModel Table { get; }
-        public string Name { get; set; }
-        public string Type { get; set; }
+        public string Name { get; }
+        public string? Type { get; set; }
         public string? Computation { get; set; }
 
-        public IDictionary<string, (bool isSystemNamed, string defaultValue)> DefaultConstraint { get; set; }
-        public bool HasDefault => (DefaultConstraint?.Count ?? 0) > 0;
-        public string? DefaultName => HasDefault ? DefaultConstraint.SingleOrDefault().Key : null;
-        public string? DefaultValue => HasDefault ? DefaultConstraint.SingleOrDefault().Value.defaultValue : null;
-        public bool IsSystemNamedDefault => HasDefault && DefaultConstraint.SingleOrDefault().Value.isSystemNamed;
+        public FieldDefaultModel? Default { get; set; }
+        public bool HasDefault => Default?.Value is not null;
+        public string? DefaultName => Default?.Name;
+        public string? DefaultValue => Default?.Value;
+        public bool IsDefaultSystemNamed => Default?.IsSystemNamed == true;
 
         public string? Unique { get; set; }
-        public bool IsSystemNamedUnique { get; set; }
         public bool IsUnique => (Unique?.Length ?? 0) > 0;
         public string? UniqueName => IsUnique ? Unique : null;
+        public bool IsUniqueSystemNamed { get; set; }
+
         public int Order { get; set; }
         public bool Nullable { get; set; }
         public bool Identity { get; set; }
@@ -34,16 +33,69 @@ namespace DacpacDiff.Core.Model
         public string? RefTargetField => Ref?.TargetField;
         public bool IsNamedReference => Ref?.IsSystemNamed ?? false;
 
-        public string[] Dependents { get; set; }
+        public string[] Dependents { get; set; } = Array.Empty<string>();
 
         private FieldModel()
         {
             Table = TableModel.Empty;
+            Name = string.Empty;
         }
         public FieldModel(TableModel table, string name)
         {
             Table = table;
             Name = name;
+        }
+
+        public bool Equals(FieldModel? other)
+        {
+            if (other is null)
+            {
+                return false;
+            }
+
+            bool eq<T>(Func<FieldModel, T?> fn) where T : IEquatable<T>
+            {
+                var l = fn(this);
+                var r = fn(other);
+                return (l is null && r is null) || l?.Equals(r) == true;
+            }
+            return eq(m => m.Table.FullName)
+                && eq(m => m.Name)
+                && eq(m => m.Type)
+                && eq(m => m.Computation)
+                && IsDefaultMatch(other)
+                && eq(m => m.IsUnique)
+                && eq(m => m.UniqueName)
+                && eq(m => m.IsUniqueSystemNamed)
+                //&& eq(m => m.Order) // TODO: Table field ordering to separate option and diff
+                && eq(m => m.Nullable)
+                && eq(m => m.Identity)
+                && eq(m => m.HasReference)
+                && eq(m => m.RefName)
+                && eq(m => m.RefTargetTable)
+                && eq(m => m.RefTargetField)
+                && eq(m => m.IsNamedReference);
+        }
+        public override bool Equals(object? obj) => Equals(obj as FieldModel);
+
+        public bool IsSignatureMatch(FieldModel other)
+        {
+            bool eq<T>(Func<FieldModel, T?> fn) where T : IEquatable<T>
+            {
+                var l = fn(this);
+                var r = fn(other);
+                return (l is null && r is null) || l?.Equals(r) == true;
+            }
+            return eq(m => m.Type)
+                && eq(m => m.Computation)
+                && IsDefaultMatch(other)
+                && eq(m => m.IsUnique);
+        }
+
+        public override int GetHashCode()
+        {
+            // TODO
+            return base.GetHashCode();
         }
 
         public bool IsDefaultMatch(FieldModel field)
@@ -73,160 +125,11 @@ namespace DacpacDiff.Core.Model
                 return false;
             }
 
-            if (field.IsSystemNamedDefault && IsSystemNamedDefault)
+            if (field.IsDefaultSystemNamed && IsDefaultSystemNamed)
             {
                 return true;
             }
             return field.DefaultName == DefaultName;
-        }
-
-        // TODO: To MSSQL library
-        public string ToDefinition()
-        {
-            var sql = new StringBuilder($"[{Name}]");
-
-            if ((Computation?.Length ?? 0) > 0)
-            {
-                sql.Append($" AS {Computation}");
-            }
-            else
-            {
-                sql.Append($" {Type}");
-
-                if (Table.Temporality?.PeriodFieldFrom == Name)
-                {
-                    sql.Append(" GENERATED ALWAYS AS ROW START");
-                    return sql.ToString();
-                }
-                if (Table.Temporality?.PeriodFieldTo == Name)
-                {
-                    sql.Append(" GENERATED ALWAYS AS ROW END");
-                    return sql.ToString();
-                }
-
-                if (Nullable)
-                {
-                    sql.Append(" NULL");
-                }
-                else
-                {
-                    sql.Append(" NOT NULL");
-                }
-            }
-
-            if (Identity)
-            {
-                sql.Append(" IDENTITY(1,1)");
-            }
-
-            if (Table.PrimaryKey?.Length == 1 && Table.PrimaryKey[0] == Name)
-            {
-                sql.Append(" PRIMARY KEY");
-            }
-
-            if (HasDefault)
-            {
-                sql.Append($" DEFAULT{DefaultValue}");
-            }
-
-            if ((Unique?.Length ?? 0) > 0)
-            {
-                sql.Append(" UNIQUE");
-            }
-
-            if (Ref != null)
-            {
-                sql.Append($" REFERENCES {Ref.TargetTable} ([{Ref.TargetField}])");
-            }
-
-            return sql.ToString();
-        }
-
-        // TODO: To MSSQL library
-        public string GetTableFieldSql()
-        {
-            var sql = new StringBuilder($"[{Name}]");
-
-            if ((Computation?.Length ?? 0) > 0)
-            {
-                sql.Append($" AS {Computation}");
-            }
-            else
-            {
-                sql.Append($" {Type}");
-
-                if (Table.Temporality?.PeriodFieldFrom == Name)
-                {
-                    sql.Append(" GENERATED ALWAYS AS ROW START");
-                    return sql.ToString();
-                }
-                if (Table.Temporality?.PeriodFieldTo == Name)
-                {
-                    sql.Append(" GENERATED ALWAYS AS ROW END");
-                    return sql.ToString();
-                }
-
-                if (Nullable)
-                {
-                    sql.Append(" NULL");
-                }
-                else
-                {
-                    sql.Append(" NOT NULL");
-                }
-            }
-
-            if (Identity)
-            {
-                sql.Append(" IDENTITY(1,1)");
-            }
-
-            if (HasDefault)
-            {
-                sql.Append($" DEFAULT{DefaultValue}");
-            }
-
-            if ((Unique?.Length ?? 0) > 0)
-            {
-                sql.Append(" UNIQUE");
-            }
-
-            return sql.ToString();
-        }
-
-        // TODO: To MSSQL library
-        public string GetAlterSql(bool isCurrentlyNotNullable = false)
-        {
-            var sql = new StringBuilder($"[{Name}]");
-
-            if ((Computation?.Length ?? 0) > 0)
-            {
-                sql.Append($" AS {Computation}");
-            }
-            else
-            {
-                sql.Append($" {Type}");
-
-                if (Nullable)
-                {
-                    sql.Append(" NULL");
-                }
-                else if (isCurrentlyNotNullable)
-                {
-                    sql.Append(" NOT NULL");
-                }
-                else if (!HasDefault)
-                {
-                    sql.Append(" NULL");
-                    // TODO: warning?
-                }
-                else
-                {
-                    sql.Append(" NOT NULL");
-                }
-            }
-
-            return sql.ToString();
         }
     }
 }

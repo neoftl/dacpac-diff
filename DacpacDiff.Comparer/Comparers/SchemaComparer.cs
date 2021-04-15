@@ -18,16 +18,16 @@ namespace DacpacDiff.Comparer.Comparers
 
         public IEnumerable<IDifference> Compare(SchemaModel? lft, SchemaModel? rgt)
         {
-            if (lft is null && rgt is null)
-            {
-                return Array.Empty<IDifference>();
-            }
-
             var result = new List<IDifference>();
 
             // May be a drop/create
             if (lft is null)
             {
+                if (rgt is null)
+                {
+                    return Array.Empty<IDifference>();
+                }
+
                 result.Add(new DiffObjectDrop(rgt));
             }
             else if (rgt is null)

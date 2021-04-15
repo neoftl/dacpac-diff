@@ -1,4 +1,6 @@
-﻿namespace DacpacDiff.Core.Model
+﻿using System;
+
+namespace DacpacDiff.Core.Model
 {
     public class ModuleModel : IModel<ModuleModel, SchemaModel>, IDependentModel, IModelInSchema
     {
@@ -19,7 +21,7 @@
         public ModuleType Type { get; set; }
         public string Definition { get; set; }
         public string ExecuteAs { get; set; }
-        public string[] Dependents { get; set; }
+        public string[] Dependents { get; set; } = Array.Empty<string>();
         
         public static string ScrubDefinition(string def)
         {

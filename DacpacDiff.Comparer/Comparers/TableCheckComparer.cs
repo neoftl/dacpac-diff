@@ -1,5 +1,6 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
+using System;
 using System.Collections.Generic;
 
 namespace DacpacDiff.Comparer.Comparers
@@ -8,21 +9,28 @@ namespace DacpacDiff.Comparer.Comparers
     {
         public IEnumerable<IDifference> Compare(TableCheckModel? lft, TableCheckModel? rgt)
         {
-            var diffs = new List<IDifference>();
-            if (lft == null)
+            // May be a drop/create
+            if (lft is null)
             {
-                diffs.Add(new DiffTableCheckDrop(rgt ?? lft));
+                if (rgt is null)
+                {
+                    return Array.Empty<IDifference>();
+                }
+
+                return new[] { new DiffTableCheckDrop(rgt) };
             }
-            else if (rgt == null)
+            if (rgt is null)
             {
-                diffs.Add(new DiffTableCheckCreate(lft));
-            }
-            else if (lft.Definition != rgt.Definition)
-            {
-                diffs.Add(new DiffTableCheckAlter(lft, rgt));
+                return new[] { new DiffTableCheckCreate(lft) };
             }
 
-            return diffs.ToArray();
+            // Alter
+            if (lft.Definition != rgt.Definition)
+            {
+                return new[] { new DiffTableCheckAlter(lft, rgt) };
+            }
+
+            return Array.Empty<IDifference>();
         }
     }
 }
