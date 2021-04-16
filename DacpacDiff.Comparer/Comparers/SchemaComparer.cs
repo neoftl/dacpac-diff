@@ -47,10 +47,8 @@ namespace DacpacDiff.Comparer.Comparers
                 .Distinct();
             var modCompr = _comparerFactory.GetComparer<ModuleModel>();
             var diffs = keys.SelectMany(k =>
-            {
-                var rightMod = rightModules?.Get(k);
-                return modCompr.Compare(lft?.Modules?.Get(k), rightMod);
-            });
+                modCompr.Compare(lft?.Modules?.Get(k), rightModules?.Get(k))
+            );
             result.AddRange(diffs);
 
             // Synonyms

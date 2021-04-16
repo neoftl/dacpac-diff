@@ -1,4 +1,4 @@
-﻿using DacpacDiff.Core.Model;
+using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Utility;
 using System;
 using System.IO;
@@ -371,7 +371,7 @@ namespace DacpacDiff.Core.Parser
         {
             var trig = new ModuleModel
             {
-                Type = ModuleModel.ModuleType.INDEX,
+                Type = ModuleModel.ModuleType.TRIGGER,
                 Schema = schema,
                 Name = getName(trigXml, schema.Name)
                 //Dependents?

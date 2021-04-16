@@ -42,6 +42,8 @@ namespace DacpacDiff.Mssql.Diff
             }
 
             sb.AppendIf(" UNIQUE", (fld.Unique?.Length ?? 0) > 0);
+
+            // TODO: Basic reference
         }
 
         protected override void GetFormat(ISqlFileBuilder sb)

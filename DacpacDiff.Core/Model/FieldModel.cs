@@ -27,7 +27,7 @@ namespace DacpacDiff.Core.Model
         public bool Identity { get; set; }
 
         public RefModel? Ref { get; set; }
-        public bool HasReference => Ref is null;
+        public bool HasReference => Ref is not null;
         public string? RefName => Ref?.Name;
         public string? RefTargetTable => Ref?.TargetTable;
         public string? RefTargetField => Ref?.TargetField;
