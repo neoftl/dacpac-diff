@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 
@@ -6,6 +7,11 @@ namespace DacpacDiff.Core.Utility
 {
 	internal static class XDocHelper
 	{
+		public static XElement[] Find(this IEnumerable<XElement> roots, XName elementName, params (XName name, string value)[] attributes)
+		{
+			return roots.SelectMany(e => e.Find(elementName, attributes)).ToArray();
+		}
+
 		public static XElement[] Find(this XElement root, XName elementName, params XName[] attributes)
 		{
 			return root.Elements(elementName)

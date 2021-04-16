@@ -5,7 +5,7 @@
         public UserTypeModel UserType { get; }
         public string Name { get; set; }
         public string Type { get; set; }
-        public string Computation { get; set; }
+        public string Computation { get; set; } = string.Empty;
         public string? Default { get; set; }
         public string Unique { get; set; }
         public int Order { get; set; }

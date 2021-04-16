@@ -26,6 +26,7 @@ namespace DacpacDiff.Core.Model
 
         public int Order { get; set; }
         public bool Nullable { get; set; }
+        public bool PrimaryKey { get; set; }
         public bool Identity { get; set; }
 
         public FieldRefModel? Ref { get; set; }

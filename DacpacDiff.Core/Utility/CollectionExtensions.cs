@@ -13,18 +13,17 @@ namespace DacpacDiff.Core.Utility
         {
             var result = 0;
             var i = 0;
-            foreach (var c in constituents)
+            foreach (var c in constituents.ToArray())
             {
                 result = unchecked(result + ((c?.GetHashCode() ?? 0) * PRIMES[i]));
                 i = ++i % PRIMES.Length;
             }
             return result;
         }
-
+        
         /// <summary>
         /// Gets the value associated with the specified key, if one exists; otherwise, null.
         /// </summary>
-        [Obsolete("Use TryGetValue")]
         public static TValue? Get<TKey, TValue>(this IDictionary<TKey, TValue>? dict, TKey key)
         {
             var value = default(TValue?);
@@ -43,7 +42,7 @@ namespace DacpacDiff.Core.Utility
         {
             if (dict is not null && values is not null)
             {
-                foreach (var kvp in values)
+                foreach (var kvp in values.ToArray())
                 {
                     dict[kvp.Key] = kvp.Value;
                 }
@@ -59,7 +58,7 @@ namespace DacpacDiff.Core.Utility
         {
             if (dict is not null && values is not null)
             {
-                foreach (var val in values)
+                foreach (var val in values.ToArray())
                 {
                     dict[keySelector(val)] = val;
                 }
@@ -75,13 +74,16 @@ namespace DacpacDiff.Core.Utility
         {
             if (dict is not null && items is not null)
             {
-                foreach (var val in items)
+                foreach (var val in items.ToArray())
                 {
                     dict[keySelector(val)] = valueSelector(val);
                 }
             }
             return dict;
         }
+        
+        public static IEnumerable<T> NotNull<T>(this IEnumerable<T?> source)
+            => source.Where(v => v is not null).Cast<T>();
 
         /// <summary>
         /// Get the first value in the collection that matches the predicate, or return false.

@@ -22,7 +22,7 @@ namespace DacpacDiff.Mssql.Diff
 
             sb.Append($" {fld.Type}")
                 .AppendIf($" DEFAULT{fld.DefaultValue}", fld.HasDefault && !fld.IsDefaultSystemNamed)
-                .AppendIf(" NOT ", !fld.Nullable && fld.HasDefault).Append("NULL");
+                .Append(!fld.Nullable && fld.HasDefault ? " NOT NULL" : " NULL");
         }
 
         protected override void GetFormat(ISqlFileBuilder sb)
@@ -89,7 +89,7 @@ namespace DacpacDiff.Mssql.Diff
                     // Make unique
                     sb.Append($"ALTER TABLE {lft.Table.FullName} ADD ")
                         .AppendIf($"CONSTRAINT [{lft.Unique}] ", !lft.IsUniqueSystemNamed)
-                        .AppendLine($"UNIQUE ([{lft.Name}]");
+                        .AppendLine($"UNIQUE ([{lft.Name}])");
                 }
                 else
                 {

@@ -20,7 +20,7 @@ namespace DacpacDiff.Core.Model
         public string FullName => $"[{Schema.Name}].[{Name}]";
         public ModuleType Type { get; set; }
         public string Definition { get; set; }
-        public string ExecuteAs { get; set; }
+        public string? ExecuteAs { get; set; }
         public string[] Dependents { get; set; } = Array.Empty<string>();
         
         public static string ScrubDefinition(string def)

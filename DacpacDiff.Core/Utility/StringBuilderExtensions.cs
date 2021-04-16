@@ -17,8 +17,8 @@ namespace DacpacDiff.Core.Utility
 
         public static StringBuilder EnsureLine(this StringBuilder sb)
         {
-            if (sb[^1] != NL[^1]
-                || (NL.Length == 2 && sb[^2] != NL[^2]))
+            if (sb.Length >= NL.Length
+                && (sb[^1] != NL[^1] || (NL.Length == 2 && sb[^2] != NL[^2])))
             {
                 sb.AppendLine();
             }

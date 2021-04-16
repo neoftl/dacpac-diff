@@ -35,16 +35,14 @@ namespace DacpacDiff.Mssql.Diff
                     return;
                 }
 
-                sb.Append(fld.Nullable ? " NULL" : " NOT NULL")
+                sb.Append(!fld.Nullable ? " NOT NULL" : " NULL")
                     .AppendIf($" DEFAULT{fld.DefaultValue}", fld.HasDefault)
-                    .AppendIf(" PRIMARY KEY", fld.Table.PrimaryKey.Length == 1 && fld.Table.PrimaryKey[0] == fld.Name)
-                    .AppendIf(" IDENTITY(1,1)", fld.Identity)
-                    .AppendIf($" REFERENCES {fld.Ref?.TargetField.Table.FullName} ([{fld.Ref?.TargetField.Name}])", fld.Ref?.IsSystemNamed == true);
+                    .AppendIf(" PRIMARY KEY", fld.PrimaryKey && fld.Table.PrimaryKeys.Length == 1)
+                    .AppendIf(" IDENTITY(1,1)", fld.Identity);
             }
 
-            sb.AppendIf(" UNIQUE", (fld.Unique?.Length ?? 0) > 0);
-
-            // TODO: Basic reference
+            sb.AppendIf(" UNIQUE", (fld.Unique?.Length ?? 0) > 0)
+                .AppendIf($" REFERENCES {fld.Ref?.TargetField.Table.FullName} ([{fld.Ref?.TargetField.Name}])", fld.Ref?.IsSystemNamed == true);
         }
 
         protected override void GetFormat(ISqlFileBuilder sb)
@@ -62,10 +60,10 @@ namespace DacpacDiff.Mssql.Diff
                 first = false;
             }
 
-            if (_diff.Table.PrimaryKey.Length > 0)
+            if (_diff.Table.PrimaryKeys.Length > 0)
             {
                 sb.AppendLine(",")
-                    .Append($"    PRIMARY KEY {(_diff.Table.IsPrimaryKeyUnclustered ? "NONCLUSTERED " : "")}([{String.Join("], [", _diff.Table.PrimaryKey)}])");
+                    .Append($"    PRIMARY KEY {(_diff.Table.IsPrimaryKeyUnclustered ? "NONCLUSTERED " : "")}([{String.Join("], [", _diff.Table.PrimaryKeys.Select(f => f.Name))}])");
             }
 
             if (_diff.Table.Temporality != null)

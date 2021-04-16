@@ -1,12 +1,10 @@
-﻿using DacpacDiff.Core.Model;
+using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Utility;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Xml.Linq;
-using System.Xml.XPath;
 
 namespace DacpacDiff.Core.Parser
 {
@@ -15,7 +13,7 @@ namespace DacpacDiff.Core.Parser
         public SchemeModel? ParseFile(string filename)
         {
             var modelXml = getModelXml(filename);
-            if (modelXml == null)
+            if (modelXml is null)
             {
                 return null;
             }
@@ -28,12 +26,101 @@ namespace DacpacDiff.Core.Parser
                 .Union(new[] { "dbo" }) // Always has "dbo" schema
                 .ToArray();
             db.Schemas.Merge(schemaNames.Select(s => getSchema(db, modelXml, s)), s => s.Name);
-            
-            // Table refs
-            var els = modelXml.XPathSelectElements("Element[@Type='SqlForeignKeyConstraint']")?.ToArray() ?? Array.Empty<XElement>();
+
+            // FKey references
+            var els = modelXml.Find("Element", ("Type", "SqlForeignKeyConstraint"));
             foreach (var el in els)
             {
                 parseFieldRef(el, db);
+            }
+
+            // Field defaults
+            els = modelXml.Find("Element", ("Type", "SqlDefaultConstraint"));
+            foreach (var el in els)
+            {
+                var tblName = el.Find("Relationship", ("Name", "DefiningTable")).Single()
+                    .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
+                var fldName = el.Find("Relationship", ("Name", "ForColumn")).Single()
+                    .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
+                var defValue = el.Find("Property", ("Name", "DefaultExpressionScript")).Single().Element("Value")?.Value;
+                if (tblName is not null && fldName is not null && defValue is not null
+                    && db.TryGet<TableModel>(tblName, out var tbl)
+                    && tbl.Fields.TryGetValue(f => f.FullName == fldName, out var fld))
+                {
+                    fld.Default = new FieldDefaultModel(fld, null, defValue);
+                }
+                else
+                {
+                    // TODO: log bad ref
+                }
+            }
+
+            // Primary keys
+            els = modelXml.Find("Element", ("Type", "SqlPrimaryKeyConstraint"));
+            foreach (var el in els)
+            {
+                var tbl = el.Find("Relationship", ("Name", "DefiningTable")).Single()
+                    .Elements("Entry")?
+                    .Elements("References")?.Attributes("Name")?
+                    .Select(a => db.Get(a.Value) as TableModel)
+                    .SingleOrDefault();
+                var flds = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
+                    .Element("Entry")?
+                    .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
+                    .Find("Relationship", ("Name", "Column"))
+                    .Elements("Entry")?
+                    .Elements("References")?.Attributes("Name")?
+                    .Select(a => tbl?.Fields.SingleOrDefault(f => f.FullName == a.Value))
+                    .NotNull().ToArray() ?? Array.Empty<FieldModel>();
+                if (tbl is not null && flds.Length > 0)
+                {
+                    foreach (var fld in flds)
+                    {
+                        fld.PrimaryKey = true;
+                        // TODO: IsPrimaryKeyUnclustered
+                    }
+                }
+                else
+                {
+                    // TODO: log bad ref
+                }
+            }
+
+            // Unique
+            els = modelXml.Find("Element", ("Type", "SqlUniqueConstraint"));
+            foreach (var el in els)
+            {
+                var tbl = el.Find("Relationship", ("Name", "DefiningTable")).Single()
+                    .Elements("Entry")?
+                    .Elements("References")?.Attributes("Name")?
+                    .Select(a => db.Get(a.Value) as TableModel)
+                    .SingleOrDefault();
+                var flds = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
+                    .Element("Entry")?
+                    .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
+                    .Find("Relationship", ("Name", "Column"))
+                    .Elements("Entry")?
+                    .Elements("References")?.Attributes("Name")?
+                    .Select(a => tbl?.Fields.SingleOrDefault(f => f.FullName == a.Value))
+                    .NotNull().ToArray() ?? Array.Empty<FieldModel>();
+                if (tbl is not null && flds.Length > 0)
+                {
+                    if (flds.Length > 1)
+                    {
+                        // TODO: Multi-field unique on table
+                    }
+
+                    foreach (var fld in flds)
+                    {
+                        // TODO: Named unique
+                        fld.Unique = "*";
+                        fld.IsUniqueSystemNamed = true;
+                    }
+                }
+                else
+                {
+                    // TODO: log bad ref
+                }
             }
 
             var scheme = new SchemeModel(Path.GetFileNameWithoutExtension(filename));
@@ -57,6 +144,54 @@ namespace DacpacDiff.Core.Parser
             modelData = modelData.Replace("xmlns=\"http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02\"", "");
             var rootXml = XDocument.Parse(modelData).Root ?? throw new NullReferenceException();
             return rootXml.Element("Model");
+        }
+
+        private static string getName(XElement? el, string? prefix = null)
+        {
+            var name = el?.Attribute("Name")?.Value ?? string.Empty;
+            if (name.Length > 0 && prefix is not null)
+            {
+                if (name.StartsWith($"[{prefix}].", StringComparison.OrdinalIgnoreCase))
+                {
+                    name = name[(prefix.Length + 3)..];
+                }
+                else if (name.StartsWith($"{prefix}.", StringComparison.OrdinalIgnoreCase))
+                {
+                    name = name[(prefix.Length + 1)..];
+                }
+            }
+
+            return (name.Length > 2 && name[0] == '[' && name[^1] == ']')
+                ? name[1..^1]
+                : name;
+        }
+
+        private static string getSqlType(XElement el)
+        {
+            var sqltype = getName(el.Find("Relationship", ("Name", "Type")).First()
+                .Element("Entry")?
+                .Element("References"));
+
+            var len = el.Find("Property", ("Name", "Length")).FirstOrDefault()?.Attribute("Value")?.Value;
+            if (len is not null)
+            {
+                sqltype += $"({len})";
+            }
+            else if (el.Find("Property", ("Name", "IsMax")).FirstOrDefault()?.Attribute("Value")?.Value == "True")
+            {
+                sqltype += "(MAX)";
+            }
+            else
+            {
+                var prec = el.Find("Property", ("Name", "Precision")).FirstOrDefault()?.Attribute("Value")?.Value;
+                if (prec is not null)
+                {
+                    var scale = el.Find("Property", ("Name", "Scale")).FirstOrDefault()?.Attribute("Value")?.Value;
+                    sqltype += $"({prec}, {scale})";
+                }
+            }
+
+            return sqltype;
         }
 
         private static SchemaModel getSchema(DatabaseModel db, XElement rootXml, string name)
@@ -110,28 +245,34 @@ namespace DacpacDiff.Core.Parser
 
         private static void parseFieldRef(XElement el, DatabaseModel db)
         {
-            var refFieldPath = el.XPathSelectElement("Relationship[@Name='Columns']/Entry/References")?.Attribute("Name")?.Value;
+            var refFieldPath = el.Find("Relationship", ("Name", "Columns"))
+                .Elements("Entry")
+                .Elements("References")?
+                .Single().Attribute("Name")?.Value;
             if (refFieldPath is null)
             {
                 // TODO: log bad ref
                 return;
             }
             var dtblName = refFieldPath[..refFieldPath.LastIndexOf('.')];
-            if (!db.TryGet(dtblName, out TableModel dtbl)
+            if (!db.TryGet<TableModel>(dtblName, out var dtbl)
                 || !dtbl.Fields.TryGetValue(v => v.FullName == refFieldPath, out var dfld))
             {
                 // TODO: log unknown def table/field
                 return;
             }
-            
-            refFieldPath = el.XPathSelectElement("Relationship[@Name='ForeignColumns']/Entry/References")?.Attribute("Name")?.Value;
+
+            refFieldPath = el.Find("Relationship", ("Name", "ForeignColumns"))
+                .Elements("Entry")
+                .Elements("References")?
+                .Single().Attribute("Name")?.Value;
             if (refFieldPath is null)
             {
                 // TODO: log bad ref
                 return;
             }
             var ftblName = refFieldPath[..refFieldPath.LastIndexOf('.')];
-            if (!db.TryGet(ftblName, out TableModel ftbl)
+            if (!db.TryGet<TableModel>(ftblName, out var ftbl)
                 || !ftbl.Fields.TryGetValue(v => v.FullName == refFieldPath, out var ffld))
             {
                 // TODO: log unknown foreign table
@@ -146,54 +287,6 @@ namespace DacpacDiff.Core.Parser
 
             dfld.Ref = new FieldRefModel(dfld, ffld);
             // TODO: naming
-        }
-
-        private static string getName(XElement? el, string? prefix = null)
-        {
-            var name = el?.Attribute("Name")?.Value ?? string.Empty;
-            if (name.Length > 0 && prefix is not null)
-            {
-                if (name.StartsWith($"[{prefix}].", StringComparison.OrdinalIgnoreCase))
-                {
-                    name = name[(prefix.Length + 3)..];
-                }
-                else if (name.StartsWith($"{prefix}.", StringComparison.OrdinalIgnoreCase))
-                {
-                    name = name[(prefix.Length + 1)..];
-                }
-            }
-
-            return (name.Length > 2 && name[0] == '[' && name[^1] == ']')
-                ? name[1..^1]
-                : name;
-        }
-
-        private static string getSqlType(XElement el)
-        {
-            var sqltype = getName(el.Find("Relationship", ("Name", "Type")).First()
-                .Element("Entry")?
-                .Element("References"));
-
-            var len = el.Find("Property", ("Name", "Length")).FirstOrDefault()?.Attribute("Value")?.Value;
-            if (len is not null)
-            {
-                sqltype += $"({len})";
-            }
-            else if (el.Find("Property", ("Name", "IsMax")).FirstOrDefault()?.Attribute("Value")?.Value == "True")
-            {
-                sqltype += "(MAX)";
-            }
-            else
-            {
-                var prec = el.Find("Property", ("Name", "Precision")).FirstOrDefault()?.Attribute("Value")?.Value;
-                if (prec is not null)
-                {
-                    var scale = el.Find("Property", ("Name", "Scale")).FirstOrDefault()?.Attribute("Value")?.Value;
-                    sqltype += $"({prec}, {scale})";
-                }
-            }
-
-            return sqltype;
         }
 
         private static ModuleModel getFunction(SchemaModel schema, XElement funcXml)
@@ -350,11 +443,11 @@ namespace DacpacDiff.Core.Parser
                 .Select(toArg).ToArray();
             if (args is not null && args.Length > 0)
             {
-                def += string.Join(", ", args);
+                def += "    " + string.Join(",\r\n    ", args);
             }
 
             def += "\r\nAS\r\n";
-            def += procXml.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value;
+            def += procXml.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value.Trim();
             proc.Definition = def;
 
             return proc;
@@ -379,12 +472,7 @@ namespace DacpacDiff.Core.Parser
                 name: getName(tableXml, schema.Name)
             );
 
-            // TODO: IsPrimaryKeyUnclustered
-            // TODO: PrimaryKey
             // TODO: Checks
-            // TODO: Refs
-
-            //Dependents?
 
             // Ignore history tables (handled by current)
             if (tableXml.Find("Property", ("Name", "IsAutoGeneratedHistoryTable"), ("Value", "True")).Any())
@@ -486,10 +574,7 @@ namespace DacpacDiff.Core.Parser
                 // Ref done later
 
                 //Computation,
-                //DefaultConstraint,
                 //Dependents,
-                //Unique,
-                //IsSystemNamedUnique,
             };
 
             // Type / computed
@@ -504,10 +589,6 @@ namespace DacpacDiff.Core.Parser
                     .First(e => e.Attribute("Type")?.Value == "SqlTypeSpecifier" || e.Attribute("Type")?.Value == "SqlXmlTypeSpecifier");
                 field.Type = getSqlType(typeXml);
             }
-
-            // Default
-
-            // Unique
 
             return field;
         }

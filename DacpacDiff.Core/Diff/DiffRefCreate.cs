@@ -11,9 +11,9 @@ namespace DacpacDiff.Core.Diff
         public string Title => "Create reference";
         public string Name => $"{Ref.Field.FullName}:[{(Ref.IsSystemNamed ? "*" : Ref.Name)}]";
 
-        public DiffRefCreate(FieldRefModel @ref)
+        public DiffRefCreate(FieldRefModel fref)
         {
-            Ref = @ref ?? throw new ArgumentNullException(nameof(@ref));
+            Ref = fref ?? throw new ArgumentNullException(nameof(fref));
         }
     }
 }
