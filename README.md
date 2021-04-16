@@ -35,6 +35,7 @@ We work on a large platform that makes use of Visual Studio Database Projects fo
 ## Long-term
 * Extract minimal dacpac file from any database, to support non-MSSQL and other database projects
 * Support non-MSSQL diff output
+* Non-dacpac extract/import model of database
 
 ## Logical structure
 1. Each dacpac is parsed in to an hierarchical set of models, representing the parts of the database we support

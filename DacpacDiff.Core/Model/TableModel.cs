@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace DacpacDiff.Core.Model
@@ -11,7 +12,7 @@ namespace DacpacDiff.Core.Model
         public string Name { get; }
         public string FullName => $"[{Schema.Name}].[{Name}]";
 
-        public TableCheckModel[] Checks { get; set; } = Array.Empty<TableCheckModel>();
+        public IList<TableCheckModel> Checks { get; set; } = new List<TableCheckModel>();
         public FieldModel[] Fields { get; set; } = Array.Empty<FieldModel>();
         public FieldModel[] PrimaryKeys => Fields.Where(f => f.PrimaryKey).ToArray();
         public bool IsPrimaryKeyUnclustered { get; set; }

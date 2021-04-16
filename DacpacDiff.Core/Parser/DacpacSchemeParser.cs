@@ -1,4 +1,4 @@
-using DacpacDiff.Core.Model;
+﻿using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Utility;
 using System;
 using System.IO;
@@ -32,6 +32,24 @@ namespace DacpacDiff.Core.Parser
             foreach (var el in els)
             {
                 parseFieldRef(el, db);
+            }
+
+            // TODO: Checks
+            els = modelXml.Find("Element", ("Type", "SqlCheckConstraint"));
+            foreach (var el in els)
+            {
+                var tblName = el.Find("Relationship", ("Name", "DefiningTable")).Single()
+                    .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
+                var checkExpr = el.Find("Property", ("Name", "CheckExpressionScript")).Single().Element("Value")?.Value;
+                if (tblName is not null && checkExpr is not null
+                    && db.TryGet<TableModel>(tblName, out var tbl))
+                {
+                    tbl.Checks.Add(new TableCheckModel(tbl, null, checkExpr));
+                }
+                else
+                {
+                    // TODO: log bad check
+                }
             }
 
             // Field defaults
@@ -82,7 +100,7 @@ namespace DacpacDiff.Core.Parser
                 }
                 else
                 {
-                    // TODO: log bad ref
+                    // TODO: log bad pkey
                 }
             }
 
@@ -119,7 +137,7 @@ namespace DacpacDiff.Core.Parser
                 }
                 else
                 {
-                    // TODO: log bad ref
+                    // TODO: log bad unique
                 }
             }
 

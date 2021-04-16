@@ -4,7 +4,7 @@
     {
         public FieldModel Field { get; }
         public string Name { get; }
-        public bool IsSystemNamed { get; set; }
+        public bool IsSystemNamed { get; }
         public string Value { get; }
 
         public FieldDefaultModel(FieldModel field, string? name, string value)
@@ -14,7 +14,7 @@
             IsSystemNamed = Name.Length == 0;
             Value = value;
 
-            if (Value.Length > 2 && Value[0] == '(' && Value[^1] == ')')
+            while (Value.Length > 2 && Value[0] == '(' && Value[^1] == ')')
             {
                 Value = Value[1..^1];
             }
