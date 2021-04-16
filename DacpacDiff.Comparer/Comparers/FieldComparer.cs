@@ -2,7 +2,6 @@
 using DacpacDiff.Core.Model;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace DacpacDiff.Comparer.Comparers
 {
@@ -25,10 +24,8 @@ namespace DacpacDiff.Comparer.Comparers
                 return new[] { new DiffFieldCreate(lft) };
             }
 
-            fixFieldRef(lft);
-            fixFieldRef(rgt);
-            
             // TODO: If field has dependencies (constraint, index, etc.), drop first then recreate
+            // TODO: drop/create/alter ref can be separate
 
             // Change field
             if (!lft.Equals(rgt))
@@ -37,19 +34,6 @@ namespace DacpacDiff.Comparer.Comparers
             }
 
             return Array.Empty<IDifference>();
-        }
-
-        private static void fixFieldRef(FieldModel fld)
-        {
-            if (fld.Table.Refs.Count > 0)
-            {
-                // Copy named reference to field
-                var tref = fld.Table.Refs.Values.Where(r => r.TargetField == fld.Name).FirstOrDefault();
-                if (tref is not null)
-                {
-                    fld.Ref = new RefModel(tref);
-                }
-            }
         }
     }
 }

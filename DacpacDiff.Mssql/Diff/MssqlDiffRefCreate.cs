@@ -11,15 +11,9 @@ namespace DacpacDiff.Mssql.Diff
 
         protected override void GetFormat(ISqlFileBuilder sb)
         {
-            var fref = _diff.Field.Ref;
-            if (fref is null)
-            {
-                return;
-            }
-
-            sb.Append($"ALTER TABLE {fref.Table.FullName} WITH NOCHECK ADD ")
-                .AppendIf($"CONSTRAINT [{fref.Name}] FOREIGN KEY ([{fref.Field}]) ", fref.IsSystemNamed)
-                .AppendLine($"FOREIGN KEY ([{fref.Field}]) REFERENCES {fref.TargetTable} ([{fref.TargetField}])");
+            sb.Append($"ALTER TABLE {_diff.Ref.Table.FullName} WITH NOCHECK ADD ")
+                .AppendIf($"CONSTRAINT [{_diff.Ref.Name}] ", !_diff.Ref.IsSystemNamed)
+                .AppendLine($"FOREIGN KEY ([{_diff.Ref.Field.Name}]) REFERENCES {_diff.Ref.TargetField.Table.FullName} ([{_diff.Ref.TargetField.Name}])");
         }
     }
 }

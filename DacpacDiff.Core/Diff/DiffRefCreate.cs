@@ -5,15 +5,15 @@ namespace DacpacDiff.Core.Diff
 {
     public class DiffRefCreate : IDifference
     {
-        public FieldModel Field { get; }
+        public FieldRefModel Ref { get; }
+        public IModel Model => Ref;
 
-        public IModel Model => Field;
         public string Title => "Create reference";
-        public string Name => $"{Field.Table.FullName}.[{Field.Name}]:[{Field.RefName}]";
+        public string Name => $"{Ref.Field.FullName}:[{(Ref.IsSystemNamed ? "*" : Ref.Name)}]";
 
-        public DiffRefCreate(FieldModel fld)
+        public DiffRefCreate(FieldRefModel @ref)
         {
-            Field = fld ?? throw new ArgumentNullException(nameof(fld));
+            Ref = @ref ?? throw new ArgumentNullException(nameof(@ref));
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace DacpacDiff.Core.Model
 {
@@ -15,7 +14,6 @@ namespace DacpacDiff.Core.Model
         public FieldModel[] Fields { get; set; } = Array.Empty<FieldModel>();
         public string[] PrimaryKey { get; set; } = Array.Empty<string>();
         public bool IsPrimaryKeyUnclustered { get; set; }
-        public IDictionary<string, RefModel> Refs { get; } = new Dictionary<string, RefModel>();
         public TemporalityModel Temporality { get; set; } = TemporalityModel.Empty;
         public string[] Dependents { get; set; } = Array.Empty<string>();
 

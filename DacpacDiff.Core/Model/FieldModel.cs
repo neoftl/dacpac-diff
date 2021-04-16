@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DacpacDiff.Core.Utility;
+using System;
 
 namespace DacpacDiff.Core.Model
 {
@@ -8,6 +9,7 @@ namespace DacpacDiff.Core.Model
 
         public TableModel Table { get; }
         public string Name { get; }
+        public string FullName => $"{Table.FullName}.[{Name}]";
         public string? Type { get; set; }
         public string? Computation { get; set; }
 
@@ -26,11 +28,11 @@ namespace DacpacDiff.Core.Model
         public bool Nullable { get; set; }
         public bool Identity { get; set; }
 
-        public RefModel? Ref { get; set; }
+        public FieldRefModel? Ref { get; set; }
         public bool HasReference => Ref is not null;
         public string? RefName => Ref?.Name;
-        public string? RefTargetTable => Ref?.TargetTable;
-        public string? RefTargetField => Ref?.TargetField;
+        public string? RefTargetTable => Ref?.TargetField.Table.Name;
+        public string? RefTargetField => Ref?.TargetField.Name;
         public bool IsNamedReference => Ref?.IsSystemNamed ?? false;
 
         public string[] Dependents { get; set; } = Array.Empty<string>();
@@ -91,11 +93,23 @@ namespace DacpacDiff.Core.Model
                 && IsDefaultMatch(other)
                 && eq(m => m.IsUnique);
         }
-
+        
         public override int GetHashCode()
         {
-            // TODO
-            return base.GetHashCode();
+            return new object?[]
+            {
+                Table,
+                Name,
+                Type,
+                Computation,
+                Default,
+                Unique,
+                IsUniqueSystemNamed,
+                Order,
+                Nullable,
+                Identity,
+                Ref
+            }.CalculateHashCode();
         }
 
         public bool IsDefaultMatch(FieldModel field)

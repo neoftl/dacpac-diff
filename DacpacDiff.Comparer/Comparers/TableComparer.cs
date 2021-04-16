@@ -39,7 +39,11 @@ namespace DacpacDiff.Comparer.Comparers
             if (rgt is null)
             {
                 diffs.Add(new DiffTableCreate(lft));
-                diffs.AddRange(lft.Fields.Where(f => f.HasReference).Select(f => new DiffRefCreate(f)));
+
+                // Will need to create all named references separately
+                diffs.AddRange(lft.Fields.Where(f => f.Ref?.IsSystemNamed == false && f.Ref is not null)
+                    .Select(f => new DiffRefCreate(f.Ref)));
+
                 return diffs.ToArray();
             }
 

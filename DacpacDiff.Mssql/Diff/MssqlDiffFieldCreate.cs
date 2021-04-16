@@ -22,12 +22,12 @@ namespace DacpacDiff.Mssql.Diff
 
             sb.Append($" {fld.Type}")
                 .AppendIf($" DEFAULT{fld.DefaultValue}", fld.HasDefault)
-                .AppendIf(" NOT ", !fld.Nullable && fld.HasDefault).Append("NULL");
+                .AppendIf(" NOT ", !fld.Nullable && fld.HasDefault).Append("NULL")
+                .AppendIf($" REFERENCES {fld.Ref?.TargetField.Table.FullName} ([{fld.Ref?.TargetField.Name}])", fld.Ref?.IsSystemNamed == true);
         }
 
         protected override void GetFormat(ISqlFileBuilder sb)
         {
-            // TODO: ref
             // TODO: unique
 
             var fld = _diff.Field;

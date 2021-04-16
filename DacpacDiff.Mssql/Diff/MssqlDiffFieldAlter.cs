@@ -106,15 +106,15 @@ namespace DacpacDiff.Mssql.Diff
             }
 
             // Reference
-            var lftRef = lft.Ref is not null ? new RefModel(lft) : null;
-            var rgtRef = rgt.Ref is not null ? new RefModel(rgt) : null;
+            var lftRef = lft.Ref is not null ? new FieldRefModel(lft.Ref) : null;
+            var rgtRef = rgt.Ref is not null ? new FieldRefModel(rgt.Ref) : null;
             if (rgtRef is null || lftRef?.Equals(rgtRef) != false)
             {
                 if (rgtRef is not null)
                 {
                     if (!rgtRef.IsSystemNamed || (rgtRef.Name?.Length ?? 0) == 0)
                     {
-                        sb.AppendLine($"-- Removing unnamed FKey: {rgtRef.Table.FullName}.[{rgtRef.Field}] -> {rgtRef.TargetTable}.[{rgtRef.TargetField}]")
+                        sb.AppendLine($"-- Removing unnamed FKey: {rgtRef.Field.FullName} -> {rgtRef.TargetField.FullName}")
                             .AppendLine($"DECLARE @FKeyName VARCHAR(MAX) = (SELECT FK.[name] FROM sys.foreign_keys FK JOIN sys.foreign_key_columns KC ON KC.[constraint_object_id] = FK.[object_id] JOIN sys.columns C ON C.[object_id] = FK.[parent_object_id] AND C.[column_id] = KC.[parent_column_id] WHERE FK.[parent_object_id] = OBJECT_ID('{rgtRef.Table.FullName}') AND FK.[type] = 'F' AND C.[name] = '{rgtRef.Field}')") // TODO: Shouldn't this check the target as well?
                             .AppendLine($"DECLARE @DropConstraintSql VARCHAR(MAX) = CONCAT('ALTER TABLE {rgtRef.Table.FullName} DROP CONSTRAINT ', QUOTENAME(@FKeyName))")
                             .AppendLine("EXEC (@DropConstraintSql)");
@@ -128,7 +128,7 @@ namespace DacpacDiff.Mssql.Diff
                 {
                     sb.Append($"ALTER TABLE {lftRef.Table.FullName} WITH NOCHECK ADD ")
                         .AppendIf($"CONSTRAINT [{lftRef.Name}] FOREIGN KEY ([{lftRef.Field}]) ", lftRef.IsSystemNamed)
-                        .AppendLine($"FOREIGN KEY ([{lftRef.Field}]) REFERENCES {lftRef.TargetTable} ([{lftRef.TargetField}])");
+                        .AppendLine($"FOREIGN KEY ([{lftRef.Field}]) REFERENCES {lftRef.TargetField.Table.FullName} ([{lftRef.TargetField.Name}])");
                 }
             }
         }

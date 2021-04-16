@@ -1,10 +1,12 @@
-using DacpacDiff.Core.Model;
+﻿using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Utility;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Xml.Linq;
+using System.Xml.XPath;
 
 namespace DacpacDiff.Core.Parser
 {
@@ -20,12 +22,19 @@ namespace DacpacDiff.Core.Parser
 
             var db = new DatabaseModel("database"); // TODO
 
-            // Parse model
+            // Parse model for schemas
             var schemaNames = modelXml.Find("Element", ("Type", "SqlSchema"))
                 .Select(e => getName(e))
                 .Union(new[] { "dbo" }) // Always has "dbo" schema
                 .ToArray();
             db.Schemas.Merge(schemaNames.Select(s => getSchema(db, modelXml, s)), s => s.Name);
+            
+            // Table refs
+            var els = modelXml.XPathSelectElements("Element[@Type='SqlForeignKeyConstraint']")?.ToArray() ?? Array.Empty<XElement>();
+            foreach (var el in els)
+            {
+                parseFieldRef(el, db);
+            }
 
             var scheme = new SchemeModel(Path.GetFileNameWithoutExtension(filename));
             scheme.Databases[db.Name] = db;
@@ -97,6 +106,46 @@ namespace DacpacDiff.Core.Parser
                 .Merge(views, m => m.Name);
 
             return schema;
+        }
+
+        private static void parseFieldRef(XElement el, DatabaseModel db)
+        {
+            var refFieldPath = el.XPathSelectElement("Relationship[@Name='Columns']/Entry/References")?.Attribute("Name")?.Value;
+            if (refFieldPath is null)
+            {
+                // TODO: log bad ref
+                return;
+            }
+            var dtblName = refFieldPath[..refFieldPath.LastIndexOf('.')];
+            if (!db.TryGet(dtblName, out TableModel dtbl)
+                || !dtbl.Fields.TryGetValue(v => v.FullName == refFieldPath, out var dfld))
+            {
+                // TODO: log unknown def table/field
+                return;
+            }
+            
+            refFieldPath = el.XPathSelectElement("Relationship[@Name='ForeignColumns']/Entry/References")?.Attribute("Name")?.Value;
+            if (refFieldPath is null)
+            {
+                // TODO: log bad ref
+                return;
+            }
+            var ftblName = refFieldPath[..refFieldPath.LastIndexOf('.')];
+            if (!db.TryGet(ftblName, out TableModel ftbl)
+                || !ftbl.Fields.TryGetValue(v => v.FullName == refFieldPath, out var ffld))
+            {
+                // TODO: log unknown foreign table
+                return;
+            }
+
+            if (dfld.HasReference)
+            {
+                // TODO: log duplicate reference
+                return;
+            }
+
+            dfld.Ref = new FieldRefModel(dfld, ffld);
+            // TODO: naming
         }
 
         private static string getName(XElement? el, string? prefix = null)
@@ -434,16 +483,12 @@ namespace DacpacDiff.Core.Parser
                 Identity = colXml.Attribute("IsIdentity")?.Value.ToLower() == "true",
                 Order = ord,
                 Nullable = colXml.Attribute("IsNullable")?.Value.ToLower() != "false",
+                // Ref done later
 
                 //Computation,
                 //DefaultConstraint,
                 //Dependents,
-                //Ref,
-                //RefName,
-                //RefTargetField,
-                //RefTargetTable,
                 //Unique,
-                //UniqueName,
                 //IsSystemNamedUnique,
             };
 
@@ -461,8 +506,6 @@ namespace DacpacDiff.Core.Parser
             }
 
             // Default
-
-            // Ref
 
             // Unique
 

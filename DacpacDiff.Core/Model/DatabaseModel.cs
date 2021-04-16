@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace DacpacDiff.Core.Model
@@ -32,7 +33,8 @@ namespace DacpacDiff.Core.Model
             }
             return schema;
         }
-        public bool TryGet<T>(string fullName, out T? model)
+
+        public bool TryGet<T>(string fullName, [MaybeNullWhen(false)] out T model)
             where T : class, IModel
         {
             model = Get(fullName) as T;

@@ -1,14 +1,30 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 namespace DacpacDiff.Core.Utility
 {
-    internal static class DictionaryExtensions
+    internal static class CollectionExtensions
     {
+        [SuppressMessage("Style", "IDE1006:Naming Styles")]
+        private static readonly int[] PRIMES = new[] { 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 };
+        public static int CalculateHashCode(this IEnumerable<object?> constituents)
+        {
+            var result = 0;
+            var i = 0;
+            foreach (var c in constituents)
+            {
+                result = unchecked(result + ((c?.GetHashCode() ?? 0) * PRIMES[i]));
+                i = ++i % PRIMES.Length;
+            }
+            return result;
+        }
+
         /// <summary>
         /// Gets the value associated with the specified key, if one exists; otherwise, null.
         /// </summary>
+        [Obsolete("Use TryGetValue")]
         public static TValue? Get<TKey, TValue>(this IDictionary<TKey, TValue>? dict, TKey key)
         {
             var value = default(TValue?);
@@ -65,6 +81,19 @@ namespace DacpacDiff.Core.Utility
                 }
             }
             return dict;
+        }
+
+        /// <summary>
+        /// Get the first value in the collection that matches the predicate, or return false.
+        /// </summary>
+        public static bool TryGetValue<T>(this IEnumerable<T>? col, Func<T, bool> predicate, [MaybeNullWhen(false)] out T value)
+        {
+            value = default;
+            if (col is not null)
+            {
+                value = col.FirstOrDefault(predicate);
+            }
+            return value is not null;
         }
     }
 }
