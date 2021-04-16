@@ -9,7 +9,7 @@ namespace DacpacDiff.Core.Diff
 
         public IModel Model => LeftTableCheck ?? RightTableCheck;
         public string Title => "Alter check constraint";
-        public string Name => $"[{LeftTableCheck.Table.Schema.Name}].[{LeftTableCheck.Table.Name}].[{LeftTableCheck.Name}]";
+        public string Name => $"{LeftTableCheck.Table.FullName}.[{(LeftTableCheck.IsSystemNamed ? "*" : LeftTableCheck.Name)}]";
 
         public DiffTableCheckAlter(TableCheckModel leftTableCheck, TableCheckModel rightTableCheck)
         {

@@ -9,7 +9,7 @@ namespace DacpacDiff.Core.Diff
 
         public IModel Model => TableCheck;
         public string Title => "Drop check constraint";
-        public string Name => $"[{TableCheck.Table.Schema.Name}].[{TableCheck.Table.Name}].[{TableCheck.Name}]";
+        public string Name => $"{TableCheck.Table.FullName}.[{(TableCheck.IsSystemNamed ? "*" : TableCheck.Name)}]";
 
         public DiffTableCheckDrop(TableCheckModel tableCheck)
         {

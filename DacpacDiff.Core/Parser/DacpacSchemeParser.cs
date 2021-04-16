@@ -10,163 +10,201 @@ namespace DacpacDiff.Core.Parser
 {
     public class DacpacSchemeParser : ISchemeParser
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles")]
+        private static readonly (string type, Action<DatabaseModel, XElement> parser)[] PARSERS = new (string, Action<DatabaseModel, XElement>)[]
+        {
+            ("SqlTable", (db, el) => withSchema(db, el, parseTableElement)),
+            ("SqlView", (db, el) => withSchema(db, el, parseViewElement)),
+            ("SqlProcedure", (db, el) => withSchema(db, el, parseProcedureElement)),
+            ("SqlIndex", (db, el) => withSchema(db, el, parseIndexElement)),
+            ("SqlScalarFunction", (db, el) => withSchema(db, el, parseFunctionElement)),
+            ("SqlInlineTableValuedFunction", (db, el) => withSchema(db, el, parseFunctionElement)),
+            ("SqlMultiStatementTableValuedFunction", (db, el) => withSchema(db, el, parseFunctionElement)),
+            ("SqlDmlTrigger", (db, el) => withSchema(db, el, parseTriggerElement)),
+            ("SqlSynonym", (db, el) => withSchema(db, el, parseSynonymElement)),
+            // SqlSequence
+
+            ("SqlForeignKeyConstraint", parseForeignKeyElement),
+            // SqlPrimaryKeyConstraint
+            // SqlUniqueConstraint
+            // SqlCheckConstraint
+            // SqlDefaultConstraint
+
+            // SqlPermissionStatement
+            // SqlRole
+            // SqlLogin
+            // SqlUser
+        };
+
         public SchemeModel? ParseFile(string filename)
         {
-            var modelXml = getModelXml(filename);
+            // Extract model.xml from zip
+            XElement? modelXml = null;
+            using (var zip = ZipFile.OpenRead(filename))
+            {
+                var modelEntry = zip.Entries.First(e => e.FullName == "model.xml");
+                if (modelEntry == null)
+                {
+                    throw new InvalidOperationException("Invalid dacpac provided");
+                }
+
+                // Get model element from content
+                using var sr = new StreamReader(modelEntry.Open());
+                var modelData = sr.ReadToEnd();
+                modelData = modelData.Replace("xmlns=\"http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02\"", "");
+                var rootXml = XDocument.Parse(modelData).Root;
+                modelXml = rootXml?.Element("Model");
+            }
             if (modelXml is null)
             {
                 return null;
             }
 
-            var db = new DatabaseModel("database"); // TODO
+            // Build model hierarchy
+            var db = new DatabaseModel("database"); // DB name not in dacpac
+            db.Schemas["dbo"] = new SchemaModel(db, "dbo"); // Always has "dbo" schema
 
-            // Parse model for schemas
-            var schemaNames = modelXml.Find("Element", ("Type", "SqlSchema"))
-                .Select(e => getName(e))
-                .Union(new[] { "dbo" }) // Always has "dbo" schema
-                .ToArray();
-            db.Schemas.Merge(schemaNames.Select(s => getSchema(db, modelXml, s)), s => s.Name);
-
-            // FKey references
-            var els = modelXml.Find("Element", ("Type", "SqlForeignKeyConstraint"));
-            foreach (var el in els)
+            var elsByType = modelXml.Elements("Element")
+                .GroupBy(e => e.Attribute("Type")?.Value ?? string.Empty)
+                .ToDictionary(e => e.Key, e => e.ToArray());
+            foreach (var el in elsByType.Get("SqlSchema") ?? Array.Empty<XElement>())
             {
-                parseFieldRef(el, db);
+                var name = getName(el.Attribute("Name")?.Value ?? throw new MissingMemberException("SqlSchema", "Name"));
+                db.Schemas[name] = new SchemaModel(db, name);
+            }
+            foreach (var (type, parser) in PARSERS)
+            {
+                var els = elsByType.Get(type) ?? Array.Empty<XElement>();
+                foreach (var el in els)
+                {
+                    parser(db, el);
+                }
+                elsByType.Remove(type);
             }
 
-            // TODO: Checks
-            els = modelXml.Find("Element", ("Type", "SqlCheckConstraint"));
-            foreach (var el in els)
+            if (elsByType.Keys.Any())
             {
-                var tblName = el.Find("Relationship", ("Name", "DefiningTable")).Single()
-                    .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
-                var checkExpr = el.Find("Property", ("Name", "CheckExpressionScript")).Single().Element("Value")?.Value;
-                if (tblName is not null && checkExpr is not null
-                    && db.TryGet<TableModel>(tblName, out var tbl))
-                {
-                    tbl.Checks.Add(new TableCheckModel(tbl, null, checkExpr));
-                }
-                else
-                {
-                    // TODO: log bad check
-                }
             }
 
-            // Field defaults
-            els = modelXml.Find("Element", ("Type", "SqlDefaultConstraint"));
-            foreach (var el in els)
-            {
-                var tblName = el.Find("Relationship", ("Name", "DefiningTable")).Single()
-                    .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
-                var fldName = el.Find("Relationship", ("Name", "ForColumn")).Single()
-                    .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
-                var defValue = el.Find("Property", ("Name", "DefaultExpressionScript")).Single().Element("Value")?.Value;
-                if (tblName is not null && fldName is not null && defValue is not null
-                    && db.TryGet<TableModel>(tblName, out var tbl)
-                    && tbl.Fields.TryGetValue(f => f.FullName == fldName, out var fld))
-                {
-                    fld.Default = new FieldDefaultModel(fld, null, defValue);
-                }
-                else
-                {
-                    // TODO: log bad ref
-                }
-            }
+            //// SqlCheckConstraint
+            //els = modelXml.Find("Element", ("Type", "SqlCheckConstraint"));
+            //foreach (var el in els)
+            //{
+            //    var tblName = el.Find("Relationship", ("Name", "DefiningTable")).Single()
+            //        .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
+            //    var checkExpr = el.Find("Property", ("Name", "CheckExpressionScript")).Single().Element("Value")?.Value;
+            //    if (tblName is not null && checkExpr is not null
+            //        && db.TryGet<TableModel>(tblName, out var tbl))
+            //    {
+            //        tbl.Checks.Add(new TableCheckModel(tbl, null, checkExpr));
+            //    }
+            //    else
+            //    {
+            //        // TODO: log bad check
+            //    }
+            //}
 
-            // Primary keys
-            els = modelXml.Find("Element", ("Type", "SqlPrimaryKeyConstraint"));
-            foreach (var el in els)
-            {
-                var tbl = el.Find("Relationship", ("Name", "DefiningTable")).Single()
-                    .Elements("Entry")?
-                    .Elements("References")?.Attributes("Name")?
-                    .Select(a => db.Get(a.Value) as TableModel)
-                    .SingleOrDefault();
-                var flds = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
-                    .Element("Entry")?
-                    .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
-                    .Find("Relationship", ("Name", "Column"))
-                    .Elements("Entry")?
-                    .Elements("References")?.Attributes("Name")?
-                    .Select(a => tbl?.Fields.SingleOrDefault(f => f.FullName == a.Value))
-                    .NotNull().ToArray() ?? Array.Empty<FieldModel>();
-                if (tbl is not null && flds.Length > 0)
-                {
-                    foreach (var fld in flds)
-                    {
-                        fld.PrimaryKey = true;
-                        // TODO: IsPrimaryKeyUnclustered
-                    }
-                }
-                else
-                {
-                    // TODO: log bad pkey
-                }
-            }
+            //// SqlDefaultConstraint
+            //els = modelXml.Find("Element", ("Type", "SqlDefaultConstraint"));
+            //foreach (var el in els)
+            //{
+            //    var tblName = el.Find("Relationship", ("Name", "DefiningTable")).Single()
+            //        .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
+            //    var fldName = el.Find("Relationship", ("Name", "ForColumn")).Single()
+            //        .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
+            //    var defValue = el.Find("Property", ("Name", "DefaultExpressionScript")).Single().Element("Value")?.Value;
+            //    if (tblName is not null && fldName is not null && defValue is not null
+            //        && db.TryGet<TableModel>(tblName, out var tbl)
+            //        && tbl.Fields.TryGetValue(f => f.FullName == fldName, out var fld))
+            //    {
+            //        fld.Default = new FieldDefaultModel(fld, null, defValue);
+            //    }
+            //    else
+            //    {
+            //        // TODO: log bad ref
+            //    }
+            //}
 
-            // Unique
-            els = modelXml.Find("Element", ("Type", "SqlUniqueConstraint"));
-            foreach (var el in els)
-            {
-                var tbl = el.Find("Relationship", ("Name", "DefiningTable")).Single()
-                    .Elements("Entry")?
-                    .Elements("References")?.Attributes("Name")?
-                    .Select(a => db.Get(a.Value) as TableModel)
-                    .SingleOrDefault();
-                var flds = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
-                    .Element("Entry")?
-                    .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
-                    .Find("Relationship", ("Name", "Column"))
-                    .Elements("Entry")?
-                    .Elements("References")?.Attributes("Name")?
-                    .Select(a => tbl?.Fields.SingleOrDefault(f => f.FullName == a.Value))
-                    .NotNull().ToArray() ?? Array.Empty<FieldModel>();
-                if (tbl is not null && flds.Length > 0)
-                {
-                    if (flds.Length > 1)
-                    {
-                        // TODO: Multi-field unique on table
-                    }
+            //// SqlPrimaryKeyConstraint
+            //els = modelXml.Find("Element", ("Type", "SqlPrimaryKeyConstraint"));
+            //foreach (var el in els)
+            //{
+            //    var tbl = el.Find("Relationship", ("Name", "DefiningTable")).Single()
+            //        .Elements("Entry")?
+            //        .Elements("References")?.Attributes("Name")?
+            //        .Select(a => db.Get(a.Value) as TableModel)
+            //        .SingleOrDefault();
+            //    var flds = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
+            //        .Element("Entry")?
+            //        .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
+            //        .Find("Relationship", ("Name", "Column"))
+            //        .Elements("Entry")?
+            //        .Elements("References")?.Attributes("Name")?
+            //        .Select(a => tbl?.Fields.SingleOrDefault(f => f.FullName == a.Value))
+            //        .NotNull().ToArray() ?? Array.Empty<FieldModel>();
+            //    if (tbl is not null && flds.Length > 0)
+            //    {
+            //        foreach (var fld in flds)
+            //        {
+            //            fld.PrimaryKey = true;
+            //            // TODO: IsPrimaryKeyUnclustered
+            //        }
+            //    }
+            //    else
+            //    {
+            //        // TODO: log bad pkey
+            //    }
+            //}
 
-                    foreach (var fld in flds)
-                    {
-                        // TODO: Named unique
-                        fld.Unique = "*";
-                        fld.IsUniqueSystemNamed = true;
-                    }
-                }
-                else
-                {
-                    // TODO: log bad unique
-                }
-            }
+            //// Unique
+            //els = modelXml.Find("Element", ("Type", "SqlUniqueConstraint"));
+            //foreach (var el in els)
+            //{
+            //    var tbl = el.Find("Relationship", ("Name", "DefiningTable")).Single()
+            //        .Elements("Entry")?
+            //        .Elements("References")?.Attributes("Name")?
+            //        .Select(a => db.Get(a.Value) as TableModel)
+            //        .SingleOrDefault();
+            //    var flds = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
+            //        .Element("Entry")?
+            //        .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
+            //        .Find("Relationship", ("Name", "Column"))
+            //        .Elements("Entry")?
+            //        .Elements("References")?.Attributes("Name")?
+            //        .Select(a => tbl?.Fields.SingleOrDefault(f => f.FullName == a.Value))
+            //        .NotNull().ToArray() ?? Array.Empty<FieldModel>();
+            //    if (tbl is not null && flds.Length > 0)
+            //    {
+            //        if (flds.Length > 1)
+            //        {
+            //            // TODO: Multi-field unique on table
+            //        }
+
+            //        foreach (var fld in flds)
+            //        {
+            //            // TODO: Named unique
+            //            fld.Unique = "*";
+            //            fld.IsUniqueSystemNamed = true;
+            //        }
+            //    }
+            //    else
+            //    {
+            //        // TODO: log bad unique
+            //    }
+            //}
 
             var scheme = new SchemeModel(Path.GetFileNameWithoutExtension(filename));
             scheme.Databases[db.Name] = db;
             return scheme;
         }
 
-        private static XElement? getModelXml(string filename)
-        {
-            // Extract model.xml from zip
-            using var zip = ZipFile.OpenRead(filename);
-            var modelEntry = zip.Entries.First(e => e.FullName == "model.xml");
-            if (modelEntry == null)
-            {
-                throw new InvalidOperationException("Invalid dacpac provided");
-            }
-
-            // Get model element from content
-            using var sr = new StreamReader(modelEntry.Open());
-            var modelData = sr.ReadToEnd();
-            modelData = modelData.Replace("xmlns=\"http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02\"", "");
-            var rootXml = XDocument.Parse(modelData).Root ?? throw new NullReferenceException();
-            return rootXml.Element("Model");
-        }
-
         private static string getName(XElement? el, string? prefix = null)
         {
             var name = el?.Attribute("Name")?.Value ?? string.Empty;
+            return getName(name, prefix);
+        }
+        private static string getName(string name, string? prefix = null)
+        {
             if (name.Length > 0 && prefix is not null)
             {
                 if (name.StartsWith($"[{prefix}].", StringComparison.OrdinalIgnoreCase))
@@ -178,7 +216,6 @@ namespace DacpacDiff.Core.Parser
                     name = name[(prefix.Length + 1)..];
                 }
             }
-
             return (name.Length > 2 && name[0] == '[' && name[^1] == ']')
                 ? name[1..^1]
                 : name;
@@ -212,56 +249,256 @@ namespace DacpacDiff.Core.Parser
             return sqltype;
         }
 
-        private static SchemaModel getSchema(DatabaseModel db, XElement rootXml, string name)
+        private static void withSchema(DatabaseModel db, XElement el, Action<SchemaModel, XElement, string> parser)
         {
-            var schema = new SchemaModel(db, name);
-            // TODO: UserTypes (SqlTableType, ...)
-
-            // Synonyms
-            var els = rootXml.Find("Element", ("Type", a => a == "SqlSynonym"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
-            schema.Synonyms.Merge(els.Select(e => getSynonym(schema, e)), t => t.Name);
-
-            // Tables
-            els = rootXml.Find("Element", ("Type", a => a == "SqlTable"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
-            schema.Tables.Merge(els.Select(e => getTable(schema, e))
-                .Where(t => t is not null)
-                .Cast<TableModel>(), t => t.Name);
-
-            // Index
-            els = rootXml.Find("Element", ("Type", a => a == "SqlIndex"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
-            var indexes = els.Select(e => getIndex(schema, e)).ToArray();
-
-            // Function
-            els = rootXml.Find("Element", ("Type", a => a == "SqlScalarFunction" || a == "SqlInlineTableValuedFunction" || a == "SqlMultiStatementTableValuedFunction"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
-            var funcs = els.Select(e => getFunction(schema, e)).ToArray();
-
-            // Sequence: SqlSequence
-            var sequences = Array.Empty<ModuleModel>();
-            // TODO
-
-            // Stored Procedure
-            els = rootXml.Find("Element", ("Type", a => a == "SqlProcedure"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
-            var procs = els.Select(e => getProcedure(schema, e)).ToArray();
-
-            // Trigger: SqlDmlTrigger
-            els = rootXml.Find("Element", ("Type", a => a == "SqlDmlTrigger"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
-            var trigs = els.Select(e => getTrigger(schema, e)).ToArray();
-
-            // View
-            els = rootXml.Find("Element", ("Type", a => a == "SqlView"), ("Name", a => a?.StartsWith($"[{schema.Name}]", StringComparison.OrdinalIgnoreCase) == true));
-            var views = els.Select(e => getView(schema, e)).ToArray();
-
-            schema.Modules.Merge(indexes, m => m.Name)
-                .Merge(funcs, m => m.Name)
-                .Merge(sequences, m => m.Name)
-                .Merge(procs, m => m.Name)
-                .Merge(trigs, m => m.Name)
-                .Merge(views, m => m.Name);
-
-            return schema;
+            var name = el.Attribute("Name")?.Value ?? throw new InvalidDataException($"Element {el.Name} missing required 'Name' attribute");
+            var schemaName = getName(name.Split('.')[0]);
+            var schema = db.Get<SchemaModel>(schemaName) ?? throw new IndexOutOfRangeException($"Unknown schema: {schemaName}");
+            name = getName(name, schema.Name);
+            parser(schema, el, name);
         }
 
-        private static void parseFieldRef(XElement el, DatabaseModel db)
+        private static void parseTableElement(SchemaModel schema, XElement el, string name)
+        {
+            var table = new TableModel(
+                schema: schema,
+                name: name
+            );
+
+            // Ignore history tables (handled by current)
+            if (el.Find("Property", ("Name", "IsAutoGeneratedHistoryTable"), ("Value", "True")).Any()
+                || el.Parent?.Find(true, "Relationship", ("Name", "TemporalSystemVersioningHistoryTable")).Any(e => e.Find(true, "References", ("Name", table.FullName)).Any()) == true)
+            {
+                return;
+            }
+
+            schema.Tables[name] = table;
+
+            // Fields
+            var idx = 0;
+            var colsXml = el.Find(true, "Element", ("Type", a => a == "SqlSimpleColumn" || a == "SqlComputedColumn"), ("Name", a => a?.StartsWith(table.FullName, StringComparison.OrdinalIgnoreCase) == true));
+            table.Fields = colsXml.Select(e => toField(table, idx++, e)).ToArray();
+
+            // Temporality
+            var temporalXml = el.Find("Relationship", ("Name", "TemporalSystemVersioningHistoryTable")).FirstOrDefault();
+            if (temporalXml is not null)
+            {
+                table.Temporality = new TemporalityModel
+                {
+                    HistoryTable = temporalXml.Element("Entry")?.Element("References")?.Attribute("Name")?.Value ?? string.Empty,
+                    PeriodFieldFrom = getName(colsXml.FirstOrDefault(e => e.Find("Property", ("Name", "GeneratedAlwaysType"), ("Value", "1")).Any()), table.FullName),
+                    PeriodFieldTo = getName(colsXml.FirstOrDefault(e => e.Find("Property", ("Name", "GeneratedAlwaysType"), ("Value", "2")).Any()), table.FullName),
+                };
+            }
+        }
+
+        private static void parseViewElement(SchemaModel schema, XElement el, string name)
+        {
+            var view = new ModuleModel
+            {
+                Type = ModuleModel.ModuleType.VIEW,
+                Schema = schema,
+                Name = name,
+                //Dependents?
+            };
+            schema.Modules[name] = view;
+
+            var def = $"CREATE VIEW {view.FullName}\r\nAS\r\n";
+            def += el.Find("Property", ("Name", "QueryScript")).First().Element("Value")?.Value;
+            view.Definition = def;
+        }
+
+        private static void parseProcedureElement(SchemaModel schema, XElement el, string name)
+        {
+            var proc = new ModuleModel
+            {
+                Type = ModuleModel.ModuleType.PROCEDURE,
+                Schema = schema,
+                Name = name,
+                // TODO: ExecuteAs
+                //Dependents?
+            };
+            schema.Modules[name] = proc;
+
+            // TODO: don't build SQL; store as pieces
+            var def = $"CREATE PROCEDURE {proc.FullName}\r\n";
+
+            var args = el.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?
+                .Elements("Entry").SelectMany(e => e.Find("Element", ("Type", "SqlSubroutineParameter")))
+                .Select(toArg).ToArray();
+            if (args is not null && args.Length > 0)
+            {
+                def += "    " + string.Join(",\r\n    ", args);
+            }
+
+            def += "\r\nAS\r\n";
+            def += el.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value.Trim();
+            proc.Definition = def;
+        }
+
+        private static void parseIndexElement(SchemaModel schema, XElement el, string name)
+        {
+            var target = getName(el.Find("Relationship", ("Name", "IndexedObject")).Single()
+                .Element("Entry")?
+                .Element("References"));
+
+            var idx = new ModuleModel
+            {
+                Type = ModuleModel.ModuleType.INDEX,
+                Schema = schema,
+                Name = getName(el, target),
+                // TODO: system named
+                //Dependents?
+            };
+            schema.Modules[name] = idx;
+
+            // TODO: don't build SQL; store as pieces
+            var def = "CREATE ";
+            if (el.Find("Property", ("Name", "IsUnique"), ("Value", "True")).Any())
+            {
+                def += "UNIQUE ";
+            }
+            if (el.Find("Property", ("Name", "IsClustured"), ("Value", "True")).Any())
+            {
+                def += "CLUSTURED ";
+            }
+            def += $"INDEX [{idx.Name}] ON {target}";
+
+            var cols = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
+                .Element("Entry")?
+                .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
+                .SelectMany(e => e.Find("Relationship", ("Name", "Column")))
+                .Select(e => getName(e.Element("Entry")?.Element("References"), target))
+                .ToArray();
+            def += "(" + string.Join(", ", cols ?? Array.Empty<string?>()) + ")";
+
+            var includes = el.Find("Relationship", ("Name", "IncludedColumns"))
+                .SelectMany(e => e.Elements("Entry").Select(r => getName(r.Element("References"), target)))
+                .ToArray();
+            if (includes.Length > 0)
+            {
+                def += " INCLUDE (" + string.Join(", ", includes) + ")";
+            }
+
+            var predsXml = el.Find("Property", ("Name", "FilterPredicate")).FirstOrDefault();
+            if (predsXml is not null)
+            {
+                var script = predsXml.Element("Value")?.Value ?? string.Empty;
+                if (script.Length < 2 || script[0] != '(' || script[^1] != ')')
+                {
+                    script = $"({script})";
+                }
+                def += " WHERE " + script;
+            }
+
+            idx.Definition = def;
+        }
+
+        private static void parseFunctionElement(SchemaModel schema, XElement el, string name)
+        {
+            var func = new ModuleModel
+            {
+                Type = ModuleModel.ModuleType.FUNCTION,
+                Schema = schema,
+                Name = name,
+                //ExecuteAs
+                //Dependents?
+            };
+            schema.Modules[name] = func;
+
+            // TODO: don't build SQL; store as pieces
+            var def = $"CREATE FUNCTION {func.FullName} (\r\n";
+
+            var args = el.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?
+                .Elements("Entry").SelectMany(e => e.Find("Element", ("Type", "SqlSubroutineParameter")))
+                .Select(toArg).ToArray();
+            if (args is not null && args.Length > 0)
+            {
+                def += string.Join(", ", args);
+            }
+
+            if (el.Attribute("Type")?.Value == "SqlInlineTableValuedFunction")
+            {
+                def += $"\r\n) RETURNS TABLE AS RETURN\r\n";
+            }
+            else
+            {
+                var retvar = el.Find("Property", ("Name", "ReturnTableVariable")).FirstOrDefault()?.Attribute("Value")?.Value;
+                if (retvar is not null)
+                {
+                    def += $"\r\n) RETURN {retvar} TABLE (";
+
+                    var colsXml = el.Find("Relationship", ("Name", "Columns")).First().Find(true, "Element", ("Type", a => a == "SqlSimpleColumn" || a == "SqlComputedColumn"));
+                    var tbl = new TableModel(schema, func.Name);
+                    var fields = colsXml.Select(e => toField(tbl, 0, e)).ToArray();
+                    var colStr = string.Join(", ", fields.Select(f => $"[{f.Name}] {f.Type}" + (!f.Nullable ? " NOT NULL" : "")).ToArray());
+
+                    def += colStr;
+                    def += "\r\n) AS\r\n";
+                }
+                else
+                {
+                    var typeXml = el.Find("Relationship", ("Name", "Type")).First().Find(true, "Element", ("Type", "SqlTypeSpecifier")).First();
+                    def += $"\r\n) RETURNS {getSqlType(typeXml)} AS\r\n";
+                }
+            }
+
+            def += el.Find(true, "Property", ("Name", "BodyScript"))?.First().Element("Value")?.Value;
+            func.Definition = def;
+        }
+
+        private static void parseTriggerElement(SchemaModel schema, XElement el, string name)
+        {
+            var trig = new ModuleModel
+            {
+                Type = ModuleModel.ModuleType.TRIGGER,
+                Schema = schema,
+                Name = name
+                //Dependents?
+            };
+            schema.Modules[name] = trig;
+
+            var target = getName(el.Find("Relationship", ("Name", "Parent")).Single()
+                .Element("Entry")?
+                .Element("References"));
+
+            // TODO: don't build SQL; store as pieces
+            var def = $"CREATE TRIGGER {trig.FullName} ON {target} ";
+
+            var trigTypeId = el.Find("Property", ("Name", "SqlTriggerType")).FirstOrDefault()?.Attribute("Value")?.Value;
+            var trigType = trigTypeId == "2" ? "AFTER " : "BEFORE ";
+
+            if (el.Find("Property", ("Name", "IsInsertTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True")
+            {
+                trigType += "INSERT, ";
+            }
+            if (el.Find("Property", ("Name", "IsUpdateTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True")
+            {
+                trigType += "UPDATE, ";
+            }
+            if (el.Find("Property", ("Name", "IsDeleteTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True")
+            {
+                trigType += "DELETE, ";
+            }
+
+            def += trigType.Trim(',', ' ');
+            def += "\r\nAS\r\n";
+            def += el.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value;
+            trig.Definition = def;
+        }
+
+        private static void parseSynonymElement(SchemaModel schema, XElement el, string name)
+        {
+            var syn = new SynonymModel(
+                schema: schema,
+                name: name,
+                baseObject: el.Find("Property", ("Name", "ForObjectScript")).First().Element("Value")?.Value ?? string.Empty
+            //Dependents?
+            );
+            schema.Synonyms[name] = syn;
+        }
+
+        private static void parseForeignKeyElement(DatabaseModel db, XElement el)
         {
             var refFieldPath = el.Find("Relationship", ("Name", "Columns"))
                 .Elements("Entry")
@@ -307,117 +544,6 @@ namespace DacpacDiff.Core.Parser
             // TODO: naming
         }
 
-        private static ModuleModel getFunction(SchemaModel schema, XElement funcXml)
-        {
-            var func = new ModuleModel
-            {
-                Type = ModuleModel.ModuleType.FUNCTION,
-                Schema = schema,
-                Name = getName(funcXml, schema.Name),
-                //ExecuteAs
-                //Dependents?
-            };
-
-            var def = $"CREATE FUNCTION {func.FullName} (\r\n";
-
-            var args = funcXml.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?
-                .Elements("Entry").SelectMany(e => e.Find("Element", ("Type", "SqlSubroutineParameter")))
-                .Select(toArg).ToArray();
-            if (args is not null && args.Length > 0)
-            {
-                def += string.Join(", ", args);
-            }
-
-            if (funcXml.Attribute("Type")?.Value == "SqlInlineTableValuedFunction")
-            {
-                def += $"\r\n) RETURNS TABLE AS RETURN\r\n";
-            }
-            else
-            {
-                var retvar = funcXml.Find("Property", ("Name", "ReturnTableVariable")).FirstOrDefault()?.Attribute("Value")?.Value;
-                if (retvar is not null)
-                {
-                    def += $"\r\n) RETURN {retvar} TABLE (";
-
-                    var colsXml = funcXml.Find("Relationship", ("Name", "Columns")).First().Find(true, "Element", ("Type", a => a == "SqlSimpleColumn" || a == "SqlComputedColumn"));
-                    var tbl = new TableModel(schema, func.Name);
-                    var fields = colsXml.Select(e => toField(tbl, 0, e)).ToArray();
-                    var colStr = string.Join(", ", fields.Select(f => $"[{f.Name}] {f.Type}" + (!f.Nullable ? " NOT NULL" : "")).ToArray());
-
-                    def += colStr;
-                    def += "\r\n) AS\r\n";
-                }
-                else
-                {
-                    var typeXml = funcXml.Find("Relationship", ("Name", "Type")).First().Find(true, "Element", ("Type", "SqlTypeSpecifier")).First();
-                    def += $"\r\n) RETURNS {getSqlType(typeXml)} AS\r\n";
-                }
-            }
-
-            def += funcXml.Find(true, "Property", ("Name", "BodyScript"))?.First().Element("Value")?.Value;
-            func.Definition = def;
-
-            return func;
-        }
-
-        private static ModuleModel getIndex(SchemaModel schema, XElement indexXml)
-        {
-            var target = getName(indexXml.Find("Relationship", ("Name", "IndexedObject")).Single()
-                .Element("Entry")?
-                .Element("References"));
-
-            var idx = new ModuleModel
-            {
-                Type = ModuleModel.ModuleType.INDEX,
-                Schema = schema,
-                Name = getName(indexXml, target),
-                // TODO: system named
-                //Dependents?
-            };
-
-            var def = "CREATE ";
-            if (indexXml.Find("Property", ("Name", "IsUnique"), ("Value", "True")).Any())
-            {
-                def += "UNIQUE ";
-            }
-            if (indexXml.Find("Property", ("Name", "IsClustured"), ("Value", "True")).Any())
-            {
-                def += "CLUSTURED ";
-            }
-            def += $"INDEX [{idx.Name}] ON {target}";
-
-            var cols = indexXml.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
-                .Element("Entry")?
-                .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
-                .SelectMany(e => e.Find("Relationship", ("Name", "Column")))
-                .Select(e => getName(e.Element("Entry")?.Element("References"), target))
-                .ToArray();
-            def += "(" + string.Join(", ", cols ?? Array.Empty<string?>()) + ")";
-
-            var includes = indexXml.Find("Relationship", ("Name", "IncludedColumns"))
-                .SelectMany(e => e.Elements("Entry").Select(r => getName(r.Element("References"), target)))
-                .ToArray();
-            if (includes.Length > 0)
-            {
-                def += " INCLUDE (" + string.Join(", ", includes) + ")";
-            }
-
-            var predsXml = indexXml.Find("Property", ("Name", "FilterPredicate")).FirstOrDefault();
-            if (predsXml is not null)
-            {
-                var script = predsXml.Element("Value")?.Value ?? string.Empty;
-                if (script.Length < 2 || script[0] != '(' || script[^1] != ')')
-                {
-                    script = $"({script})";
-                }
-                def += " WHERE " + script;
-            }
-
-            idx.Definition = def;
-
-            return idx;
-        }
-
         private static string toArg(XElement a)
         {
             var name = getName(a).Split('.')[^1].Trim('[', ']');
@@ -441,142 +567,6 @@ namespace DacpacDiff.Core.Parser
             }
 
             return arg;
-        }
-
-        private static ModuleModel getProcedure(SchemaModel schema, XElement procXml)
-        {
-            var proc = new ModuleModel
-            {
-                Type = ModuleModel.ModuleType.PROCEDURE,
-                Schema = schema,
-                Name = getName(procXml, schema.Name),
-                // TODO: ExecuteAs
-                //Dependents?
-            };
-
-            var def = $"CREATE PROCEDURE {proc.FullName}\r\n";
-
-            var args = procXml.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?
-                .Elements("Entry").SelectMany(e => e.Find("Element", ("Type", "SqlSubroutineParameter")))
-                .Select(toArg).ToArray();
-            if (args is not null && args.Length > 0)
-            {
-                def += "    " + string.Join(",\r\n    ", args);
-            }
-
-            def += "\r\nAS\r\n";
-            def += procXml.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value.Trim();
-            proc.Definition = def;
-
-            return proc;
-        }
-
-        private static SynonymModel getSynonym(SchemaModel schema, XElement synXml)
-        {
-            var syn = new SynonymModel(
-                schema: schema,
-                name: getName(synXml, schema.Name),
-                baseObject: synXml.Find("Property", ("Name", "ForObjectScript")).First().Element("Value")?.Value ?? string.Empty
-            //Dependents?
-            );
-
-            return syn;
-        }
-
-        private static TableModel? getTable(SchemaModel schema, XElement tableXml)
-        {
-            var table = new TableModel(
-                schema: schema,
-                name: getName(tableXml, schema.Name)
-            );
-
-            // TODO: Checks
-
-            // Ignore history tables (handled by current)
-            if (tableXml.Find("Property", ("Name", "IsAutoGeneratedHistoryTable"), ("Value", "True")).Any())
-            {
-                return null;
-            }
-            if (tableXml.Parent?.Find(true, "Relationship", ("Name", "TemporalSystemVersioningHistoryTable")).Any(e => e.Find(true, "References", ("Name", table.FullName)).Any()) == true)
-            {
-                return null;
-            }
-
-            // Fields
-            var idx = 0;
-            var colsXml = tableXml.Find(true, "Element", ("Type", a => a == "SqlSimpleColumn" || a == "SqlComputedColumn"), ("Name", a => a?.StartsWith(table.FullName, StringComparison.OrdinalIgnoreCase) == true));
-            table.Fields = colsXml.Select(e => toField(table, idx++, e)).ToArray();
-
-            // Temporality
-            var temporalXml = tableXml.Find("Relationship", ("Name", "TemporalSystemVersioningHistoryTable")).FirstOrDefault();
-            if (temporalXml is not null)
-            {
-                table.Temporality = new TemporalityModel
-                {
-                    HistoryTable = temporalXml.Element("Entry")?.Element("References")?.Attribute("Name")?.Value ?? string.Empty,
-                    PeriodFieldFrom = getName(colsXml.FirstOrDefault(e => e.Find("Property", ("Name", "GeneratedAlwaysType"), ("Value", "1")).Any()), table.FullName),
-                    PeriodFieldTo = getName(colsXml.FirstOrDefault(e => e.Find("Property", ("Name", "GeneratedAlwaysType"), ("Value", "2")).Any()), table.FullName),
-                };
-            }
-
-            return table;
-        }
-
-        private static ModuleModel getTrigger(SchemaModel schema, XElement trigXml)
-        {
-            var trig = new ModuleModel
-            {
-                Type = ModuleModel.ModuleType.TRIGGER,
-                Schema = schema,
-                Name = getName(trigXml, schema.Name)
-                //Dependents?
-            };
-
-            var target = getName(trigXml.Find("Relationship", ("Name", "Parent")).Single()
-                .Element("Entry")?
-                .Element("References"));
-
-            var def = $"CREATE TRIGGER {trig.FullName} ON {target} ";
-
-            var trigTypeId = trigXml.Find("Property", ("Name", "SqlTriggerType")).FirstOrDefault()?.Attribute("Value")?.Value;
-            var trigType = trigTypeId == "2" ? "AFTER " : "BEFORE ";
-
-            if (trigXml.Find("Property", ("Name", "IsInsertTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True")
-            {
-                trigType += "INSERT, ";
-            }
-            if (trigXml.Find("Property", ("Name", "IsUpdateTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True")
-            {
-                trigType += "UPDATE, ";
-            }
-            if (trigXml.Find("Property", ("Name", "IsDeleteTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True")
-            {
-                trigType += "DELETE, ";
-            }
-
-            def += trigType.Trim(',', ' ');
-            def += "\r\nAS\r\n";
-            def += trigXml.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value;
-            trig.Definition = def;
-
-            return trig;
-        }
-
-        private static ModuleModel getView(SchemaModel schema, XElement viewXml)
-        {
-            var view = new ModuleModel
-            {
-                Type = ModuleModel.ModuleType.VIEW,
-                Schema = schema,
-                Name = getName(viewXml, schema.Name),
-                //Dependents?
-            };
-
-            var def = $"CREATE VIEW {view.FullName}\r\nAS\r\n";
-            def += viewXml.Find("Property", ("Name", "QueryScript")).First().Element("Value")?.Value;
-            view.Definition = def;
-
-            return view;
         }
 
         private static FieldModel toField(TableModel table, int ord, XElement colXml)
