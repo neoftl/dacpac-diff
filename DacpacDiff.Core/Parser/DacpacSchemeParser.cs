@@ -25,10 +25,10 @@ namespace DacpacDiff.Core.Parser
             // SqlSequence
 
             ("SqlForeignKeyConstraint", parseForeignKeyElement),
-            // SqlPrimaryKeyConstraint
-            // SqlUniqueConstraint
-            // SqlCheckConstraint
-            // SqlDefaultConstraint
+            ("SqlPrimaryKeyConstraint", parsePrimaryKeyElement),
+            ("SqlUniqueConstraint", parseUniqueElement),
+            ("SqlCheckConstraint", parseCheckElement),
+            ("SqlDefaultConstraint", parseDefaultElement),
 
             // SqlPermissionStatement
             // SqlRole
@@ -72,6 +72,7 @@ namespace DacpacDiff.Core.Parser
                 var name = getName(el.Attribute("Name")?.Value ?? throw new MissingMemberException("SqlSchema", "Name"));
                 db.Schemas[name] = new SchemaModel(db, name);
             }
+            elsByType.Remove("SqlSchema");
             foreach (var (type, parser) in PARSERS)
             {
                 var els = elsByType.Get(type) ?? Array.Empty<XElement>();
@@ -85,113 +86,6 @@ namespace DacpacDiff.Core.Parser
             if (elsByType.Keys.Any())
             {
             }
-
-            //// SqlCheckConstraint
-            //els = modelXml.Find("Element", ("Type", "SqlCheckConstraint"));
-            //foreach (var el in els)
-            //{
-            //    var tblName = el.Find("Relationship", ("Name", "DefiningTable")).Single()
-            //        .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
-            //    var checkExpr = el.Find("Property", ("Name", "CheckExpressionScript")).Single().Element("Value")?.Value;
-            //    if (tblName is not null && checkExpr is not null
-            //        && db.TryGet<TableModel>(tblName, out var tbl))
-            //    {
-            //        tbl.Checks.Add(new TableCheckModel(tbl, null, checkExpr));
-            //    }
-            //    else
-            //    {
-            //        // TODO: log bad check
-            //    }
-            //}
-
-            //// SqlDefaultConstraint
-            //els = modelXml.Find("Element", ("Type", "SqlDefaultConstraint"));
-            //foreach (var el in els)
-            //{
-            //    var tblName = el.Find("Relationship", ("Name", "DefiningTable")).Single()
-            //        .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
-            //    var fldName = el.Find("Relationship", ("Name", "ForColumn")).Single()
-            //        .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
-            //    var defValue = el.Find("Property", ("Name", "DefaultExpressionScript")).Single().Element("Value")?.Value;
-            //    if (tblName is not null && fldName is not null && defValue is not null
-            //        && db.TryGet<TableModel>(tblName, out var tbl)
-            //        && tbl.Fields.TryGetValue(f => f.FullName == fldName, out var fld))
-            //    {
-            //        fld.Default = new FieldDefaultModel(fld, null, defValue);
-            //    }
-            //    else
-            //    {
-            //        // TODO: log bad ref
-            //    }
-            //}
-
-            //// SqlPrimaryKeyConstraint
-            //els = modelXml.Find("Element", ("Type", "SqlPrimaryKeyConstraint"));
-            //foreach (var el in els)
-            //{
-            //    var tbl = el.Find("Relationship", ("Name", "DefiningTable")).Single()
-            //        .Elements("Entry")?
-            //        .Elements("References")?.Attributes("Name")?
-            //        .Select(a => db.Get(a.Value) as TableModel)
-            //        .SingleOrDefault();
-            //    var flds = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
-            //        .Element("Entry")?
-            //        .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
-            //        .Find("Relationship", ("Name", "Column"))
-            //        .Elements("Entry")?
-            //        .Elements("References")?.Attributes("Name")?
-            //        .Select(a => tbl?.Fields.SingleOrDefault(f => f.FullName == a.Value))
-            //        .NotNull().ToArray() ?? Array.Empty<FieldModel>();
-            //    if (tbl is not null && flds.Length > 0)
-            //    {
-            //        foreach (var fld in flds)
-            //        {
-            //            fld.PrimaryKey = true;
-            //            // TODO: IsPrimaryKeyUnclustered
-            //        }
-            //    }
-            //    else
-            //    {
-            //        // TODO: log bad pkey
-            //    }
-            //}
-
-            //// Unique
-            //els = modelXml.Find("Element", ("Type", "SqlUniqueConstraint"));
-            //foreach (var el in els)
-            //{
-            //    var tbl = el.Find("Relationship", ("Name", "DefiningTable")).Single()
-            //        .Elements("Entry")?
-            //        .Elements("References")?.Attributes("Name")?
-            //        .Select(a => db.Get(a.Value) as TableModel)
-            //        .SingleOrDefault();
-            //    var flds = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
-            //        .Element("Entry")?
-            //        .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
-            //        .Find("Relationship", ("Name", "Column"))
-            //        .Elements("Entry")?
-            //        .Elements("References")?.Attributes("Name")?
-            //        .Select(a => tbl?.Fields.SingleOrDefault(f => f.FullName == a.Value))
-            //        .NotNull().ToArray() ?? Array.Empty<FieldModel>();
-            //    if (tbl is not null && flds.Length > 0)
-            //    {
-            //        if (flds.Length > 1)
-            //        {
-            //            // TODO: Multi-field unique on table
-            //        }
-
-            //        foreach (var fld in flds)
-            //        {
-            //            // TODO: Named unique
-            //            fld.Unique = "*";
-            //            fld.IsUniqueSystemNamed = true;
-            //        }
-            //    }
-            //    else
-            //    {
-            //        // TODO: log bad unique
-            //    }
-            //}
 
             var scheme = new SchemeModel(Path.GetFileNameWithoutExtension(filename));
             scheme.Databases[db.Name] = db;
@@ -338,15 +232,16 @@ namespace DacpacDiff.Core.Parser
 
         private static void parseIndexElement(SchemaModel schema, XElement el, string name)
         {
-            var target = getName(el.Find("Relationship", ("Name", "IndexedObject")).Single()
+            var target = el.Find("Relationship", ("Name", "IndexedObject")).Single()
                 .Element("Entry")?
-                .Element("References"));
+                .Element("References")?.Attribute("Name")?.Value;
+            name = getName(el, target);
 
             var idx = new ModuleModel
             {
                 Type = ModuleModel.ModuleType.INDEX,
                 Schema = schema,
-                Name = getName(el, target),
+                Name = name,
                 // TODO: system named
                 //Dependents?
             };
@@ -362,7 +257,7 @@ namespace DacpacDiff.Core.Parser
             {
                 def += "CLUSTURED ";
             }
-            def += $"INDEX [{idx.Name}] ON {target}";
+            def += $"INDEX [{name}] ON {target}";
 
             var cols = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
                 .Element("Entry")?
@@ -370,14 +265,14 @@ namespace DacpacDiff.Core.Parser
                 .SelectMany(e => e.Find("Relationship", ("Name", "Column")))
                 .Select(e => getName(e.Element("Entry")?.Element("References"), target))
                 .ToArray();
-            def += "(" + string.Join(", ", cols ?? Array.Empty<string?>()) + ")";
+            def += "([" + string.Join("], [", cols ?? Array.Empty<string?>()) + "])";
 
             var includes = el.Find("Relationship", ("Name", "IncludedColumns"))
                 .SelectMany(e => e.Elements("Entry").Select(r => getName(r.Element("References"), target)))
                 .ToArray();
             if (includes.Length > 0)
             {
-                def += " INCLUDE (" + string.Join(", ", includes) + ")";
+                def += " INCLUDE ([" + string.Join("], [", includes) + "])";
             }
 
             var predsXml = el.Find("Property", ("Name", "FilterPredicate")).FirstOrDefault();
@@ -542,6 +437,94 @@ namespace DacpacDiff.Core.Parser
 
             dfld.Ref = new FieldRefModel(dfld, ffld);
             // TODO: naming
+        }
+
+        private static void parsePrimaryKeyElement(DatabaseModel db, XElement el)
+        {
+            var tbl = el.Find("Relationship", ("Name", "DefiningTable")).Single()
+                .Elements("Entry")?
+                .Elements("References")?.Attributes("Name")?
+                .Select(a => db.Get(a.Value) as TableModel)
+                .SingleOrDefault();
+            var flds = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
+                .Element("Entry")?
+                .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
+                .Find("Relationship", ("Name", "Column"))
+                .Elements("Entry")?
+                .Elements("References")?.Attributes("Name")?
+                .Select(a => tbl?.Fields.SingleOrDefault(f => f.FullName == a.Value))
+                .NotNull().ToArray() ?? Array.Empty<FieldModel>();
+            if (tbl is null || flds.Length == 0)
+            {
+                // TODO: log bad pkey
+                return;
+            }
+
+            foreach (var fld in flds)
+            {
+                fld.PrimaryKey = true;
+                // TODO: IsPrimaryKeyUnclustered
+            }
+        }
+
+        private static void parseUniqueElement(DatabaseModel db, XElement el)
+        {
+            var tbl = el.Find("Relationship", ("Name", "DefiningTable")).Single()
+                .Elements("Entry")?
+                .Elements("References")?.Attributes("Name")?
+                .Select(a => db.Get(a.Value) as TableModel)
+                .SingleOrDefault();
+            var flds = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
+                .Element("Entry")?
+                .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
+                .Find("Relationship", ("Name", "Column"))
+                .Elements("Entry")?
+                .Elements("References")?.Attributes("Name")?
+                .Select(a => tbl?.Fields.SingleOrDefault(f => f.FullName == a.Value))
+                .NotNull().ToArray() ?? Array.Empty<FieldModel>();
+            if (tbl is null || flds.Length != 1)
+            {
+                // TODO: log bad unique
+                return;
+            }
+
+            var fld = flds.Single();
+            // TODO: Named unique?
+            fld.Unique = "*";
+            fld.IsUniqueSystemNamed = true;
+        }
+
+        private static void parseCheckElement(DatabaseModel db, XElement el)
+        {
+            var tblName = el.Find("Relationship", ("Name", "DefiningTable")).Single()
+                .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
+            var checkExpr = el.Find("Property", ("Name", "CheckExpressionScript")).Single().Element("Value")?.Value;
+            if (tblName is null || checkExpr is null
+                || !db.TryGet<TableModel>(tblName, out var tbl))
+            {
+                // TODO: log bad check
+                return;
+            }
+
+            tbl.Checks.Add(new TableCheckModel(tbl, null, checkExpr));
+        }
+
+        private static void parseDefaultElement(DatabaseModel db, XElement el)
+        {
+            var tblName = el.Find("Relationship", ("Name", "DefiningTable")).Single()
+                .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
+            var fldName = el.Find("Relationship", ("Name", "ForColumn")).Single()
+                .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
+            var defValue = el.Find("Property", ("Name", "DefaultExpressionScript")).Single().Element("Value")?.Value;
+            if (tblName is null || fldName is null || defValue is null
+                || !db.TryGet<TableModel>(tblName, out var tbl)
+                || !tbl.Fields.TryGetValue(f => f.FullName == fldName, out var fld))
+            {
+                // TODO: log bad ref
+                return;
+            }
+
+            fld.Default = new FieldDefaultModel(fld, null, defValue);
         }
 
         private static string toArg(XElement a)
