@@ -88,20 +88,7 @@ namespace DacpacDiff.Mssql.Diff
                 {
                     // Make unique
                     sb.Append($"ALTER TABLE {lft.Table.FullName} ADD ")
-                        .AppendIf($"CONSTRAINT [{lft.Unique}] ", !lft.IsUniqueSystemNamed)
                         .AppendLine($"UNIQUE ([{lft.Name}])");
-                }
-                else
-                {
-                    // Make non-unique
-                    if (!rgt.IsUniqueSystemNamed)
-                    {
-                        sb.AppendLine($"ALTER TABLE {lft.Table.FullName} DROP CONSTRAINT [{rgt.DefaultName}]");
-                    }
-                    else
-                    {
-                        // TODO
-                    }
                 }
             }
 

@@ -7,10 +7,10 @@
         public string Type { get; set; }
         public string Computation { get; set; } = string.Empty;
         public string? Default { get; set; }
-        public string Unique { get; set; }
         public int Order { get; set; }
         public bool Nullable { get; set; }
         public bool Identity { get; set; }
+        public bool IsUnique { get; set; }
         public bool IsPrimaryKey { get; set; }
 
         private UserTypeFieldModel()

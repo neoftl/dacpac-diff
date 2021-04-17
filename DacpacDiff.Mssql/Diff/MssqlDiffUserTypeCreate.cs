@@ -27,7 +27,7 @@ namespace DacpacDiff.Mssql.Diff
                     .AppendIf(" IDENTITY(1,1)", fld.Identity);
             }
 
-            sb.AppendIf(" UNIQUE", (fld.Unique?.Length ?? 0) > 0);
+            sb.AppendIf(" UNIQUE", fld.IsUnique);
         }
 
         protected override void GetFormat(ISqlFileBuilder sb)

@@ -14,7 +14,7 @@ namespace DacpacDiff.Core.Model
 
         public IList<TableCheckModel> Checks { get; set; } = new List<TableCheckModel>();
         public FieldModel[] Fields { get; set; } = Array.Empty<FieldModel>();
-        public FieldModel[] PrimaryKeys => Fields.Where(f => f.PrimaryKey).ToArray();
+        public FieldModel[] PrimaryKeys => Fields.Where(f => f.IsPrimaryKey).ToArray();
         public bool IsPrimaryKeyUnclustered { get; set; }
         public TemporalityModel Temporality { get; set; } = TemporalityModel.Empty;
         public string[] Dependents { get; set; } = Array.Empty<string>();

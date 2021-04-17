@@ -37,11 +37,11 @@ namespace DacpacDiff.Mssql.Diff
 
                 sb.Append(!fld.Nullable ? " NOT NULL" : " NULL")
                     .AppendIf($" DEFAULT{fld.DefaultValue}", fld.HasDefault)
-                    .AppendIf(" PRIMARY KEY", fld.PrimaryKey && fld.Table.PrimaryKeys.Length == 1)
+                    .AppendIf(" PRIMARY KEY", fld.IsPrimaryKey && fld.Table.PrimaryKeys.Length == 1)
                     .AppendIf(" IDENTITY(1,1)", fld.Identity);
             }
 
-            sb.AppendIf(" UNIQUE", (fld.Unique?.Length ?? 0) > 0)
+            sb.AppendIf(" UNIQUE", fld.IsUnique)
                 .AppendIf($" REFERENCES {fld.Ref?.TargetField.Table.FullName} ([{fld.Ref?.TargetField.Name}])", fld.Ref?.IsSystemNamed == true);
         }
 

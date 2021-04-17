@@ -19,15 +19,11 @@ namespace DacpacDiff.Core.Model
         public string? DefaultValue => Default?.Value;
         public bool IsDefaultSystemNamed => Default?.IsSystemNamed == true;
 
-        public string? Unique { get; set; }
-        public bool IsUnique => (Unique?.Length ?? 0) > 0;
-        public string? UniqueName => IsUnique ? Unique : null;
-        public bool IsUniqueSystemNamed { get; set; }
-
         public int Order { get; set; }
         public bool Nullable { get; set; }
-        public bool PrimaryKey { get; set; }
-        public bool Identity { get; set; }
+        public bool IsUnique { get; set; }
+        public bool IsPrimaryKey { get; set; }
+        public bool Identity { get; set; } // TODO: seed,inc
 
         public FieldRefModel? Ref { get; set; }
         public bool HasReference => Ref is not null;
@@ -68,8 +64,6 @@ namespace DacpacDiff.Core.Model
                 && eq(m => m.Computation)
                 && IsDefaultMatch(other)
                 && eq(m => m.IsUnique)
-                && eq(m => m.UniqueName)
-                && eq(m => m.IsUniqueSystemNamed)
                 //&& eq(m => m.Order) // TODO: Table field ordering to separate option and diff
                 && eq(m => m.Nullable)
                 && eq(m => m.Identity)
@@ -104,8 +98,7 @@ namespace DacpacDiff.Core.Model
                 Type,
                 Computation,
                 Default,
-                Unique,
-                IsUniqueSystemNamed,
+                IsUnique,
                 Order,
                 Nullable,
                 Identity,

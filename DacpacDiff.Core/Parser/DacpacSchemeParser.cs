@@ -462,7 +462,7 @@ namespace DacpacDiff.Core.Parser
 
             foreach (var fld in flds)
             {
-                fld.PrimaryKey = true;
+                fld.IsPrimaryKey = true;
                 // TODO: IsPrimaryKeyUnclustered
             }
         }
@@ -488,10 +488,7 @@ namespace DacpacDiff.Core.Parser
                 return;
             }
 
-            var fld = flds.Single();
-            // TODO: Named unique?
-            fld.Unique = "*";
-            fld.IsUniqueSystemNamed = true;
+            flds.Single().IsUnique = true;
         }
 
         private static void parseCheckElement(DatabaseModel db, XElement el)
