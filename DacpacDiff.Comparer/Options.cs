@@ -1,8 +1,10 @@
 ﻿using CommandLine;
+using DacpacDiff.Core.Output;
+using DacpacDiff.Core.Parser;
 
 namespace DacpacDiff.Comparer
 {
-    public class Options
+    public class Options : IOutputOptions, IParserOptions
     {
         [Value(index: 0, MetaName = "Start schema", Required = true, HelpText = "The path of the dacpac file for the current scheme.")]
         public string? StartSchemeFile { get; init; }
@@ -13,10 +15,7 @@ namespace DacpacDiff.Comparer
         [Option(shortName: 'o', longName: "output", HelpText = "The file to write the result to.")]
         public string? OutputFile { get; init; }
 
-        [Option(shortName: 'p', longName: "pretty-print", HelpText = "Specify flag to not remove unnecessary whitespace.")]
         public bool PrettyPrint { get; init; }
-
-        [Option(shortName: 'd', longName: "disable-dataloss-check", HelpText = "Specify flag to remove failures if change may cause a dataloss.")]
         public bool DisableDatalossCheck { get; init; }
     }
 }

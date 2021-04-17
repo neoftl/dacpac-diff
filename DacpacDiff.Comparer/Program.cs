@@ -66,8 +66,7 @@ Parser.Default.ParseArguments<Options>(args)
 
         // Output
         var outputFormat = formatProvider.GetSqlFileBuilder();
-        outputFormat.DataLossChecks = !o.DisableDatalossCheck;
-        outputFormat.PrettyPrint = o.PrettyPrint;
+        outputFormat.Options = o;
         var result = outputFormat.Generate(leftScheme.Name, rightScheme.Name, targetVer, diffs);
 
         if (outputFile != null)

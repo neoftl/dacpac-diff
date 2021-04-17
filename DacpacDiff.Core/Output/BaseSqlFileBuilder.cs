@@ -7,8 +7,7 @@ namespace DacpacDiff.Core.Output
 {
     public abstract class BaseSqlFileBuilder : ISqlFileBuilder
     {
-        public bool DataLossChecks { get; set; }
-        public bool PrettyPrint { get; set; }
+        public IOutputOptions? Options { get; set; }
 
         protected StringBuilder _sql = new StringBuilder();
 
@@ -52,9 +51,9 @@ namespace DacpacDiff.Core.Output
             return this;
         }
 
-        public virtual string Flatten(string? sql, bool flat = true)
+        public virtual string Flatten(string? sql, bool? flat = null)
         {
-            if (flat)
+            if (flat == true || Options?.PrettyPrint != true)
             {
                 sql = sql?.Replace(Environment.NewLine, " ")
                     .ReplaceAll("  ", " ");

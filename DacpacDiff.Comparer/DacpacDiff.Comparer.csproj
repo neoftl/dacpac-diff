@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,10 +6,6 @@
     <Nullable>enable</Nullable>
     <AssemblyName>dacpac-diff</AssemblyName>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.8.0" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DacpacDiff.Core\DacpacDiff.Core.csproj" />

@@ -4,8 +4,7 @@ namespace DacpacDiff.Core.Output
 {
     public interface ISqlFileBuilder
     {
-        bool DataLossChecks { get; set; }
-        bool PrettyPrint { get; set; }
+        IOutputOptions? Options { get; set; }
 
         string Generate(string leftFileName, string rightFileName, string targetVersion, IEnumerable<ISqlFormattable> objs);
 
@@ -18,6 +17,6 @@ namespace DacpacDiff.Core.Output
         ISqlFileBuilder AppendLine(string? value);
         ISqlFileBuilder EnsureLine();
 
-        string Flatten(string? sql, bool flat = true);
+        string Flatten(string? sql, bool? flat = null);
     }
 }

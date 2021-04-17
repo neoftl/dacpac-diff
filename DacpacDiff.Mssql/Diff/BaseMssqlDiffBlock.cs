@@ -43,19 +43,19 @@ COMMIT";
         {
             _diff = diff ?? throw new ArgumentNullException(nameof(diff));
 
-            var sb = new NullSqlBuilder { DataLossChecks = false };
+            var sb = new NullSqlBuilder();
             GetFormat(sb);
             _sql = sb.ToString();
         }
 
         public void Format(ISqlFileBuilder sb)
         {
-            sb.Append(sb.Flatten(SECTION_START, !sb.PrettyPrint))
+            sb.Append(sb.Flatten(SECTION_START))
                 .EnsureLine().AppendGo().AppendLine();
 
             string? datalossTable = null;
             var isDataLossChange = _diff is IDataLossChange d && d.GetDataLossTable(out datalossTable);
-            if (sb.DataLossChecks && isDataLossChange)
+            if (sb.Options?.DisableDatalossCheck != true && isDataLossChange)
             {
                 sb.AppendLine()
                     .AppendLine($"IF EXISTS (SELECT TOP 1 1 FROM {datalossTable}) BEGIN")
@@ -69,7 +69,7 @@ COMMIT";
 
             sb.EnsureLine().AppendLine()
                 .AppendGo()
-                .Append(sb.Flatten(SECTION_END, !sb.PrettyPrint))
+                .Append(sb.Flatten(SECTION_END))
                 .EnsureLine().AppendGo();
         }
 
