@@ -25,6 +25,8 @@ namespace DacpacDiff.Mssql.Diff
                 throw new InvalidOperationException($"Could not locate 'CREATE {_diff.Module.Type}' for [{_diff.Module.Schema.Name}].[{_diff.Module.Name}]");
             }
 
+            // TODO: execute as
+
             sb.EnsureLine().Append(m.Groups[1].Value.Trim()).EnsureLine()
                 .AppendLine($"ALTER {_diff.Module.Type} " + m.Groups[2].Value);
         }

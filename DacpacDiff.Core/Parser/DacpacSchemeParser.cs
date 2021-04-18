@@ -38,6 +38,17 @@ namespace DacpacDiff.Core.Parser
 
         public SchemeModel? ParseFile(string filename)
         {
+            var db = new DatabaseModel("database"); // DB name not in dacpac
+            db.Schemas["dbo"] = new SchemaModel(db, "dbo"); // Always has "dbo" schema
+
+            var scheme = new SchemeModel(Path.GetFileNameWithoutExtension(filename));
+            scheme.Databases[db.Name] = db;
+
+            if (filename.EndsWith("blank.dacpac"))
+            {
+                return scheme;
+            }
+
             // Extract model.xml from zip
             XElement? modelXml = null;
             using (var zip = ZipFile.OpenRead(filename))
@@ -61,9 +72,6 @@ namespace DacpacDiff.Core.Parser
             }
 
             // Build model hierarchy
-            var db = new DatabaseModel("database"); // DB name not in dacpac
-            db.Schemas["dbo"] = new SchemaModel(db, "dbo"); // Always has "dbo" schema
-
             var elsByType = modelXml.Elements("Element")
                 .GroupBy(e => e.Attribute("Type")?.Value ?? string.Empty)
                 .ToDictionary(e => e.Key, e => e.ToArray());
@@ -87,8 +95,6 @@ namespace DacpacDiff.Core.Parser
             {
             }
 
-            var scheme = new SchemeModel(Path.GetFileNameWithoutExtension(filename));
-            scheme.Databases[db.Name] = db;
             return scheme;
         }
 
@@ -209,7 +215,6 @@ namespace DacpacDiff.Core.Parser
                 Type = ModuleModel.ModuleType.PROCEDURE,
                 Schema = schema,
                 Name = name,
-                // TODO: ExecuteAs
                 //Dependents?
             };
             schema.Modules[name] = proc;
@@ -223,6 +228,17 @@ namespace DacpacDiff.Core.Parser
             if (args is not null && args.Length > 0)
             {
                 def += "    " + string.Join(",\r\n    ", args);
+            }
+            
+            if (el.Find("Property", ("Name", "IsCaller"), ("Value", "True"))?.Any() == true)
+            {
+                proc.ExecuteAs = "CALLER";
+                def += "\r\nWITH EXECUTE AS CALLER";
+            }
+            else if (el.Find("Property", ("Name", "IsOwner"), ("Value", "True"))?.Any() == true)
+            {
+                proc.ExecuteAs = "OWNER";
+                def += "\r\nWITH EXECUTE AS OWNER";
             }
 
             def += "\r\nAS\r\n";
@@ -388,7 +404,7 @@ namespace DacpacDiff.Core.Parser
                 schema: schema,
                 name: name,
                 baseObject: el.Find("Property", ("Name", "ForObjectScript")).First().Element("Value")?.Value ?? string.Empty
-            //Dependents?
+                //Dependents?
             );
             schema.Synonyms[name] = syn;
         }
@@ -561,7 +577,6 @@ namespace DacpacDiff.Core.Parser
                 Nullable = colXml.Attribute("IsNullable")?.Value.ToLower() != "false",
                 // Ref done later
 
-                //Computation,
                 //Dependents,
             };
 

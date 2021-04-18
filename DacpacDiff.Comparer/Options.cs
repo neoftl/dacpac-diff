@@ -11,9 +11,12 @@ namespace DacpacDiff.Comparer
 
         [Value(index: 1, MetaName = "Target schema", Required = true, HelpText = "The path of the dacpac file for the desired scheme.")]
         public string? TargetSchemeFile { get; init; }
-
+        
         [Option(shortName: 'o', longName: "output", HelpText = "The file to write the result to.")]
         public string? OutputFile { get; init; }
+
+        [Option(shortName: 'n', longName: "new", HelpText = "No existing scheme to compare to.")]
+        public bool New { get; init; }
 
         public bool PrettyPrint { get; init; }
         public bool DisableDatalossCheck { get; init; }

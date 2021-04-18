@@ -21,8 +21,19 @@ Parser.Default.ParseArguments<Options>(args)
         }
         if (!FileUtilities.TryParsePath(o.TargetSchemeFile, out var leftSchemeFile) || leftSchemeFile?.Exists != true)
         {
-            Console.Error.WriteLine("Unable to find target scheme: " + o.TargetSchemeFile);
-            leftSchemeFile = null;
+            if (o.New)
+            {
+                leftSchemeFile = rightSchemeFile;
+            }
+            else
+            {
+                Console.Error.WriteLine("Unable to find target scheme: " + o.TargetSchemeFile);
+                leftSchemeFile = null;
+            }
+        }
+        if (o.New)
+        {
+            rightSchemeFile = new FileInfo("blank" + leftSchemeFile.Extension); // TODO: blank file
         }
 
         if ((o.OutputFile?.Length ?? 0) > 0 & !FileUtilities.TryParsePath(o.OutputFile, out var outputFile))
