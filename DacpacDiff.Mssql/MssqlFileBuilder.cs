@@ -45,21 +45,19 @@ namespace DacpacDiff.Mssql
                     continue;
                 }
 
-                var diffNum = $"[{(++count).ToString("D" + countMag)}] ";
+                var diffNum = (++count).ToString("D" + countMag);
                 var progress = (double)(99.99 / objCount) * count;
 
-                sqlHead.Append("-- ").Append(diffNum)
-                    .Append(diff.Title).Append(": ").Append(diff.Name).AppendLine();
-                AppendLine().Append($"RAISERROR('> ").Append(diffNum)
-                    .Append(diff.Title).Append(": ").Append(diff.Name)
-                    .AppendFormat(" ({0,5}%)", progress.ToString("0.00"))
-                    .Append("', 0, 1) WITH NOWAIT; ");
+                sqlHead.AppendFormat("-- [{0}] {1}: {2}", diffNum, diff.Title, diff.Name).AppendLine();
+                AppendLine().AppendFormat("#print '> [{0}] {1}: {2} ({3}%%)'", diffNum, diff.Title, diff.Name, progress.ToString("0.00")).AppendLine();
 
                 diffFormatter.Format(this);
                 EnsureLine();
             }
 
             _sql.Insert(0, sqlHead.AppendLine("--").AppendLine().ToString());
+
+            // TODO: when to refresh modules?
 
             addScriptFoot();
             return _sql.ToString();
@@ -73,6 +71,9 @@ SET NOEXEC OFF;
 SET QUOTED_IDENTIFIER ON;
 GO
 
+CREATE OR ALTER PROCEDURE #print(@s1 NVARCHAR(max), @s2 NVARCHAR(max) = NULL, @s3 NVARCHAR(max) = NULL, @s4 NVARCHAR(max) = NULL, @s5 NVARCHAR(max) = NULL, @s6 NVARCHAR(max) = NULL, @s7 NVARCHAR(max) = NULL, @s8 NVARCHAR(max) = NULL, @s9 NVARCHAR(max) = NULL) AS DECLARE @M NVARCHAR(MAX) = CONCAT(@s1, @s2, @s3, @s4, @s5, @s6, @s7, @s8, @s9); RAISERROR(@M, 0, 1) WITH NOWAIT
+GO
+
 -- Pre-flight checks
 DECLARE @CurVersion VARCHAR(MAX)
 IF (object_id('[dbo].[tfn_DatabaseVersion]') IS NULL) BEGIN
@@ -81,15 +82,42 @@ END ELSE BEGIN
 	SELECT @CurVersion = [BuildNumber] FROM [dbo].tfn_DatabaseVersion()
 END
 IF (@CurVersion <> '{targetVersion}') BEGIN
-    DECLARE @M NVARCHAR(MAX) = CONCAT('Failed: Current version ', @CurVersion, ' does not match expected: {targetVersion}'); RAISERROR(@M, 0, 1) WITH NOWAIT;
+    EXEC #print 'Failed: Current version ', @CurVersion, ' does not match expected: {targetVersion}'
     SET NOEXEC ON;
 END
 GO
 IF (@@TRANCOUNT <> 0) BEGIN
-    DECLARE @M NVARCHAR(MAX) = CONCAT('Failed: Transaction mismatch (', @@TRANCOUNT, ')'); RAISERROR(@M, 0, 1) WITH NOWAIT;
+    EXEC #print 'Failed: Transaction mismatch (', @@TRANCOUNT, ')'
     SET NOEXEC ON;
 END
-BEGIN TRAN;
+;BEGIN TRAN
+GO
+
+-- Temporary release helpers
+CREATE OR ALTER PROCEDURE #usp_DropUnnamedCheckConstraint(@parentTable NVARCHAR(max), @defSql NVARCHAR(max)) AS BEGIN
+    DECLARE @chkName VARCHAR(MAX) = (SELECT TOP 1 [name] FROM sys.check_constraints
+        WHERE [parent_object_id] = OBJECT_ID(@parentTable) AND [type] = 'C' AND REPLACE(REPLACE(REPLACE([definition], '(', ''), ')', ''), ' ', '') = @defSql AND [is_system_named] = 1)
+    IF (@chkName IS NULL) BEGIN
+        EXEC #print '[WARN] Could not locate system-named check constraint on ', @parentTable, '. Manual clean-up may be required.'
+    END ELSE BEGIN
+        DECLARE @sql VARCHAR(MAX) = CONCAT('ALTER TABLE ', @parentTable, ' DROP CONSTRAINT [', @chkName, ']')
+        EXEC (@sql)
+        EXEC #print '[NOTE] Dropped system-named check constraint [', @chkName, '] on ', @parentTable
+    END
+END
+GO
+CREATE OR ALTER PROCEDURE #usp_DropUnnamedDefault(@parentTable NVARCHAR(max), @colName VARCHAR(255)) AS BEGIN
+    DECLARE @chkName VARCHAR(MAX) = (SELECT TOP 1 DF.[name] FROM sys.default_constraints DF
+        JOIN sys.all_columns C ON C.[object_id] = DF.[parent_object_id] AND C.[column_id] = DF.[parent_column_id]
+        WHERE DF.[parent_object_id] = OBJECT_ID(@parentTable) AND DF.[type] = 'D' AND DF.[is_system_named] = 1 AND C.[name] = @colName)
+    IF (@chkName IS NULL) BEGIN
+        EXEC #print '[WARN] Could not locate system-named check constraint on ', @parentTable, '. Manual clean-up may be required.'
+    END ELSE BEGIN
+        DECLARE @sql VARCHAR(MAX) = CONCAT('ALTER TABLE ', @parentTable, ' DROP CONSTRAINT [', @chkName, ']')
+        EXEC (@sql)
+        EXEC #print '[NOTE] Dropped system-named check constraint [', @chkName, '] on ', @parentTable
+    END
+END
 GO");
         }
 
@@ -98,20 +126,22 @@ GO");
             AppendLine($@"
 -- Complete
 GO
+DROP FUNCTION IF EXISTS tmpsfn_CleanSQL
+GO
 IF (@@ERROR <> 0) BEGIN
-    RAISERROR('Failed', 0, 1) WITH NOWAIT;
+    EXEC #print 'Failed'
     IF (@@TRANCOUNT > 0) ROLLBACK;
     SET NOEXEC ON;
 END ELSE IF (@@TRANCOUNT <> 1) BEGIN
-    DECLARE @M NVARCHAR(MAX) = CONCAT('Failed: Transaction mismatch (', @@TRANCOUNT, ')'); RAISERROR(@M, 0, 1) WITH NOWAIT;
+    EXEC #print 'Failed: Transaction mismatch (', @@TRANCOUNT, ')'
     IF (@@TRANCOUNT > 0) ROLLBACK;
     SET NOEXEC ON;
 END
-COMMIT;
+;COMMIT
 GO
 
-RAISERROR('Complete', 0, 1) WITH NOWAIT;
-SELECT * FROM [dbo].[tfn_DatabaseVersion]();
+#print 'Complete'
+SELECT * FROM [dbo].[tfn_DatabaseVersion]()
 SET NOEXEC OFF;");
         }
     }

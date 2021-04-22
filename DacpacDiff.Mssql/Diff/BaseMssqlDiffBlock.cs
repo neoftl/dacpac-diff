@@ -11,21 +11,21 @@ namespace DacpacDiff.Mssql.Diff
         // Boilerplate to ensure we have a per-block transaction
         public static readonly string SECTION_START = @"BEGIN TRAN;
 IF (@@TRANCOUNT <> 2) BEGIN
-    DECLARE @M NVARCHAR(MAX) = CONCAT('Failed: Transaction mismatch (', @@TRANCOUNT, ')'); RAISERROR(@M, 0, 1) WITH NOWAIT;
+    EXEC #print 'Failed: Transaction mismatch (', @@TRANCOUNT, ')';
     IF (@@TRANCOUNT > 0) ROLLBACK;
     SET NOEXEC ON;
 END";
 
         // Boilerplace to ensure the per-block transaction survived and no errors
         public static readonly string SECTION_END = @"IF (@@ERROR <> 0) BEGIN
-    RAISERROR('Failed', 0, 1) WITH NOWAIT;
+    EXEC #print 'Failed';
     IF (@@TRANCOUNT > 0) ROLLBACK;
     SET NOEXEC ON;
 END ELSE IF (@@TRANCOUNT <> 2) BEGIN
-    DECLARE @M NVARCHAR(MAX) = CONCAT('Failed: Transaction mismatch (', @@TRANCOUNT, ')'); RAISERROR(@M, 0, 1) WITH NOWAIT;
+    EXEC #print 'Failed: Transaction mismatch (', @@TRANCOUNT, ')';
     IF (@@TRANCOUNT > 0) ROLLBACK;
     SET NOEXEC ON;
-END;
+END
 COMMIT";
 
         protected readonly T _diff;

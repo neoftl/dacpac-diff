@@ -1,6 +1,7 @@
 ﻿using DacpacDiff.Core.Utility;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace DacpacDiff.Core.Output
@@ -53,10 +54,11 @@ namespace DacpacDiff.Core.Output
 
         public virtual string Flatten(string? sql, bool? flat = null)
         {
-            if (flat == true || Options?.PrettyPrint != true)
+            if (sql != null && (flat == true || Options?.PrettyPrint != true))
             {
-                sql = sql?.Replace(Environment.NewLine, " ")
-                    .ReplaceAll("  ", " ");
+                sql = string.Join("; ", sql.Split(new [] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(l => l.Trim().Trim(';')))
+                    .Replace("; GO; ", $";{Environment.NewLine}GO{Environment.NewLine}");
             }
             return sql ?? string.Empty;
         }

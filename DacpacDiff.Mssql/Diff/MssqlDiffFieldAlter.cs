@@ -21,7 +21,7 @@ namespace DacpacDiff.Mssql.Diff
             }
 
             sb.Append($" {fld.Type}")
-                .AppendIf($" DEFAULT{fld.DefaultValue}", fld.HasDefault && !fld.IsDefaultSystemNamed)
+                .AppendIf($" DEFAULT ({fld.DefaultValue})", fld.HasDefault && !fld.IsDefaultSystemNamed)
                 .Append(!fld.Nullable && fld.HasDefault ? " NOT NULL" : " NULL");
         }
 
@@ -34,9 +34,10 @@ namespace DacpacDiff.Mssql.Diff
             {
                 sb.AppendLine($"ALTER TABLE {rgt.Table.FullName} DROP COLUMN [{rgt.Name}]")
                     .AppendLine("GO")
-                    .AppendLine($"ALTER TABLE {lft.Table.FullName} ADD ");
+                    .Append($"ALTER TABLE {lft.Table.FullName} ADD ");
                 appendFieldSql(lft, sb);
-                sb.AppendLine("GO");
+                sb.EnsureLine();
+                return;
             }
 
             // TODO
@@ -48,37 +49,37 @@ namespace DacpacDiff.Mssql.Diff
             //    sql = sql.Select(s => "--" + s).ToList();
             //}
 
+            // Remove existing default
+            if (!lft.IsDefaultMatch(rgt) && rgt.HasDefault)
+            {
+                // Remove default
+                if (rgt.IsDefaultSystemNamed)
+                {
+                    sb.AppendLine($"EXEC #usp_DropUnnamedDefault '{rgt.Table.FullName}', '{rgt.Name}'");
+                }
+                else
+                {
+                    sb.AppendLine($"ALTER TABLE {rgt.Table.FullName} DROP CONSTRAINT [{rgt.DefaultName}]");
+                }
+                sb.AppendGo();
+            }
+
             // Main definition
             if (!lft.IsSignatureMatch(rgt))
             {
                 sb.Append($"ALTER TABLE {lft.Table.FullName} ALTER COLUMN ");
                 appendFieldSql(lft, sb); // TODO: changing between nullability needs thinking about
                 sb.AppendLine(!lft.Nullable && !lft.HasDefault && rgt.Nullable ? " -- NOTE: Cannot change to NOT NULL column" : string.Empty)
-                    .AppendLine("GO");
+                    .AppendGo();
             }
 
             // Default
-            if (!lft.IsDefaultMatch(rgt))
+            if (!lft.IsDefaultMatch(rgt) && lft.HasDefault)
             {
-                if (rgt.HasDefault)
-                {
-                    // Remove default
-                    if (!rgt.IsDefaultSystemNamed)
-                    {
-                        sb.AppendLine($"ALTER TABLE {rgt.Table.FullName} DROP CONSTRAINT [{rgt.DefaultName}]");
-                    }
-                    else
-                    {
-                        sb.AppendLine($"DECLARE @DropConstraintSql VARCHAR(MAX) = (SELECT CONCAT('ALTER TABLE {rgt.Table.FullName} DROP CONSTRAINT [', [name], ']') FROM sys.default_constraints WHERE parent_object_id = OBJECT_ID('{rgt.Table.FullName}') AND parent_column_id = {rgt.Order - 1}); EXEC (@DropConstraintSql)");
-                    }
-                }
-                if (lft.HasDefault)
-                {
-                    // Add default
-                    sb.Append($"ALTER TABLE {lft.Table.FullName} ADD ")
-                        .AppendIf($"CONSTRAINT [{lft.DefaultName}] ", !lft.IsDefaultSystemNamed)
-                        .AppendLine($"DEFAULT{lft.DefaultValue} FOR [{lft.Name}]");
-                }
+                // Add default
+                sb.Append($"ALTER TABLE {lft.Table.FullName} ADD ")
+                    .AppendIf($"CONSTRAINT [{lft.DefaultName}] ", !lft.IsDefaultSystemNamed)
+                    .AppendLine($"DEFAULT ({lft.DefaultValue}) FOR [{lft.Name}]");
             }
 
             // Unique

@@ -36,7 +36,7 @@ namespace DacpacDiff.Mssql.Diff
                 }
 
                 sb.Append(!fld.Nullable ? " NOT NULL" : " NULL")
-                    .AppendIf($" DEFAULT{fld.DefaultValue}", fld.HasDefault)
+                    .AppendIf($" DEFAULT ({fld.DefaultValue})", fld.HasDefault)
                     .AppendIf(" PRIMARY KEY", fld.IsPrimaryKey && fld.Table.PrimaryKeys.Length == 1)
                     .AppendIf(" IDENTITY(1,1)", fld.Identity);
             }

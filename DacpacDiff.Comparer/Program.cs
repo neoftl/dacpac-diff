@@ -73,7 +73,7 @@ Parser.Default.ParseArguments<Options>(args)
         var comparer = new SchemeComparer(comparerFactory);
         var diffs = comparer.Compare(leftScheme, rightScheme);
 
-        var targetVer = leftScheme.GetDatabaseVersion();
+        var targetVer = rightScheme.GetDatabaseVersion();
 
         // Output
         var outputFormat = formatProvider.GetSqlFileBuilder();

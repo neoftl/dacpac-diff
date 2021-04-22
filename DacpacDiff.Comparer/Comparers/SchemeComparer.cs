@@ -53,6 +53,8 @@ namespace DacpacDiff.Comparer.Comparers
             }
             var rightDb = rgt.Databases.Values.Single();
 
+            // TODO: Group related diffs (e.g., small alters to same table)
+
             // Produce diffs in execution order
             var diffs = _comparerFactory.GetComparer<DatabaseModel>()
                 .Compare(leftDb, rightDb);

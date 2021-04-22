@@ -11,12 +11,12 @@ namespace DacpacDiff.Mssql.Diff
 
         protected override void GetFormat(ISqlFileBuilder sb)
         {
-            var lft = _diff.LeftTableCheck;
-            var rgt = _diff.RightTableCheck;
+            var diffDrop = new MssqlDiffTableCheckDrop(new DiffTableCheckDrop(_diff.RightTableCheck));
+            var diffCreate = new MssqlDiffTableCheckCreate(new DiffTableCheckCreate(_diff.LeftTableCheck));
             
-            sb.AppendLine($"ALTER TABLE [{rgt.Table.Schema.Name}].[{rgt.Table.Name}] DROP CONSTRAINT [{rgt.Name}]")
+            sb.Append(diffDrop.ToString())
                 .AppendGo()
-                .AppendLine($"ALTER TABLE [{lft.Table.Schema.Name}].[{lft.Table.Name}] ADD CONSTRAINT [{lft.Name}] CHECK {lft.Definition}");
+                .Append(diffCreate.ToString());
         }
     }
 }

@@ -177,7 +177,7 @@ namespace DacpacDiff.Core.Parser
             // Fields
             var idx = 0;
             var colsXml = el.Find(true, "Element", ("Type", a => a == "SqlSimpleColumn" || a == "SqlComputedColumn"), ("Name", a => a?.StartsWith(table.FullName, StringComparison.OrdinalIgnoreCase) == true));
-            table.Fields = colsXml.Select(e => toField(table, idx++, e)).ToArray();
+            table.Fields = colsXml.Select(e => toField(table, ++idx, e)).ToArray();
 
             // Temporality
             var temporalXml = el.Find("Relationship", ("Name", "TemporalSystemVersioningHistoryTable")).FirstOrDefault();
@@ -229,7 +229,7 @@ namespace DacpacDiff.Core.Parser
             {
                 def += "    " + string.Join(",\r\n    ", args);
             }
-            
+
             if (el.Find("Property", ("Name", "IsCaller"), ("Value", "True"))?.Any() == true)
             {
                 proc.ExecuteAs = "CALLER";
@@ -339,9 +339,10 @@ namespace DacpacDiff.Core.Parser
                 {
                     def += $"\r\n) RETURN {retvar} TABLE (";
 
+                    var idx = 0;
                     var colsXml = el.Find("Relationship", ("Name", "Columns")).First().Find(true, "Element", ("Type", a => a == "SqlSimpleColumn" || a == "SqlComputedColumn"));
                     var tbl = new TableModel(schema, func.Name);
-                    var fields = colsXml.Select(e => toField(tbl, 0, e)).ToArray();
+                    var fields = colsXml.Select(e => toField(tbl, ++idx, e)).ToArray();
                     var colStr = string.Join(", ", fields.Select(f => $"[{f.Name}] {f.Type}" + (!f.Nullable ? " NOT NULL" : "")).ToArray());
 
                     def += colStr;
@@ -369,9 +370,10 @@ namespace DacpacDiff.Core.Parser
             };
             schema.Modules[name] = trig;
 
-            var target = getName(el.Find("Relationship", ("Name", "Parent")).Single()
+            var target = el.Find("Relationship", ("Name", "Parent")).Single()
                 .Element("Entry")?
-                .Element("References"));
+                .Element("References")?
+                .Attribute("Name").Value;
 
             // TODO: don't build SQL; store as pieces
             var def = $"CREATE TRIGGER {trig.FullName} ON {target} ";
@@ -392,9 +394,9 @@ namespace DacpacDiff.Core.Parser
                 trigType += "DELETE, ";
             }
 
-            def += trigType.Trim(',', ' ');
-            def += "\r\nAS\r\n";
-            def += el.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value;
+            def += trigType.Trim(',', ' ').TrimEnd()
+                + "\r\nAS\r\n"
+                + el.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value.TrimStart();
             trig.Definition = def;
         }
 
@@ -404,7 +406,7 @@ namespace DacpacDiff.Core.Parser
                 schema: schema,
                 name: name,
                 baseObject: el.Find("Property", ("Name", "ForObjectScript")).First().Element("Value")?.Value ?? string.Empty
-                //Dependents?
+            //Dependents?
             );
             schema.Synonyms[name] = syn;
         }
@@ -519,7 +521,9 @@ namespace DacpacDiff.Core.Parser
                 return;
             }
 
-            tbl.Checks.Add(new TableCheckModel(tbl, null, checkExpr));
+            var chkName = el.Attribute("Name")?.Value;
+            chkName = chkName != null ? getName(chkName, tbl.Schema.Name) : null;
+            tbl.Checks.Add(new TableCheckModel(tbl, chkName, checkExpr));
         }
 
         private static void parseDefaultElement(DatabaseModel db, XElement el)

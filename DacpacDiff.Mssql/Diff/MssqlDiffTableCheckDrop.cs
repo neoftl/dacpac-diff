@@ -13,7 +13,9 @@ namespace DacpacDiff.Mssql.Diff
         {
             if (_diff.TableCheck.IsSystemNamed)
             {
-                sb.AppendLine($"DECLARE @DropConstraintSql VARCHAR(MAX) = (SELECT TOP 1 CONCAT('ALTER TABLE {_diff.TableCheck.Table.FullName} DROP CONSTRAINT [', [name], ']') FROM sys.check_constraints WHERE [parent_object_id] = OBJECT_ID('{_diff.TableCheck.Table.FullName}') AND [type] = 'C' AND [definition] = '{_diff.TableCheck.Definition}' AND [is_system_named] = 1); EXEC (@DropConstraintSql)");
+                var cleanSql = _diff.TableCheck.Definition.Replace("'", "''")
+                    .Replace("(", "").Replace(")", "").Replace(" ", "");
+                sb.Append($"EXEC #usp_DropUnnamedCheckConstraint '{_diff.TableCheck.Table.FullName}', '{cleanSql}'");
             }
             else
             {

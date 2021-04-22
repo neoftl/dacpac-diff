@@ -81,6 +81,8 @@ namespace DacpacDiff.Comparer.Comparers
                     diffs.AddRange(chkCompr.Compare(null, chkR) ?? Array.Empty<IDifference>());
                 }
             }
+            
+            // TODO: If any changes, do we need to drop all indexes and recreate?
 
             return diffs.ToArray();
         }
