@@ -48,7 +48,7 @@ namespace DacpacDiff.Comparer.Comparers
                     diffs.Add(new DiffModuleAlter(lft));
                 }
             }
-            if (diffCreate?.NeedsStub ?? false)
+            if (diffCreate?.NeedsStub == true)
             {
                 diffs.Add(new DiffModuleAlter(lft));
             }

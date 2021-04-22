@@ -1,5 +1,6 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
+using DacpacDiff.Core.Utility;
 using System;
 using System.Collections.Generic;
 
@@ -25,7 +26,7 @@ namespace DacpacDiff.Comparer.Comparers
             }
 
             // Alter
-            if (lft.Definition != rgt.Definition)
+            if (lft.Definition.ScrubSQL() != rgt.Definition.ScrubSQL())
             {
                 return new[] { new DiffTableCheckAlter(lft, rgt) };
             }

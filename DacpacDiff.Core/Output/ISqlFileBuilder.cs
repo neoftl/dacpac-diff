@@ -15,7 +15,7 @@ namespace DacpacDiff.Core.Output
         ISqlFileBuilder AppendIf(string? value, bool condition);
         ISqlFileBuilder AppendLine();
         ISqlFileBuilder AppendLine(string? value);
-        ISqlFileBuilder EnsureLine();
+        ISqlFileBuilder EnsureLine(int num = 1);
 
         string Flatten(string? sql, bool? flat = null);
     }

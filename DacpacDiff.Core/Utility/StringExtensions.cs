@@ -12,6 +12,14 @@ namespace DacpacDiff.Core.Utility
             }
             return input;
         }
+        
+        public static string ScrubSQL(this string sql)
+        {
+            return sql.Replace("\r", "").Replace("\n", "").Replace("\t", "").Replace(" ", "")
+                .Replace("(", "").Replace(")", "")
+                .Replace("[", "").Replace("]", "")
+                .ToLower();
+        }
 
         public static bool TryMatch(this string input, string pattern, out Match match)
         {

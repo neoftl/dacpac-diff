@@ -15,12 +15,28 @@ namespace DacpacDiff.Core.Utility
             return sb;
         }
 
-        public static StringBuilder EnsureLine(this StringBuilder sb)
+        public static StringBuilder EnsureLine(this StringBuilder sb, int num = 1)
         {
-            if (sb.Length >= NL.Length
-                && (sb[^1] != NL[^1] || (NL.Length == 2 && sb[^2] != NL[^2])))
+            if (sb.Length >= NL.Length * num)
             {
-                sb.AppendLine();
+                for (var i = sb.Length - 1; num > 0; i -= NL.Length, --num)
+                {
+                    if (NL.Length == 2)
+                    {
+                        if (sb[i - 1] != NL[0] || sb[i] != NL[1])
+                        {
+                            break;
+                        }
+                    }
+                    else if (sb[i] != NL[0])
+                    {
+                        break;
+                    }
+                }
+                while (num-- > 0)
+                {
+                    sb.AppendLine();
+                }
             }
             return sb;
         }

@@ -32,6 +32,8 @@ namespace DacpacDiff.Mssql
 -- Changes ({objCount}):");
 
             addScriptStart(targetVersion);
+            addScriptHelpers();
+            AppendLine("BEGIN TRAN").AppendGo();
 
             var count = 0;
             foreach (var diff in objs)
@@ -65,10 +67,10 @@ namespace DacpacDiff.Mssql
 
         private void addScriptStart(string targetVersion)
         {
-            AppendLine($@"SET NOCOUNT ON;
-SET XACT_ABORT ON;
-SET NOEXEC OFF;
-SET QUOTED_IDENTIFIER ON;
+            AppendLine($@"SET NOCOUNT ON
+SET XACT_ABORT ON
+SET NOEXEC OFF
+SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE OR ALTER PROCEDURE #print(@s1 NVARCHAR(max), @s2 NVARCHAR(max) = NULL, @s3 NVARCHAR(max) = NULL, @s4 NVARCHAR(max) = NULL, @s5 NVARCHAR(max) = NULL, @s6 NVARCHAR(max) = NULL, @s7 NVARCHAR(max) = NULL, @s8 NVARCHAR(max) = NULL, @s9 NVARCHAR(max) = NULL) AS DECLARE @M NVARCHAR(MAX) = CONCAT(@s1, @s2, @s3, @s4, @s5, @s6, @s7, @s8, @s9); RAISERROR(@M, 0, 1) WITH NOWAIT
@@ -83,20 +85,22 @@ END ELSE BEGIN
 END
 IF (@CurVersion <> '{targetVersion}') BEGIN
     EXEC #print 'Failed: Current version ', @CurVersion, ' does not match expected: {targetVersion}'
-    SET NOEXEC ON;
+    SET NOEXEC ON
 END
 GO
 IF (@@TRANCOUNT <> 0) BEGIN
     EXEC #print 'Failed: Transaction mismatch (', @@TRANCOUNT, ')'
-    SET NOEXEC ON;
+    SET NOEXEC ON
 END
-;BEGIN TRAN
-GO
+GO");
+        }
 
+        private void addScriptHelpers()
+        {
+            AppendLine(Flatten(@"
 -- Temporary release helpers
-CREATE OR ALTER PROCEDURE #usp_DropUnnamedCheckConstraint(@parentTable NVARCHAR(max), @defSql NVARCHAR(max)) AS BEGIN
-    DECLARE @chkName VARCHAR(MAX) = (SELECT TOP 1 [name] FROM sys.check_constraints
-        WHERE [parent_object_id] = OBJECT_ID(@parentTable) AND [type] = 'C' AND REPLACE(REPLACE(REPLACE([definition], '(', ''), ')', ''), ' ', '') = @defSql AND [is_system_named] = 1)
+CREATE OR ALTER PROCEDURE #usp_DropUnnamedCheckConstraint(@parentTable NVARCHAR(max), @defSql CHAR(16)) AS BEGIN
+    DECLARE @chkName VARCHAR(MAX) = (SELECT TOP 1 [name] FROM sys.check_constraints WHERE [parent_object_id] = OBJECT_ID(@parentTable) AND [type] = 'C' AND HASHBYTES('MD5', REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(CONVERT(VARCHAR(MAX), [definition])), '(', ''), ')', ''), '[', ''), ']', ''), ' ', '')) = @defSql AND [is_system_named] = 1)
     IF (@chkName IS NULL) BEGIN
         EXEC #print '[WARN] Could not locate system-named check constraint on ', @parentTable, '. Manual clean-up may be required.'
     END ELSE BEGIN
@@ -107,9 +111,7 @@ CREATE OR ALTER PROCEDURE #usp_DropUnnamedCheckConstraint(@parentTable NVARCHAR(
 END
 GO
 CREATE OR ALTER PROCEDURE #usp_DropUnnamedDefault(@parentTable NVARCHAR(max), @colName VARCHAR(255)) AS BEGIN
-    DECLARE @chkName VARCHAR(MAX) = (SELECT TOP 1 DF.[name] FROM sys.default_constraints DF
-        JOIN sys.all_columns C ON C.[object_id] = DF.[parent_object_id] AND C.[column_id] = DF.[parent_column_id]
-        WHERE DF.[parent_object_id] = OBJECT_ID(@parentTable) AND DF.[type] = 'D' AND DF.[is_system_named] = 1 AND C.[name] = @colName)
+    DECLARE @chkName VARCHAR(MAX) = (SELECT TOP 1 DF.[name] FROM sys.default_constraints DF JOIN sys.all_columns C ON C.[object_id] = DF.[parent_object_id] AND C.[column_id] = DF.[parent_column_id] WHERE DF.[parent_object_id] = OBJECT_ID(@parentTable) AND DF.[type] = 'D' AND DF.[is_system_named] = 1 AND C.[name] = @colName)
     IF (@chkName IS NULL) BEGIN
         EXEC #print '[WARN] Could not locate system-named check constraint on ', @parentTable, '. Manual clean-up may be required.'
     END ELSE BEGIN
@@ -118,7 +120,29 @@ CREATE OR ALTER PROCEDURE #usp_DropUnnamedDefault(@parentTable NVARCHAR(max), @c
         EXEC #print '[NOTE] Dropped system-named check constraint [', @chkName, '] on ', @parentTable
     END
 END
-GO");
+GO
+CREATE OR ALTER PROCEDURE #usp_BlockStart AS BEGIN
+    IF (@@TRANCOUNT <> 2) BEGIN
+        EXEC #print 'Failed: Transaction mismatch (', @@TRANCOUNT, ')'
+        IF (@@TRANCOUNT > 0) ROLLBACK
+        SET NOEXEC ON
+    END
+    RETURN 1
+END
+GO
+CREATE OR ALTER PROCEDURE #usp_BlockEnd AS BEGIN
+IF (@@ERROR <> 0) BEGIN
+    EXEC #print 'Failed'
+    IF (@@TRANCOUNT > 0) ROLLBACK
+    SET NOEXEC ON
+END ELSE IF (@@TRANCOUNT <> 2) BEGIN
+    EXEC #print 'Failed: Transaction mismatch (', @@TRANCOUNT, ')'
+    IF (@@TRANCOUNT > 0) ROLLBACK
+    SET NOEXEC ON
+END
+    RETURN 1
+END
+GO"));
         }
 
         private void addScriptFoot()
@@ -130,19 +154,21 @@ DROP FUNCTION IF EXISTS tmpsfn_CleanSQL
 GO
 IF (@@ERROR <> 0) BEGIN
     EXEC #print 'Failed'
-    IF (@@TRANCOUNT > 0) ROLLBACK;
-    SET NOEXEC ON;
+    IF (@@TRANCOUNT > 0) ROLLBACK
+    SET NOEXEC ON
 END ELSE IF (@@TRANCOUNT <> 1) BEGIN
     EXEC #print 'Failed: Transaction mismatch (', @@TRANCOUNT, ')'
-    IF (@@TRANCOUNT > 0) ROLLBACK;
-    SET NOEXEC ON;
+    IF (@@TRANCOUNT > 0) ROLLBACK
+    SET NOEXEC ON
 END
-;COMMIT
+GO
+COMMIT
 GO
 
 #print 'Complete'
 SELECT * FROM [dbo].[tfn_DatabaseVersion]()
-SET NOEXEC OFF;");
+GO
+SET NOEXEC OFF");
         }
     }
 }

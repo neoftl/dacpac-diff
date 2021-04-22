@@ -61,7 +61,7 @@ namespace DacpacDiff.Core.Model
             return eq(m => m.Table.FullName)
                 && eq(m => m.Name)
                 && eq(m => m.Type)
-                && eq(m => m.Computation)
+                && eq(m => m.Computation?.ScrubSQL())
                 && IsDefaultMatch(other)
                 && eq(m => m.IsUnique)
                 //&& eq(m => m.Order) // TODO: Table field ordering to separate option and diff
@@ -117,17 +117,8 @@ namespace DacpacDiff.Core.Model
                 return false;
             }
 
-            var dbL = DefaultValue;
-            while (dbL?.Length > 2 && dbL[0] == '(' && dbL[^1] == ')')
-            {
-                dbL = dbL[1..^1];
-            }
-            var dbR = field.DefaultValue;
-            while (dbR?.Length > 2 && dbR[0] == '(' && dbR[^1] == ')')
-            {
-                dbR = dbR[1..^1];
-            }
-
+            var dbL = DefaultValue?.ScrubSQL();
+            var dbR = field.DefaultValue?.ScrubSQL();
             if (dbL != dbR)
             {
                 return false;

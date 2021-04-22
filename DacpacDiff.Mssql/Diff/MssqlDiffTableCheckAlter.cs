@@ -15,7 +15,7 @@ namespace DacpacDiff.Mssql.Diff
             var diffCreate = new MssqlDiffTableCheckCreate(new DiffTableCheckCreate(_diff.LeftTableCheck));
             
             sb.Append(diffDrop.ToString())
-                .AppendGo()
+                .EnsureLine(2)
                 .Append(diffCreate.ToString());
         }
     }

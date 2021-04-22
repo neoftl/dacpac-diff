@@ -46,9 +46,9 @@ namespace DacpacDiff.Core.Output
         {
             _sql.AppendLine(value); return this;
         }
-        public ISqlFileBuilder EnsureLine()
+        public ISqlFileBuilder EnsureLine(int num = 1)
         {
-            _sql.EnsureLine();
+            _sql.EnsureLine(num);
             return this;
         }
 
@@ -56,9 +56,20 @@ namespace DacpacDiff.Core.Output
         {
             if (sql != null && (flat == true || Options?.PrettyPrint != true))
             {
-                sql = string.Join("; ", sql.Split(new [] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(l => l.Trim().Trim(';')))
-                    .Replace("; GO; ", $";{Environment.NewLine}GO{Environment.NewLine}");
+                sql = string.Join("", sql.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(l => l.Trim().Trim(';'))
+                    .Select(l =>
+                    {
+                        if (l == "GO")
+                        {
+                            return Environment.NewLine + l + Environment.NewLine;
+                        }
+                        if (l.StartsWith("--"))
+                        {
+                            return l + Environment.NewLine;
+                        }
+                        return $"{l}; ";
+                    })).Trim(' ', ';');
             }
             return sql ?? string.Empty;
         }

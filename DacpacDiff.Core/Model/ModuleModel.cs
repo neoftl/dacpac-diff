@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DacpacDiff.Core.Utility;
+using System;
 
 namespace DacpacDiff.Core.Model
 {
@@ -19,21 +20,14 @@ namespace DacpacDiff.Core.Model
         public string Name { get; set; }
         public string FullName => $"[{Schema.Name}].[{Name}]";
         public ModuleType Type { get; set; }
-        public string Definition { get; set; }
+        public string Definition { get; set; } = string.Empty;
         public string? ExecuteAs { get; set; }
         public string[] Dependents { get; set; } = Array.Empty<string>();
-        
-        public static string ScrubDefinition(string def)
-        {
-            return def.Replace(" ", "")
-                .Replace("(", "")
-                .Replace(")", "")
-                .ToLower();
-        }
+
         public bool IsSimilarDefinition(ModuleModel alt)
         {
-            var def1 = ScrubDefinition(Definition);
-            var def2 = ScrubDefinition(alt.Definition);
+            var def1 = Definition.ScrubSQL();
+            var def2 = alt.Definition.ScrubSQL();
             return def1 == def2;
         }
     }

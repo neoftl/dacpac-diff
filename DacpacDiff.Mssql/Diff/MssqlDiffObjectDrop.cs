@@ -1,6 +1,7 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Output;
+using DacpacDiff.Core.Utility;
 using System;
 
 namespace DacpacDiff.Mssql.Diff
@@ -17,17 +18,19 @@ namespace DacpacDiff.Mssql.Diff
         {
             if (_diff.Type == DiffObjectDrop.ObjectType.INDEX && _diff.Model is ModuleModel idx)
             {
-                var m = System.Text.RegularExpressions.Regex.Match(idx.Definition, MOD_DEF_PATTERN);
-                if (!m.Success)
+                if (!idx.Definition.TryMatch(MOD_DEF_PATTERN, out var m))
                 {
                     Console.Error.WriteLine($"Cannot drop INDEX {_diff.Name} using this scheme");
-                    return;
                 }
-                sb.Append($"DROP INDEX [{idx.Name}] ON {m.Groups[1].Value}");
-                return;
+                else
+                {
+                    sb.Append($"DROP INDEX [{idx.Name}] ON {m.Groups[1].Value}");
+                }
             }
-
-            sb.Append($"DROP {_diff.Type} {_diff.Name}");
+            else
+            {
+                sb.Append($"DROP {_diff.Type} {_diff.Name}");
+            }
         }
     }
 }

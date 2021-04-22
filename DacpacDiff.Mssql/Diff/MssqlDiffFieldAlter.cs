@@ -33,7 +33,7 @@ namespace DacpacDiff.Mssql.Diff
             if ((lft.Computation?.Length ?? 0) > 0)
             {
                 sb.AppendLine($"ALTER TABLE {rgt.Table.FullName} DROP COLUMN [{rgt.Name}]")
-                    .AppendLine("GO")
+                    .AppendLine()
                     .Append($"ALTER TABLE {lft.Table.FullName} ADD ");
                 appendFieldSql(lft, sb);
                 sb.EnsureLine();
@@ -61,7 +61,7 @@ namespace DacpacDiff.Mssql.Diff
                 {
                     sb.AppendLine($"ALTER TABLE {rgt.Table.FullName} DROP CONSTRAINT [{rgt.DefaultName}]");
                 }
-                sb.AppendGo();
+                sb.AppendLine();
             }
 
             // Main definition
@@ -70,7 +70,7 @@ namespace DacpacDiff.Mssql.Diff
                 sb.Append($"ALTER TABLE {lft.Table.FullName} ALTER COLUMN ");
                 appendFieldSql(lft, sb); // TODO: changing between nullability needs thinking about
                 sb.AppendLine(!lft.Nullable && !lft.HasDefault && rgt.Nullable ? " -- NOTE: Cannot change to NOT NULL column" : string.Empty)
-                    .AppendGo();
+                    .AppendLine();
             }
 
             // Default

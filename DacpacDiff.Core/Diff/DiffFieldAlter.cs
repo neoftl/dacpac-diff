@@ -22,6 +22,7 @@ namespace DacpacDiff.Core.Diff
         public bool GetDataLossTable(out string tableName)
         {
             // TODO: More accurate test
+            // numeric precision: decimal(x,y) = (x-y).y = if lft > rgt, dataloss
             tableName = RightField.Table.FullName;
             return LeftField.Type != RightField.Type;
         }

@@ -8,26 +8,6 @@ namespace DacpacDiff.Mssql.Diff
     public abstract class BaseMssqlDiffBlock<T> : ISqlFormatter
         where T : IDifference
     {
-        // Boilerplate to ensure we have a per-block transaction
-        public static readonly string SECTION_START = @"BEGIN TRAN;
-IF (@@TRANCOUNT <> 2) BEGIN
-    EXEC #print 'Failed: Transaction mismatch (', @@TRANCOUNT, ')';
-    IF (@@TRANCOUNT > 0) ROLLBACK;
-    SET NOEXEC ON;
-END";
-
-        // Boilerplace to ensure the per-block transaction survived and no errors
-        public static readonly string SECTION_END = @"IF (@@ERROR <> 0) BEGIN
-    EXEC #print 'Failed';
-    IF (@@TRANCOUNT > 0) ROLLBACK;
-    SET NOEXEC ON;
-END ELSE IF (@@TRANCOUNT <> 2) BEGIN
-    EXEC #print 'Failed: Transaction mismatch (', @@TRANCOUNT, ')';
-    IF (@@TRANCOUNT > 0) ROLLBACK;
-    SET NOEXEC ON;
-END
-COMMIT";
-
         protected readonly T _diff;
         private readonly string _sql;
 
@@ -50,27 +30,39 @@ COMMIT";
 
         public void Format(ISqlFileBuilder sb)
         {
-            sb.Append(sb.Flatten(SECTION_START))
-                .EnsureLine().AppendGo().AppendLine();
+            sb.AppendLine("BEGIN TRAN")
+                .AppendLine(sb.Flatten(@"DECLARE @R INT
+EXEC @R = #usp_BlockStart
+IF (@R <> 1) SET NOEXEC ON"))
+                .AppendGo().AppendLine();
 
             string? datalossTable = null;
             var isDataLossChange = _diff is IDataLossChange d && d.GetDataLossTable(out datalossTable);
             if (sb.Options?.DisableDatalossCheck != true && isDataLossChange)
             {
-                sb.AppendLine()
+                sb.EnsureLine(2)
                     .AppendLine($"IF EXISTS (SELECT TOP 1 1 FROM {datalossTable}) BEGIN")
-                    .AppendLine($"    RAISERROR('WARNING! This change may cause dataloss to {datalossTable}. Verify and remove this error block to continue.', 0, 1) WITH NOWAIT;")
-                    .AppendLine("    IF (@@TRANCOUNT > 0) ROLLBACK;")
-                    .AppendLine("    SET NOEXEC ON;")
+                    .AppendLine($"    RAISERROR('WARNING! This change may cause dataloss to {datalossTable}. Verify and remove this error block to continue.', 15, 1) WITH NOWAIT")
+                    .AppendLine("    IF (@@TRANCOUNT > 0) ROLLBACK")
+                    .AppendLine("    SET NOEXEC ON")
                     .AppendLine("END").AppendLine();
             }
 
             sb.Append(_sql);
 
-            sb.EnsureLine().AppendLine()
+            sb.EnsureLine(2)
                 .AppendGo()
-                .Append(sb.Flatten(SECTION_END))
-                .EnsureLine().AppendGo();
+                .AppendLine(sb.Flatten(@"IF (@@ERROR <> 0) BEGIN
+    EXEC #print 'Failed'
+    IF (@@TRANCOUNT > 0) ROLLBACK
+    SET NOEXEC ON
+END ELSE IF (@@TRANCOUNT <> 2) BEGIN
+    EXEC #print 'Failed: Transaction mismatch (', @@TRANCOUNT, ')'
+    IF (@@TRANCOUNT > 0) ROLLBACK
+    SET NOEXEC ON
+END"))
+                .AppendLine("COMMIT")
+                .AppendGo();
         }
 
         protected abstract void GetFormat(ISqlFileBuilder sb);
