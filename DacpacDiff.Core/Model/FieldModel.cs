@@ -32,7 +32,7 @@ namespace DacpacDiff.Core.Model
         public string? RefTargetField => Ref?.TargetField.Name;
         public bool IsNamedReference => Ref?.IsSystemNamed ?? false;
 
-        public string[] Dependents { get; set; } = Array.Empty<string>();
+        public string[] Dependencies => RefTargetTable == null ? Array.Empty<string>() : new[] { RefTargetTable };
 
         private FieldModel()
         {
@@ -88,7 +88,7 @@ namespace DacpacDiff.Core.Model
                 && IsDefaultMatch(other)
                 && eq(m => m.IsUnique);
         }
-        
+
         public override int GetHashCode()
         {
             return new object?[]

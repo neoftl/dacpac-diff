@@ -17,7 +17,7 @@ namespace DacpacDiff.Core.Model
         public FieldModel[] PrimaryKeys => Fields.Where(f => f.IsPrimaryKey).ToArray();
         public bool IsPrimaryKeyUnclustered { get; set; }
         public TemporalityModel Temporality { get; set; } = TemporalityModel.Empty;
-        public string[] Dependents { get; set; } = Array.Empty<string>();
+        public string[] Dependencies => Fields.SelectMany(f => f.Dependencies).Distinct().ToArray();
 
         private TableModel()
         {

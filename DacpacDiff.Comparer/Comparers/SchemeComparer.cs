@@ -67,13 +67,13 @@ namespace DacpacDiff.Comparer.Comparers
         /// </summary>
         public static bool ReferencesRemain(IEnumerable<IDifference> dict, IDifference diff)
         {
-            if (diff.Model is not null && dict.Where(o => o != diff && o.Model is IDependentModel)
-                .Any(o => o.Model is IDependentModel m && m.Dependents?.Contains(diff.Model.Name) == true))
+            if (diff.Model is IDependentModel d
+                && dict.Where(m => m != diff).Any(m => d.Dependencies?.Contains(m.Name) == true))
             {
                 return true;
             }
 
-            // TODO:
+            // TODO?
             var sql = diff.ToString() ?? string.Empty;
             var refs = dict.Where(o => o.Model is not null && o != diff && NameInSql(sql, o.Model)).ToArray();
             return refs.Any();
@@ -88,6 +88,7 @@ namespace DacpacDiff.Comparer.Comparers
             //    && k.Value.Contains(diff.Name));
         }
 
+        // TODO: obsolete?
         public static bool NameInSql(string sql, IModel model)
         {
             return model switch

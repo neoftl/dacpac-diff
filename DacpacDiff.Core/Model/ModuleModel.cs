@@ -22,7 +22,7 @@ namespace DacpacDiff.Core.Model
         public ModuleType Type { get; set; }
         public string Definition { get; set; } = string.Empty;
         public string? ExecuteAs { get; set; }
-        public string[] Dependents { get; set; } = Array.Empty<string>();
+        public string[] Dependencies { get; set; } = Array.Empty<string>();
 
         public bool IsSimilarDefinition(ModuleModel alt)
         {

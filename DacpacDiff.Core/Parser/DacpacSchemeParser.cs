@@ -149,6 +149,19 @@ namespace DacpacDiff.Core.Parser
             return sqltype;
         }
 
+        private static string[] resolveDependencies(XElement el, string name)
+        {
+            var depEls = el.Find("Relationship", ("Name", name)).FirstOrDefault()?
+                .Elements("Entry").Select(e => e.Element("References"))
+                .Where(e => e != null && e.Attribute("ExternalSource") == null)
+                .Select(e => e?.Attribute("Name")?.Value)
+                .Where(e => e != null).ToArray();
+            return depEls?.Select(d => d.Split('.'))
+                .Where(d => d.Length > 1)
+                .Select(d => $"{d[0]}.{d[1]}")
+                .Distinct().ToArray() ?? Array.Empty<string>();
+        }
+
         private static void withSchema(DatabaseModel db, XElement el, Action<SchemaModel, XElement, string> parser)
         {
             var name = el.Attribute("Name")?.Value ?? throw new InvalidDataException($"Element {el.Name} missing required 'Name' attribute");
@@ -199,7 +212,7 @@ namespace DacpacDiff.Core.Parser
                 Type = ModuleModel.ModuleType.VIEW,
                 Schema = schema,
                 Name = name,
-                //Dependents?
+                Dependencies = resolveDependencies(el, "QueryDependencies")
             };
             schema.Modules[name] = view;
 
@@ -215,7 +228,7 @@ namespace DacpacDiff.Core.Parser
                 Type = ModuleModel.ModuleType.PROCEDURE,
                 Schema = schema,
                 Name = name,
-                //Dependents?
+                Dependencies = resolveDependencies(el, "BodyDependencies")
             };
             schema.Modules[name] = proc;
 
@@ -258,8 +271,8 @@ namespace DacpacDiff.Core.Parser
                 Type = ModuleModel.ModuleType.INDEX,
                 Schema = schema,
                 Name = name,
+                Dependencies = resolveDependencies(el, "BodyDependencies")
                 // TODO: system named
-                //Dependents?
             };
             schema.Modules[name] = idx;
 
@@ -312,8 +325,8 @@ namespace DacpacDiff.Core.Parser
                 Type = ModuleModel.ModuleType.FUNCTION,
                 Schema = schema,
                 Name = name,
+                Dependencies = resolveDependencies(el, "BodyDependencies")
                 //ExecuteAs
-                //Dependents?
             };
             schema.Modules[name] = func;
 
@@ -365,15 +378,15 @@ namespace DacpacDiff.Core.Parser
             {
                 Type = ModuleModel.ModuleType.TRIGGER,
                 Schema = schema,
-                Name = name
-                //Dependents?
+                Name = name,
+                Dependencies = resolveDependencies(el, "BodyDependencies")
             };
             schema.Modules[name] = trig;
 
             var target = el.Find("Relationship", ("Name", "Parent")).Single()
                 .Element("Entry")?
                 .Element("References")?
-                .Attribute("Name").Value;
+                .Attribute("Name")?.Value;
 
             // TODO: don't build SQL; store as pieces
             var def = $"CREATE TRIGGER {trig.FullName} ON {target} ";
@@ -406,7 +419,6 @@ namespace DacpacDiff.Core.Parser
                 schema: schema,
                 name: name,
                 baseObject: el.Find("Property", ("Name", "ForObjectScript")).First().Element("Value")?.Value ?? string.Empty
-            //Dependents?
             );
             schema.Synonyms[name] = syn;
         }
@@ -523,7 +535,11 @@ namespace DacpacDiff.Core.Parser
 
             var chkName = el.Attribute("Name")?.Value;
             chkName = chkName != null ? getName(chkName, tbl.Schema.Name) : null;
-            tbl.Checks.Add(new TableCheckModel(tbl, chkName, checkExpr));
+            var chk = new TableCheckModel(tbl, chkName, checkExpr)
+            {
+                Dependencies = resolveDependencies(el, "CheckExpressionDependencies")
+            };
+            tbl.Checks.Add(chk);
         }
 
         private static void parseDefaultElement(DatabaseModel db, XElement el)
@@ -541,7 +557,10 @@ namespace DacpacDiff.Core.Parser
                 return;
             }
 
-            fld.Default = new FieldDefaultModel(fld, null, defValue);
+            fld.Default = new FieldDefaultModel(fld, null, defValue)
+            {
+                Dependencies = resolveDependencies(el, "ExpressionDependencies")
+            };
         }
 
         private static string toArg(XElement a)
@@ -580,8 +599,6 @@ namespace DacpacDiff.Core.Parser
                 Order = ord,
                 Nullable = colXml.Find("Property", ("Name", "IsNullable")).FirstOrDefault()?.Attribute("Value")?.Value.ToLower() != "false",
                 // Ref done later
-
-                //Dependents,
             };
 
             // Type / computed
@@ -589,6 +606,7 @@ namespace DacpacDiff.Core.Parser
             {
                 var expr = colXml.Find("Property", ("Name", "ExpressionScript")).First().Element("Value")?.Value;
                 field.Computation = expr;
+                // TODO: may need to add to dependencies
             }
             else
             {
