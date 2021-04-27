@@ -576,9 +576,9 @@ namespace DacpacDiff.Core.Parser
                 name: getName(colXml, table.FullName)
             )
             {
-                Identity = colXml.Attribute("IsIdentity")?.Value.ToLower() == "true",
+                Identity = colXml.Find("Property", ("Name", "IsIdentity")).FirstOrDefault()?.Attribute("Value")?.Value.ToLower() == "true",
                 Order = ord,
-                Nullable = colXml.Attribute("IsNullable")?.Value.ToLower() != "false",
+                Nullable = colXml.Find("Property", ("Name", "IsNullable")).FirstOrDefault()?.Attribute("Value")?.Value.ToLower() != "false",
                 // Ref done later
 
                 //Dependents,

@@ -37,7 +37,7 @@ namespace DacpacDiff.Mssql.Diff
 
                 sb.Append(!fld.Nullable ? " NOT NULL" : " NULL")
                     .AppendIf($" DEFAULT ({fld.DefaultValue})", fld.HasDefault)
-                    .AppendIf(" PRIMARY KEY", fld.IsPrimaryKey && fld.Table.PrimaryKeys.Length == 1)
+                    .AppendIf(" PRIMARY KEY", fld.IsPrimaryKey && fld.Table.PrimaryKeys.Length == 1 && !fld.Table.IsPrimaryKeyUnclustered)
                     .AppendIf(" IDENTITY(1,1)", fld.Identity);
             }
 
@@ -60,13 +60,13 @@ namespace DacpacDiff.Mssql.Diff
                 first = false;
             }
 
-            if (_diff.Table.PrimaryKeys.Length > 0)
+            if (_diff.Table.PrimaryKeys.Length > 1 || _diff.Table.IsPrimaryKeyUnclustered)
             {
                 sb.AppendLine(",")
                     .Append($"    PRIMARY KEY {(_diff.Table.IsPrimaryKeyUnclustered ? "NONCLUSTERED " : "")}([{String.Join("], [", _diff.Table.PrimaryKeys.Select(f => f.Name))}])");
             }
 
-            if (_diff.Table.Temporality != null)
+            if (_diff.Table.Temporality.PeriodFieldFrom != null)
             {
                 sb.AppendLine(",")
                     .AppendLine($"    PERIOD FOR SYSTEM_TIME ([{_diff.Table.Temporality.PeriodFieldFrom}], [{_diff.Table.Temporality.PeriodFieldTo}])")
