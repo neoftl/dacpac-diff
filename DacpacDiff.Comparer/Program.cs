@@ -80,6 +80,13 @@ Parser.Default.ParseArguments<Options>(args)
         outputFormat.Options = o;
         var result = outputFormat.Generate(leftScheme.Name, rightScheme.Name, targetVer, diffs);
 
+        if (o.StandardiseLineEndings)
+        {
+            result = result.Replace("\r\n", "\n")
+                .Replace('\r', '\n')
+                .Replace("\n", "\r\n");
+        }
+
         if (outputFile != null)
         {
             File.WriteAllText(outputFile.FullName, result);

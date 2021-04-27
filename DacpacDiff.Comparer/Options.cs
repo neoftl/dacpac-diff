@@ -14,9 +14,12 @@ namespace DacpacDiff.Comparer
         
         [Option(shortName: 'o', longName: "output", HelpText = "The file to write the result to.")]
         public string? OutputFile { get; init; }
-
+        
         [Option(shortName: 'n', longName: "new", HelpText = "No existing scheme to compare to.")]
         public bool New { get; init; }
+
+        [Option(shortName: 'l', longName: "standard-eols", HelpText = "Standardise line endings to CRLF.")]
+        public bool StandardiseLineEndings { get; init; }
 
         public bool PrettyPrint { get; init; }
         public bool DisableDatalossCheck { get; init; }
