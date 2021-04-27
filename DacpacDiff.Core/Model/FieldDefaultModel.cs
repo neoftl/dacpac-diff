@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DacpacDiff.Core.Utility;
+using System;
 
 namespace DacpacDiff.Core.Model
 {
@@ -15,12 +16,7 @@ namespace DacpacDiff.Core.Model
             Field = field;
             Name = name ?? string.Empty;
             IsSystemNamed = Name.Length == 0;
-            Value = value;
-
-            while (Value.Length > 2 && Value[0] == '(' && Value[^1] == ')') // TODO: if both are odd
-            {
-                Value = Value[1..^1];
-            }
+            Value = value.ReduceBrackets();
         }
     }
 }

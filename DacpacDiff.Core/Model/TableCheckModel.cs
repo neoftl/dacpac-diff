@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DacpacDiff.Core.Utility;
+using System;
 
 namespace DacpacDiff.Core.Model
 {
@@ -16,13 +17,7 @@ namespace DacpacDiff.Core.Model
             Table = table;
             Name = name ?? string.Empty;
             IsSystemNamed = Name.Length == 0;
-            Definition = definition;
-
-            // TODO: only if count ( and count ) are each odd
-            //while (Definition.Length > 2 && Definition[0] == '(' && Definition[^1] == ')')
-            //{
-            //    Definition = Definition[1..^1];
-            //}
+            Definition = definition.ReduceBrackets();
         }
     }
 }

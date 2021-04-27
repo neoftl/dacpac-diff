@@ -308,10 +308,7 @@ namespace DacpacDiff.Core.Parser
             if (predsXml is not null)
             {
                 var script = predsXml.Element("Value")?.Value ?? string.Empty;
-                if (script.Length < 2 || script[0] != '(' || script[^1] != ')')
-                {
-                    script = $"({script})";
-                }
+                script = $"({script.ReduceBrackets()})";
                 def += " WHERE " + script;
             }
 
