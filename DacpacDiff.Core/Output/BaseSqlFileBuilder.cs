@@ -69,7 +69,9 @@ namespace DacpacDiff.Core.Output
                             return l + Environment.NewLine;
                         }
                         return $"{l}; ";
-                    })).Trim(' ', ';');
+                    }));
+                sql = string.Join(Environment.NewLine, sql.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(l => l.Trim().Trim(';')));
             }
             return sql ?? string.Empty;
         }

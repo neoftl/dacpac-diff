@@ -31,9 +31,8 @@ namespace DacpacDiff.Mssql.Diff
         public void Format(ISqlFileBuilder sb)
         {
             sb.AppendLine("BEGIN TRAN")
-                .AppendLine(sb.Flatten(@"DECLARE @R INT
-EXEC @R = #usp_BlockStart
-IF (@R <> 1) SET NOEXEC ON"))
+                .AppendLine(sb.Flatten(@"EXEC #usp_CheckState 2
+IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON"))
                 .AppendGo().AppendLine();
 
             string? datalossTable = null;
@@ -42,7 +41,7 @@ IF (@R <> 1) SET NOEXEC ON"))
             {
                 sb.EnsureLine(2)
                     .AppendLine($"IF EXISTS (SELECT TOP 1 1 FROM {datalossTable}) BEGIN")
-                    .AppendLine($"    RAISERROR('WARNING! This change may cause dataloss to {datalossTable}. Verify and remove this error block to continue.', 15, 1) WITH NOWAIT")
+                    .AppendLine($"    EXEC #print 1, '[WARN] This change may cause dataloss to {datalossTable}. Verify and remove this error block to continue.'")
                     .AppendLine("    IF (@@TRANCOUNT > 0) ROLLBACK")
                     .AppendLine("    SET NOEXEC ON")
                     .AppendLine("END").AppendLine();
@@ -52,15 +51,8 @@ IF (@R <> 1) SET NOEXEC ON"))
 
             sb.EnsureLine(2)
                 .AppendGo()
-                .AppendLine(sb.Flatten(@"IF (@@ERROR <> 0) BEGIN
-    EXEC #print 'Failed'
-    IF (@@TRANCOUNT > 0) ROLLBACK
-    SET NOEXEC ON
-END ELSE IF (@@TRANCOUNT <> 2) BEGIN
-    EXEC #print 'Failed: Transaction mismatch (', @@TRANCOUNT, ')'
-    IF (@@TRANCOUNT > 0) ROLLBACK
-    SET NOEXEC ON
-END"))
+                .AppendLine(sb.Flatten(@"EXEC #usp_CheckState 2
+IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON"))
                 .AppendLine("COMMIT")
                 .AppendGo();
         }
