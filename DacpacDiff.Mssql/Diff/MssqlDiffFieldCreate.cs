@@ -31,7 +31,7 @@ namespace DacpacDiff.Mssql.Diff
             // TODO: unique
 
             var fld = _diff.Field;
-            sb.Append($"ALTER TABLE {fld.Table.FullName} ADD COLUMN ");
+            sb.Append($"ALTER TABLE {fld.Table.FullName} ADD ");
             appendFieldSql(fld, sb);
             sb.AppendIf(" -- NOTE: Cannot create NOT NULL column", !fld.Nullable && !fld.HasDefault)
                 .AppendLine();
