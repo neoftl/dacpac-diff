@@ -85,8 +85,8 @@ namespace DacpacDiff.Core.Model
             }
             return eq(m => m.Type)
                 && eq(m => m.Computation)
-                && IsDefaultMatch(other)
-                && eq(m => m.IsUnique);
+                && eq(m => m.Nullable)
+                && IsDefaultMatch(other);
         }
 
         public override int GetHashCode()
