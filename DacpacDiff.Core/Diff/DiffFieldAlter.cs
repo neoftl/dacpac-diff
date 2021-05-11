@@ -6,12 +6,14 @@ namespace DacpacDiff.Core.Diff
     // TODO: should be individual diff per type of alter?
     public class DiffFieldAlter : IDifference, IDataLossChange
     {
+        public const string TITLE = "Alter table field";
+
         public FieldModel LeftField { get; }
         public FieldModel RightField { get; }
 
-        public IModel Model => LeftField ?? RightField;
-        public string Title => "Alter table field";
-        public string Name => $"[{LeftField.Table.Schema.Name}].[{LeftField.Table.Name}].[{LeftField.Name}]";
+        public IModel Model => LeftField;
+        public string Name => $"{LeftField.Table.FullName}.[{LeftField.Name}]";
+        public string Title => TITLE;
 
         public DiffFieldAlter(FieldModel lft, FieldModel rgt)
         {

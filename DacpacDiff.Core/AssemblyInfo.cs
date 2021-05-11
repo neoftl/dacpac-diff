@@ -2,3 +2,4 @@
 
 [assembly: InternalsVisibleTo("dacpac-diff")]
 [assembly: InternalsVisibleTo("DacpacDiff.Mssql")]
+[assembly: InternalsVisibleTo("DacpacDiff.Core.Tests")]

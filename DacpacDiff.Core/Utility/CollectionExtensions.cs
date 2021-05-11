@@ -7,8 +7,9 @@ namespace DacpacDiff.Core.Utility
 {
     internal static class CollectionExtensions
     {
-        [SuppressMessage("Style", "IDE1006:Naming Styles")]
-        private static readonly int[] PRIMES = new[] { 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 };
+        // A selection of interesting primes
+        internal static readonly int[] PRIMES = new[] { 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139 };
+
         public static int CalculateHashCode(this IEnumerable<object?> constituents)
         {
             var result = 0;
@@ -20,7 +21,7 @@ namespace DacpacDiff.Core.Utility
             }
             return result;
         }
-        
+
         /// <summary>
         /// Gets the value associated with the specified key, if one exists; otherwise, null.
         /// </summary>
@@ -35,44 +36,12 @@ namespace DacpacDiff.Core.Utility
         }
 
         /// <summary>
-        /// Apply all of the content of <paramref name="values"/> to this dictionary.
-        /// Overwrites existing keys.
-        /// </summary>
-        public static IDictionary<TKey, TValue>? Merge<TKey, TValue>(this IDictionary<TKey, TValue>? dict, IEnumerable<KeyValuePair<TKey, TValue>>? values)
-        {
-            if (dict is not null && values is not null)
-            {
-                foreach (var kvp in values.ToArray())
-                {
-                    dict[kvp.Key] = kvp.Value;
-                }
-            }
-            return dict;
-        }
-
-        /// <summary>
-        /// Apply all of the content of <paramref name="values"/> to this dictionary, using a selector to determine the key of each value.
-        /// Overwrites existing keys.
-        /// </summary>
-        public static IDictionary<TKey, TValue>? Merge<TKey, TValue>(this IDictionary<TKey, TValue>? dict, IEnumerable<TValue>? values, Func<TValue, TKey> keySelector)
-        {
-            if (dict is not null && values is not null)
-            {
-                foreach (var val in values.ToArray())
-                {
-                    dict[keySelector(val)] = val;
-                }
-            }
-            return dict;
-        }
-
-        /// <summary>
         /// Apply all of the content of <paramref name="items"/> to this dictionary, using selectors to determine the key and value of each item.
         /// Overwrites existing keys.
         /// </summary>
         public static IDictionary<TKey, TValue>? Merge<TItem, TKey, TValue>(this IDictionary<TKey, TValue>? dict, IEnumerable<TItem>? items, Func<TItem, TKey> keySelector, Func<TItem, TValue> valueSelector)
         {
-            if (dict is not null && items is not null)
+            if (dict != null && items != null)
             {
                 foreach (var val in items.ToArray())
                 {
@@ -81,7 +50,7 @@ namespace DacpacDiff.Core.Utility
             }
             return dict;
         }
-        
+
         public static IEnumerable<T> NotNull<T>(this IEnumerable<T?> source)
             => source.Where(v => v is not null).Cast<T>();
 
@@ -90,12 +59,9 @@ namespace DacpacDiff.Core.Utility
         /// </summary>
         public static bool TryGetValue<T>(this IEnumerable<T>? col, Func<T, bool> predicate, [MaybeNullWhen(false)] out T value)
         {
-            value = default;
-            if (col is not null)
-            {
-                value = col.FirstOrDefault(predicate);
-            }
-            return value is not null;
+            var matches = col?.Where(predicate).Take(1).ToArray() ?? Array.Empty<T>();
+            value = matches.FirstOrDefault();
+            return matches.Length > 0;
         }
     }
 }

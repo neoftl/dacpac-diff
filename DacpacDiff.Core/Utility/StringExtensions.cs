@@ -2,7 +2,7 @@
 
 namespace DacpacDiff.Core.Utility
 {
-    public static class StringExtensions
+    internal static class StringExtensions
     {
         /// <summary>
         /// Remove unnecessary parenthesis from well-formed SQL.

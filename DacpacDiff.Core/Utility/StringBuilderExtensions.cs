@@ -2,7 +2,7 @@
 
 namespace DacpacDiff.Core.Utility
 {
-    public static class StringBuilderExtensions
+    internal static class StringBuilderExtensions
     {
         public static readonly string NL = System.Environment.NewLine;
 
@@ -15,28 +15,29 @@ namespace DacpacDiff.Core.Utility
             return sb;
         }
 
-        public static StringBuilder EnsureLine(this StringBuilder sb, int num = 1)
+        public static StringBuilder EnsureLine(this StringBuilder sb, int num = 1, string? nl = null)
         {
-            if (sb.Length >= NL.Length * num)
+            nl ??= NL;
+            if (sb.Length >= nl.Length)
             {
-                for (var i = sb.Length - 1; num > 0; i -= NL.Length, --num)
+                for (var i = sb.Length - 1; num > 0; i -= nl.Length, --num)
                 {
-                    if (NL.Length == 2)
+                    if (nl.Length == 2)
                     {
-                        if (sb[i - 1] != NL[0] || sb[i] != NL[1])
+                        if (sb[i - 1] != nl[0] || sb[i] != nl[1])
                         {
                             break;
                         }
                     }
-                    else if (sb[i] != NL[0])
+                    else if (sb[i] != nl[0])
                     {
                         break;
                     }
                 }
-                while (num-- > 0)
-                {
-                    sb.AppendLine();
-                }
+            }
+            while (num-- > 0)
+            {
+                sb.Append(nl);
             }
             return sb;
         }

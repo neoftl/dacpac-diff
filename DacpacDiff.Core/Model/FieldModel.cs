@@ -5,7 +5,7 @@ namespace DacpacDiff.Core.Model
 {
     public class FieldModel : IModel<FieldModel, TableModel>, IDependentModel, IEquatable<FieldModel>
     {
-        public static readonly FieldModel Empty = new FieldModel();
+        public static readonly FieldModel Empty = new();
 
         public TableModel Table { get; }
         public string Name { get; }
