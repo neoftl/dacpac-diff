@@ -155,7 +155,7 @@ namespace DacpacDiff.Core.Parser
                 .Elements("Entry").Select(e => e.Element("References"))
                 .Where(e => e != null && e.Attribute("ExternalSource") == null)
                 .Select(e => e?.Attribute("Name")?.Value)
-                .Where(e => e != null).ToArray();
+                .Where(e => e != null).Cast<string>().ToArray();
             return depEls?.Select(d => d.Split('.'))
                 .Where(d => d.Length > 1)
                 .Select(d => $"{d[0]}.{d[1]}")
@@ -289,8 +289,8 @@ namespace DacpacDiff.Core.Parser
             def += $"INDEX [{name}] ON {target}";
 
             var cols = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
-                .Element("Entry")?
-                .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
+                .Elements("Entry")?
+                .SelectMany(e => e.Find("Element", ("Type", "SqlIndexedColumnSpecification")))
                 .SelectMany(e => e.Find("Relationship", ("Name", "Column")))
                 .Select(e => getName(e.Element("Entry")?.Element("References"), target))
                 .ToArray();
