@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using DacpacDiff.Comparer;
 using DacpacDiff.Comparer.Comparers;
+using DacpacDiff.Core;
 using DacpacDiff.Core.Parser;
 using DacpacDiff.Core.Utility;
 using System;

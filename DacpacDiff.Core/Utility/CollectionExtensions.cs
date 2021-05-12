@@ -36,6 +36,22 @@ namespace DacpacDiff.Core.Utility
         }
 
         /// <summary>
+        /// Apply all of the content of <paramref name="items"/> to this dictionary, using selectors the key and value of each item.
+        /// Overwrites existing keys.
+        /// </summary>
+        public static IDictionary<TKey, TValue>? Merge<TKey, TValue>(this IDictionary<TKey, TValue>? dict, IEnumerable<KeyValuePair<TKey, TValue>>? items)
+        {
+            if (dict != null && items != null)
+            {
+                foreach (var val in items.ToArray())
+                {
+                    dict[val.Key] = val.Value;
+                }
+            }
+            return dict;
+        }
+
+        /// <summary>
         /// Apply all of the content of <paramref name="items"/> to this dictionary, using selectors to determine the key and value of each item.
         /// Overwrites existing keys.
         /// </summary>

@@ -80,9 +80,64 @@ namespace DacpacDiff.Core.Utility.Tests
             // Assert
             Assert.AreSame(obj, res);
         }
+        
+        [TestMethod]
+        public void Merge_1__Null_dict__Null()
+        {
+            // Act
+            var res = ((IDictionary<string, object>)null).Merge(Array.Empty<KeyValuePair<string, object>>());
+
+            // Assert
+            Assert.IsNull(res);
+        }
+        
+        [TestMethod]
+        public void Merge_1__Null_arg__Noop()
+        {
+            // Arrange
+            var dict = new Dictionary<string, object>
+            {
+                ["key1"] = "value1"
+            };
+
+            // Act
+            var res = dict.Merge((IDictionary<string, object>)null);
+
+            // Assert
+            Assert.AreSame(dict, res);
+            Assert.AreEqual(1, res.Count);
+            Assert.AreEqual("value1", res["key1"]);
+        }
+        
+        [TestMethod]
+        public void Merge_1__Combines_items_from_other_array()
+        {
+            // Arrange
+            var arr = new Dictionary<string, string>
+            {
+                ["key1"] = "value1b",
+                ["key3"] = "value3"
+            };
+
+            var dict = new Dictionary<string, object>
+            {
+                ["key1"] = "value1a",
+                ["key2"] = "value2"
+            };
+
+            // Act
+            var res = dict.Merge(arr, e => e.Key, e => e.Value);
+
+            // Assert
+            Assert.AreSame(dict, res);
+            Assert.AreEqual(3, res.Count);
+            Assert.AreEqual("value1b", res["key1"]); // Overwrite
+            Assert.AreEqual("value2", res["key2"]); // Ignore
+            Assert.AreEqual("value3", res["key3"]); // Add
+        }
 
         [TestMethod]
-        public void Merge__Null_dict__Null()
+        public void Merge_2__Null_dict__Null()
         {
             // Act
             var res = ((IDictionary<string, object>)null).Merge(Array.Empty<object>(), null, null);
@@ -92,7 +147,7 @@ namespace DacpacDiff.Core.Utility.Tests
         }
 
         [TestMethod]
-        public void Merge__Null_arg__Noop()
+        public void Merge_2__Null_arg__Noop()
         {
             // Arrange
             var dict = new Dictionary<string, object>
@@ -110,7 +165,7 @@ namespace DacpacDiff.Core.Utility.Tests
         }
 
         [TestMethod]
-        public void Merge__Combines_items_from_other_array()
+        public void Merge_2__Combines_items_from_other_array()
         {
             // Arrange
             var arr = new[]
