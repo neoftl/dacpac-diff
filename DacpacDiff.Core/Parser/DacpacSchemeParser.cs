@@ -1,6 +1,7 @@
 ﻿using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Utility;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -36,21 +37,17 @@ namespace DacpacDiff.Core.Parser
             // SqlUser
         };
 
+        [ExcludeFromCodeCoverage(Justification = "Requires file containing zip")]
         public SchemeModel? ParseFile(string filename)
         {
-            var db = new DatabaseModel("database"); // DB name not in dacpac
-            db.Schemas["dbo"] = new SchemaModel(db, "dbo"); // Always has "dbo" schema
-
-            var scheme = new SchemeModel(Path.GetFileNameWithoutExtension(filename));
-            scheme.Databases[db.Name] = db;
-
-            if (filename.EndsWith("blank.dacpac"))
+            var name = Path.GetFileNameWithoutExtension(filename);
+            if (filename == "blank.dacpac")
             {
-                return scheme;
+                return ParseContent("blank", "<blank />");
             }
 
             // Extract model.xml from zip
-            XElement? modelXml = null;
+            string? modelData = null;
             using (var zip = ZipFile.OpenRead(filename))
             {
                 var modelEntry = zip.Entries.First(e => e.FullName == "model.xml");
@@ -61,14 +58,27 @@ namespace DacpacDiff.Core.Parser
 
                 // Get model element from content
                 using var sr = new StreamReader(modelEntry.Open());
-                var modelData = sr.ReadToEnd();
+                modelData = sr.ReadToEnd();
                 modelData = modelData.Replace("xmlns=\"http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02\"", "");
-                var rootXml = XDocument.Parse(modelData).Root;
-                modelXml = rootXml?.Element("Model");
             }
+
+            return modelData != null ? ParseContent(name, modelData) : null;
+        }
+
+        internal static SchemeModel? ParseContent(string name, string content)
+        {
+            var scheme = new SchemeModel(name);
+            
+            var db = new DatabaseModel("database"); // DB name not in dacpac
+            db.Schemas["dbo"] = new SchemaModel(db, "dbo"); // Always has "dbo" schema
+            
+            scheme.Databases[db.Name] = db;
+
+            var rootXml = XDocument.Parse(content).Root;
+            var modelXml = rootXml?.Element("Model");
             if (modelXml is null)
             {
-                return null;
+                return scheme;
             }
 
             // Build model hierarchy
@@ -77,8 +87,8 @@ namespace DacpacDiff.Core.Parser
                 .ToDictionary(e => e.Key, e => e.ToArray());
             foreach (var el in elsByType.Get("SqlSchema") ?? Array.Empty<XElement>())
             {
-                var name = getName(el.Attribute("Name")?.Value ?? throw new MissingMemberException("SqlSchema", "Name"));
-                db.Schemas[name] = new SchemaModel(db, name);
+                var elName = getName(el.Attribute("Name")?.Value ?? throw new MissingMemberException("SqlSchema", "Name"));
+                db.Schemas[elName] = new SchemaModel(db, elName);
             }
             elsByType.Remove("SqlSchema");
             foreach (var (type, parser) in PARSERS)
