@@ -18,7 +18,7 @@ Parser.Default.ParseArguments<Options>(args)
         if (!FileUtilities.TryParsePath(o.StartSchemeFile, out var rightSchemeFile) || rightSchemeFile?.Exists != true)
         {
             Console.Error.WriteLine("Unable to find source scheme: " + o.StartSchemeFile);
-            rightSchemeFile = null;
+            return;
         }
         if (!FileUtilities.TryParsePath(o.TargetSchemeFile, out var leftSchemeFile) || leftSchemeFile?.Exists != true)
         {
@@ -29,7 +29,7 @@ Parser.Default.ParseArguments<Options>(args)
             else
             {
                 Console.Error.WriteLine("Unable to find target scheme: " + o.TargetSchemeFile);
-                leftSchemeFile = null;
+                return;
             }
         }
         if (o.New)
@@ -40,11 +40,6 @@ Parser.Default.ParseArguments<Options>(args)
         if ((o.OutputFile?.Length ?? 0) > 0 & !FileUtilities.TryParsePath(o.OutputFile, out var outputFile))
         {
             Console.Error.WriteLine("Unable to use output file: " + o.OutputFile);
-            rightSchemeFile = null;
-        }
-
-        if (rightSchemeFile is null || leftSchemeFile is null)
-        {
             return;
         }
 

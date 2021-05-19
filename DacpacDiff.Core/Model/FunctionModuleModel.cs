@@ -10,7 +10,7 @@ namespace DacpacDiff.Core.Model
 
         public ParameterModel[] Parameters { get; set; } = Array.Empty<ParameterModel>();
 
-        public string ReturnType { get; set; }
+        public string ReturnType { get; set; } = string.Empty;
 
         public FunctionModuleModel(SchemaModel schema, string name)
             : base(schema, name, ModuleType.FUNCTION)
