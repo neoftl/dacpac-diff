@@ -16,13 +16,12 @@ namespace DacpacDiff.Core.Model
             VIEW
         }
 
-        public SchemaModel Schema { get; set; } = SchemaModel.Empty;
-        public string Name { get; set; }
+        public SchemaModel Schema { get; init; } = SchemaModel.Empty;
+        public string Name { get; init; } = string.Empty;
         public string FullName => $"[{Schema.Name}].[{Name}]";
-        public ModuleType Type { get; set; }
+        public ModuleType Type { get; init; }
+        public string[] Dependencies { get; init; } = Array.Empty<string>();
         public string Definition { get; set; } = string.Empty;
-        public string? ExecuteAs { get; set; }
-        public string[] Dependencies { get; set; } = Array.Empty<string>();
 
         public bool IsSimilarDefinition(ModuleModel alt)
         {

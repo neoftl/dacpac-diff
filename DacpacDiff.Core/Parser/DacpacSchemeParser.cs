@@ -115,7 +115,7 @@ namespace DacpacDiff.Core.Parser
         }
         private static string getName(string name, string? prefix = null)
         {
-            if (name.Length > 0 && prefix is not null)
+            if (name.Length > 0 && prefix != null)
             {
                 if (name.StartsWith($"[{prefix}].", StringComparison.OrdinalIgnoreCase))
                 {
@@ -138,7 +138,7 @@ namespace DacpacDiff.Core.Parser
                 .Element("References"));
 
             var len = el.Find("Property", ("Name", "Length")).FirstOrDefault()?.Attribute("Value")?.Value;
-            if (len is not null)
+            if (len != null)
             {
                 sqltype += $"({len})";
             }
@@ -149,7 +149,7 @@ namespace DacpacDiff.Core.Parser
             else
             {
                 var prec = el.Find("Property", ("Name", "Precision")).FirstOrDefault()?.Attribute("Value")?.Value;
-                if (prec is not null)
+                if (prec != null)
                 {
                     var scale = el.Find("Property", ("Name", "Scale")).FirstOrDefault()?.Attribute("Value")?.Value;
                     sqltype += $"({prec}, {scale})";
@@ -204,7 +204,7 @@ namespace DacpacDiff.Core.Parser
 
             // Temporality
             var temporalXml = el.Find("Relationship", ("Name", "TemporalSystemVersioningHistoryTable")).FirstOrDefault();
-            if (temporalXml is not null)
+            if (temporalXml != null)
             {
                 table.Temporality = new TemporalityModel
                 {
@@ -226,14 +226,14 @@ namespace DacpacDiff.Core.Parser
             };
             schema.Modules[name] = view;
 
-            var def = $"CREATE VIEW {view.FullName}\r\nAS\r\n";
+            var def = $"CREATE VIEW {view.FullName}\r\nAS\r\n"; // TODO: not here
             def += el.Find("Property", ("Name", "QueryScript")).First().Element("Value")?.Value;
             view.Definition = def;
         }
 
         private static void parseProcedureElement(SchemaModel schema, XElement el, string name)
         {
-            var proc = new ModuleModel
+            var proc = new ProcedureModuleModel
             {
                 Type = ModuleModel.ModuleType.PROCEDURE,
                 Schema = schema,
@@ -248,7 +248,7 @@ namespace DacpacDiff.Core.Parser
             var args = el.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?
                 .Elements("Entry").SelectMany(e => e.Find("Element", ("Type", "SqlSubroutineParameter")))
                 .Select(toArg).ToArray();
-            if (args is not null && args.Length > 0)
+            if (args != null && args.Length > 0)
             {
                 def += "    " + string.Join(",\r\n    ", args);
             }
@@ -273,53 +273,50 @@ namespace DacpacDiff.Core.Parser
         {
             var target = el.Find("Relationship", ("Name", "IndexedObject")).Single()
                 .Element("Entry")?
-                .Element("References")?.Attribute("Name")?.Value;
+                .Element("References")?.Attribute("Name")?.Value ?? string.Empty;
             name = getName(el, target);
 
-            var idx = new ModuleModel
+            var idx = new IndexModuleModel
             {
-                Type = ModuleModel.ModuleType.INDEX,
                 Schema = schema,
                 Name = name,
-                Dependencies = resolveDependencies(el, "BodyDependencies")
                 // TODO: system named
+                IndexedObject = target,
+                Dependencies = resolveDependencies(el, "BodyDependencies"),
+
+                IsUnique = el.Find("Property", ("Name", "IsUnique"), ("Value", "True")).Any(),
+                IsClustered = el.Find("Property", ("Name", "IsClustered"), ("Value", "True")).Any(),
             };
             schema.Modules[name] = idx;
-
-            // TODO: don't build SQL; store as pieces
-            var def = "CREATE ";
-            if (el.Find("Property", ("Name", "IsUnique"), ("Value", "True")).Any())
-            {
-                def += "UNIQUE ";
-            }
-            if (el.Find("Property", ("Name", "IsClustured"), ("Value", "True")).Any())
-            {
-                def += "CLUSTURED ";
-            }
-            def += $"INDEX [{name}] ON {target}";
-
-            var cols = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
-                .Elements("Entry")?
+            
+            idx.IndexedColumns = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
+                .Elements("Entry")
                 .SelectMany(e => e.Find("Element", ("Type", "SqlIndexedColumnSpecification")))
                 .SelectMany(e => e.Find("Relationship", ("Name", "Column")))
                 .Select(e => getName(e.Element("Entry")?.Element("References"), target))
                 .ToArray();
-            def += "([" + string.Join("], [", cols ?? Array.Empty<string?>()) + "])";
 
-            var includes = el.Find("Relationship", ("Name", "IncludedColumns"))
+            idx.IncludedColumns = el.Find("Relationship", ("Name", "IncludedColumns"))
                 .SelectMany(e => e.Elements("Entry").Select(r => getName(r.Element("References"), target)))
                 .ToArray();
-            if (includes.Length > 0)
+
+            // TODO: don't build SQL
+            var def = "CREATE "
+                + (idx.IsUnique ? "UNIQUE " : "")
+                + (idx.IsClustered ? "CLUSTURED " : "")
+                + $"INDEX [{name}] ON {target}"
+                + "([" + string.Join("], [", idx.IndexedColumns) + "])";
+            if (idx.IncludedColumns.Length > 0)
             {
-                def += " INCLUDE ([" + string.Join("], [", includes) + "])";
+                def += " INCLUDE ([" + string.Join("], [", idx.IncludedColumns) + "])";
             }
 
             var predsXml = el.Find("Property", ("Name", "FilterPredicate")).FirstOrDefault();
-            if (predsXml is not null)
+            if (predsXml != null)
             {
                 var script = predsXml.Element("Value")?.Value ?? string.Empty;
-                script = $"({script.ReduceBrackets()})";
-                def += " WHERE " + script;
+                idx.Condition = $"({script.ReduceBrackets()})";
+                def += " WHERE " + idx.Condition;
             }
 
             idx.Definition = def;
@@ -343,7 +340,7 @@ namespace DacpacDiff.Core.Parser
             var args = el.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?
                 .Elements("Entry").SelectMany(e => e.Find("Element", ("Type", "SqlSubroutineParameter")))
                 .Select(toArg).ToArray();
-            if (args is not null && args.Length > 0)
+            if (args != null && args.Length > 0)
             {
                 def += string.Join(", ", args);
             }
@@ -355,7 +352,7 @@ namespace DacpacDiff.Core.Parser
             else
             {
                 var retvar = el.Find("Property", ("Name", "ReturnTableVariable")).FirstOrDefault()?.Attribute("Value")?.Value;
-                if (retvar is not null)
+                if (retvar != null)
                 {
                     def += $"\r\n) RETURN {retvar} TABLE (";
 
@@ -577,7 +574,7 @@ namespace DacpacDiff.Core.Parser
             var arg = $"{name} {getSqlType(typeXml)}";
 
             var def = a.Find("Property", ("Name", "DefaultExpressionScript")).FirstOrDefault()?.Element("Value")?.Value;
-            if (def is not null)
+            if (def != null)
             {
                 arg += $" = {def}";
             }
