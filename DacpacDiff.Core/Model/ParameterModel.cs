@@ -42,8 +42,7 @@ namespace DacpacDiff.Core.Model
                 var r = fn(other);
                 return (l is null && r is null) || l?.Equals(r) == true;
             }
-            return eq(m => m.Parent.FullName)
-                && eq(m => m.Name)
+            return eq(m => m.FullName)
                 && eq(m => m.Type)
                 && IsDefaultMatch(other)
                 && eq(m => m.Order)

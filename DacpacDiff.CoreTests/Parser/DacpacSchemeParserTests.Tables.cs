@@ -5,6 +5,11 @@ namespace DacpacDiff.Core.Parser.Tests
 {
     partial class DacpacSchemeParserTests
     {
+        // TODO: primary key
+        // TODO: reference
+        // TODO: unique
+        // TODO: default
+
         [TestMethod]
         public void ParseContent__Parses_tables_and_fields()
         {
@@ -32,8 +37,6 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.IsFalse(col.HasDefault);
             Assert.IsFalse(col.HasReference);
             Assert.IsFalse(col.Identity);
-            Assert.IsFalse(col.IsDefaultSystemNamed);
-            Assert.IsFalse(col.IsNamedReference);
             Assert.IsFalse(col.IsPrimaryKey);
             Assert.IsFalse(col.IsUnique);
             Assert.IsTrue(col.Nullable);

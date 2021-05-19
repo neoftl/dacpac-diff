@@ -105,6 +105,8 @@ namespace DacpacDiff.Core.Parser.Tests
                     </Element>
                     <Property Name=""DefaultExpressionScript""><Value>'default'</Value></Property>
                 </Element>
+            </Entry>
+            <Entry>
                 <Element Type=""SqlSubroutineParameter"" Name=""[dbo].[usp_Test].[@Char10]"">
                     <Element Type=""SqlTypeSpecifier"">
                         <Relationship Name=""Type""><Entry><References Name=""char"" /></Entry></Relationship>
@@ -131,9 +133,10 @@ namespace DacpacDiff.Core.Parser.Tests
 
             // Assert
             var proc = (ProcedureModuleModel)sch.Modules["usp_Test"];
-            Assert.IsTrue(proc.Definition.Contains("@VarcharMax varchar(MAX) = 'default'"), proc.Definition);
-            Assert.IsTrue(proc.Definition.Contains("@Char10 char(10) READONLY"), proc.Definition);
-            Assert.IsTrue(proc.Definition.Contains("@Decimal decimal(19, 5) OUTPUT"), proc.Definition);
+            Assert.AreEqual(3, proc.Parameters.Length);
+            Assert.AreEqual(new ParameterModel(proc, "@VarcharMax") { Type = "varchar(MAX)", DefaultValue = "'default'", Order = 1 }, proc.Parameters[0]);
+            Assert.AreEqual(new ParameterModel(proc, "@Char10") { Type = "char(10)", IsReadOnly = true, Order = 2 }, proc.Parameters[1]);
+            Assert.AreEqual(new ParameterModel(proc, "@Decimal") { Type = "decimal(19, 5)", IsOutput = true, Order = 3 }, proc.Parameters[2]);
         }
 
         [TestMethod]

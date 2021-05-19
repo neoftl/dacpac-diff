@@ -12,6 +12,8 @@ namespace DacpacDiff.Core.Model
 
         public string ReturnType { get; set; } = string.Empty;
 
+        public TableModel? ReturnTable { get; set; }
+
         public FunctionModuleModel(SchemaModel schema, string name)
             : base(schema, name, ModuleType.FUNCTION)
         {

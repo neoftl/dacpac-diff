@@ -242,9 +242,10 @@ namespace DacpacDiff.Core.Parser
             };
             schema.Modules[name] = proc;
 
+            var idx = 0;
             proc.Parameters = el.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?
                 .Elements("Entry").SelectMany(e => e.Find("Element", ("Type", "SqlSubroutineParameter")))
-                .Select(e => toParam(proc, e)).ToArray() ?? Array.Empty<ParameterModel>();
+                .Select(e => toParam(proc, e, ++idx)).ToArray() ?? Array.Empty<ParameterModel>();
 
             proc.ExecuteAs = el.Find("Property", ("Name", "IsCaller"), ("Value", "True"))?.Any() == true
                 ? "CALLER"
@@ -340,33 +341,30 @@ namespace DacpacDiff.Core.Parser
                 : el.Find("Property", ("Name", "IsOwner"), ("Value", "True"))?.Any() == true
                 ? "OWNER" : null;
 
+            var idx = 0;
             func.Parameters = el.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?
                 .Elements("Entry").SelectMany(e => e.Find("Element", ("Type", "SqlSubroutineParameter")))
-                .Select(e => toParam(func, e)).ToArray() ?? Array.Empty<ParameterModel>();
+                .Select(e => toParam(func, e, ++idx)).ToArray() ?? Array.Empty<ParameterModel>();
 
             if (el.Attribute("Type")?.Value == "SqlInlineTableValuedFunction")
             {
                 func.ReturnType = "TABLE";
             }
+            else if (el.Attribute("Type")?.Value == "SqlMultiStatementTableValuedFunction")
+            {
+                func.ReturnType = el.Find("Property", ("Name", "ReturnTableVariable")).FirstOrDefault()?.Attribute("Value")?.Value ?? string.Empty;
+
+                idx = 0;
+                var colsXml = el.Find("Relationship", ("Name", "Columns")).First().Find(true, "Element", ("Type", a => a == "SqlSimpleColumn" || a == "SqlComputedColumn"));
+                var tbl = new TableModel(schema, func.Name);
+                tbl.Fields = colsXml.Select(e => toField(tbl, ++idx, e)).ToArray();
+
+                func.ReturnTable = tbl;
+            }
             else
             {
-                var retvar = el.Find("Property", ("Name", "ReturnTableVariable")).FirstOrDefault()?.Attribute("Value")?.Value;
-                if (retvar != null)
-                {
-                    // TODO: Store as component
-                    var idx = 0;
-                    var colsXml = el.Find("Relationship", ("Name", "Columns")).First().Find(true, "Element", ("Type", a => a == "SqlSimpleColumn" || a == "SqlComputedColumn"));
-                    var tbl = new TableModel(schema, func.Name);
-                    var fields = colsXml.Select(e => toField(tbl, ++idx, e)).ToArray();
-                    var colStr = string.Join(", ", fields.Select(f => $"[{f.Name}] {f.Type}" + (!f.Nullable ? " NOT NULL" : "")).ToArray());
-
-                    func.ReturnType = $"{retvar} TABLE ({colStr}\r\n)";
-                }
-                else
-                {
-                    var typeXml = el.Find("Relationship", ("Name", "Type")).First().Find(true, "Element", ("Type", "SqlTypeSpecifier")).First();
-                    func.ReturnType = getSqlType(typeXml);
-                }
+                var typeXml = el.Find("Relationship", ("Name", "Type")).First().Find(true, "Element", ("Type", "SqlTypeSpecifier")).First();
+                func.ReturnType = getSqlType(typeXml);
             }
 
             // TODO: don't build SQL
@@ -381,7 +379,7 @@ namespace DacpacDiff.Core.Parser
                 def += string.Join(", ", argSql);
             }
 
-            def += $"\r\n) RETURNS {func.ReturnType}"
+            def += $"\r\n) RETURNS {(func.ReturnTable is null ? func.ReturnType : $"{func.ReturnType} TABLE ({string.Join(", ", func.ReturnTable.Fields.Select(f => $"[{f.Name}] {f.Type}" + (!f.Nullable ? " NOT NULL" : "")))})")}"
                 + (func.ExecuteAs != null ? $"\r\nWITH EXECUTE AS {func.ExecuteAs}" : "")
                 + " AS \r\n";
             if (func.ReturnType == "TABLE") { def += "RETURN "; }
@@ -580,7 +578,7 @@ namespace DacpacDiff.Core.Parser
             };
         }
 
-        private static ParameterModel toParam(IParameterisedModuleModel parent, XElement a)
+        private static ParameterModel toParam(IParameterisedModuleModel parent, XElement a, int order)
         {
             var typeXml = a.Find(true, "Element", ("Type", p => p == "SqlTypeSpecifier" || p == "SqlXmlTypeSpecifier")).First();
 
@@ -589,6 +587,7 @@ namespace DacpacDiff.Core.Parser
                 name: getName(a).Split('.')[^1].Trim('[', ']')
             )
             {
+                Order = order,
                 Type = getSqlType(typeXml)
             };
 
