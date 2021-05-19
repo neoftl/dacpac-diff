@@ -68,10 +68,10 @@ namespace DacpacDiff.Core.Parser
         internal static SchemeModel? ParseContent(string name, string content)
         {
             var scheme = new SchemeModel(name);
-            
+
             var db = new DatabaseModel("database"); // DB name not in dacpac
             db.Schemas["dbo"] = new SchemaModel(db, "dbo"); // Always has "dbo" schema
-            
+
             scheme.Databases[db.Name] = db;
 
             var rootXml = XDocument.Parse(content).Root;
@@ -217,11 +217,11 @@ namespace DacpacDiff.Core.Parser
 
         private static void parseViewElement(SchemaModel schema, XElement el, string name)
         {
-            var view = new ModuleModel
+            var view = new ViewModuleModel(
+                schema: schema,
+                name: name
+            )
             {
-                Type = ModuleModel.ModuleType.VIEW,
-                Schema = schema,
-                Name = name,
                 Dependencies = resolveDependencies(el, "QueryDependencies")
             };
             schema.Modules[name] = view;
@@ -233,36 +233,37 @@ namespace DacpacDiff.Core.Parser
 
         private static void parseProcedureElement(SchemaModel schema, XElement el, string name)
         {
-            var proc = new ProcedureModuleModel
+            var proc = new ProcedureModuleModel(
+                schema: schema,
+                name: name
+            )
             {
-                Type = ModuleModel.ModuleType.PROCEDURE,
-                Schema = schema,
-                Name = name,
                 Dependencies = resolveDependencies(el, "BodyDependencies")
             };
             schema.Modules[name] = proc;
 
-            // TODO: don't build SQL; store as pieces
+            proc.Parameters = el.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?
+                .Elements("Entry").SelectMany(e => e.Find("Element", ("Type", "SqlSubroutineParameter")))
+                .Select(e => toParam(proc, e)).ToArray() ?? Array.Empty<ParameterModel>();
+
+            proc.ExecuteAs = el.Find("Property", ("Name", "IsCaller"), ("Value", "True"))?.Any() == true
+                ? "CALLER"
+                : el.Find("Property", ("Name", "IsOwner"), ("Value", "True"))?.Any() == true
+                ? "OWNER" : null;
+
+            // TODO: don't build SQL
             var def = $"CREATE PROCEDURE {proc.FullName}\r\n";
 
-            var args = el.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?
-                .Elements("Entry").SelectMany(e => e.Find("Element", ("Type", "SqlSubroutineParameter")))
-                .Select(toArg).ToArray();
-            if (args != null && args.Length > 0)
+            if (proc.Parameters.Length > 0)
             {
-                def += "    " + string.Join(",\r\n    ", args);
+                var argSql = proc.Parameters.Select(p => $"{p.Name} {p.Type}"
+                    + (p.HasDefault ? $" = {p.DefaultValue}" : "")
+                    + (p.IsReadOnly ? " READONLY" : "")
+                    + (p.IsOutput ? " OUTPUT" : "")).ToArray();
+                def += "    " + string.Join(",\r\n    ", argSql);
             }
 
-            if (el.Find("Property", ("Name", "IsCaller"), ("Value", "True"))?.Any() == true)
-            {
-                proc.ExecuteAs = "CALLER";
-                def += "\r\nWITH EXECUTE AS CALLER";
-            }
-            else if (el.Find("Property", ("Name", "IsOwner"), ("Value", "True"))?.Any() == true)
-            {
-                proc.ExecuteAs = "OWNER";
-                def += "\r\nWITH EXECUTE AS OWNER";
-            }
+            if (proc.ExecuteAs != null) { def += $"\r\nWITH EXECUTE AS {proc.ExecuteAs}"; }
 
             def += "\r\nAS\r\n";
             def += el.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value.Trim();
@@ -276,10 +277,11 @@ namespace DacpacDiff.Core.Parser
                 .Element("References")?.Attribute("Name")?.Value ?? string.Empty;
             name = getName(el, target);
 
-            var idx = new IndexModuleModel
+            var idx = new IndexModuleModel(
+                schema: schema,
+                name: name
+            )
             {
-                Schema = schema,
-                Name = name,
                 // TODO: system named
                 IndexedObject = target,
                 Dependencies = resolveDependencies(el, "BodyDependencies"),
@@ -288,7 +290,7 @@ namespace DacpacDiff.Core.Parser
                 IsClustered = el.Find("Property", ("Name", "IsClustered"), ("Value", "True")).Any(),
             };
             schema.Modules[name] = idx;
-            
+
             idx.IndexedColumns = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
                 .Elements("Entry")
                 .SelectMany(e => e.Find("Element", ("Type", "SqlIndexedColumnSpecification")))
@@ -324,65 +326,76 @@ namespace DacpacDiff.Core.Parser
 
         private static void parseFunctionElement(SchemaModel schema, XElement el, string name)
         {
-            var func = new ModuleModel
+            var func = new FunctionModuleModel(
+                schema: schema,
+                name: name
+            )
             {
-                Type = ModuleModel.ModuleType.FUNCTION,
-                Schema = schema,
-                Name = name,
                 Dependencies = resolveDependencies(el, "BodyDependencies")
-                //ExecuteAs
             };
             schema.Modules[name] = func;
 
-            // TODO: don't build SQL; store as pieces
-            var def = $"CREATE FUNCTION {func.FullName} (\r\n";
+            func.ExecuteAs = el.Find("Property", ("Name", "IsCaller"), ("Value", "True"))?.Any() == true
+                ? "CALLER"
+                : el.Find("Property", ("Name", "IsOwner"), ("Value", "True"))?.Any() == true
+                ? "OWNER" : null;
 
-            var args = el.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?
+            func.Parameters = el.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?
                 .Elements("Entry").SelectMany(e => e.Find("Element", ("Type", "SqlSubroutineParameter")))
-                .Select(toArg).ToArray();
-            if (args != null && args.Length > 0)
-            {
-                def += string.Join(", ", args);
-            }
+                .Select(e => toParam(func, e)).ToArray() ?? Array.Empty<ParameterModel>();
 
             if (el.Attribute("Type")?.Value == "SqlInlineTableValuedFunction")
             {
-                def += $"\r\n) RETURNS TABLE AS RETURN\r\n";
+                func.ReturnType = "TABLE";
             }
             else
             {
                 var retvar = el.Find("Property", ("Name", "ReturnTableVariable")).FirstOrDefault()?.Attribute("Value")?.Value;
                 if (retvar != null)
                 {
-                    def += $"\r\n) RETURN {retvar} TABLE (";
-
+                    // TODO: Store as component
                     var idx = 0;
                     var colsXml = el.Find("Relationship", ("Name", "Columns")).First().Find(true, "Element", ("Type", a => a == "SqlSimpleColumn" || a == "SqlComputedColumn"));
                     var tbl = new TableModel(schema, func.Name);
                     var fields = colsXml.Select(e => toField(tbl, ++idx, e)).ToArray();
                     var colStr = string.Join(", ", fields.Select(f => $"[{f.Name}] {f.Type}" + (!f.Nullable ? " NOT NULL" : "")).ToArray());
 
-                    def += colStr;
-                    def += "\r\n) AS\r\n";
+                    func.ReturnType = $"{retvar} TABLE ({colStr}\r\n)";
                 }
                 else
                 {
                     var typeXml = el.Find("Relationship", ("Name", "Type")).First().Find(true, "Element", ("Type", "SqlTypeSpecifier")).First();
-                    def += $"\r\n) RETURNS {getSqlType(typeXml)} AS\r\n";
+                    func.ReturnType = getSqlType(typeXml);
                 }
             }
 
+            // TODO: don't build SQL
+            var def = $"CREATE FUNCTION {func.FullName} (\r\n";
+
+            if (func.Parameters.Length > 0)
+            {
+                var argSql = func.Parameters.Select(p => $"{p.Name} {p.Type}"
+                    + (p.HasDefault ? $" = {p.DefaultValue}" : "")
+                    + (p.IsReadOnly ? " READONLY" : "")
+                    + (p.IsOutput ? " OUTPUT" : "")).ToArray();
+                def += string.Join(", ", argSql);
+            }
+
+            def += $"\r\n) RETURNS {func.ReturnType}"
+                + (func.ExecuteAs != null ? $"\r\nWITH EXECUTE AS {func.ExecuteAs}" : "")
+                + " AS \r\n";
+            if (func.ReturnType == "TABLE") { def += "RETURN "; }
             def += el.Find(true, "Property", ("Name", "BodyScript"))?.First().Element("Value")?.Value;
             func.Definition = def;
         }
 
         private static void parseTriggerElement(SchemaModel schema, XElement el, string name)
         {
-            var trig = new ModuleModel
+            var trig = new TriggerModuleModel(
+                schema: schema,
+                name: name
+            )
             {
-                Type = ModuleModel.ModuleType.TRIGGER,
-                Schema = schema,
-                Name = name,
                 Dependencies = resolveDependencies(el, "BodyDependencies")
             };
             schema.Modules[name] = trig;
@@ -567,29 +580,23 @@ namespace DacpacDiff.Core.Parser
             };
         }
 
-        private static string toArg(XElement a)
+        private static ParameterModel toParam(IParameterisedModuleModel parent, XElement a)
         {
-            var name = getName(a).Split('.')[^1].Trim('[', ']');
             var typeXml = a.Find(true, "Element", ("Type", p => p == "SqlTypeSpecifier" || p == "SqlXmlTypeSpecifier")).First();
-            var arg = $"{name} {getSqlType(typeXml)}";
 
-            var def = a.Find("Property", ("Name", "DefaultExpressionScript")).FirstOrDefault()?.Element("Value")?.Value;
-            if (def != null)
+            var param = new ParameterModel(
+                parent: parent,
+                name: getName(a).Split('.')[^1].Trim('[', ']')
+            )
             {
-                arg += $" = {def}";
-            }
+                Type = getSqlType(typeXml)
+            };
 
-            if (a.Find("Property", ("Name", "IsReadOnly")).FirstOrDefault()?.Attribute("Value")?.Value == "True")
-            {
-                arg += " READONLY";
-            }
+            param.DefaultValue = a.Find("Property", ("Name", "DefaultExpressionScript")).FirstOrDefault()?.Element("Value")?.Value;
+            param.IsReadOnly = a.Find("Property", ("Name", "IsReadOnly")).FirstOrDefault()?.Attribute("Value")?.Value == "True";
+            param.IsOutput = a.Find("Property", ("Name", "IsOutput")).FirstOrDefault()?.Attribute("Value")?.Value == "True";
 
-            if (a.Find("Property", ("Name", "IsOutput")).FirstOrDefault()?.Attribute("Value")?.Value == "True")
-            {
-                arg += " OUTPUT";
-            }
-
-            return arg;
+            return param;
         }
 
         private static FieldModel toField(TableModel table, int ord, XElement colXml)

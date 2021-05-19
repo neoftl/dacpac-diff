@@ -13,9 +13,9 @@ namespace DacpacDiff.Core.Model
         public string[] IncludedColumns { get; set; } = Array.Empty<string>();
         public string? Condition { get; set; }
 
-        public IndexModuleModel()
+        public IndexModuleModel(SchemaModel schema, string name)
+            : base(schema, name, ModuleType.INDEX)
         {
-            Type = ModuleType.INDEX;
         }
     }
 }
