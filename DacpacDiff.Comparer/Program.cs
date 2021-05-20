@@ -65,6 +65,21 @@ Parser.Default.ParseArguments<Options>(args)
             return;
         }
 
+        if (o.ExcludeSchemas != null)
+        {
+            foreach (var schemaName in o.ExcludeSchemas)
+            {
+                foreach (var db in leftScheme.Databases.Values)
+                {
+                    db.Schemas.Remove(schemaName);
+                }
+                foreach (var db in rightScheme.Databases.Values)
+                {
+                    db.Schemas.Remove(schemaName);
+                }
+            }
+        }
+
         // Compare schemes (left scheme to replace right)
         var comparer = new SchemeComparer(comparerFactory);
         var diffs = comparer.Compare(leftScheme, rightScheme);
