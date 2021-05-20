@@ -15,6 +15,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DacpacDiff.Core.Tests", "Da
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DacpacDiff.Comparer.Tests", "DacpacDiff.ComparerTests\DacpacDiff.Comparer.Tests.csproj", "{3D49303F-C250-446F-98D4-AAE352083419}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DacpacDiff.Mssql.Tests", "DacpacDiff.MssqlTests\DacpacDiff.Mssql.Tests.csproj", "{97689C4A-18E9-4D2E-B621-1ACD619DC461}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,10 @@ Global
 		{3D49303F-C250-446F-98D4-AAE352083419}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D49303F-C250-446F-98D4-AAE352083419}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D49303F-C250-446F-98D4-AAE352083419}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97689C4A-18E9-4D2E-B621-1ACD619DC461}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97689C4A-18E9-4D2E-B621-1ACD619DC461}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97689C4A-18E9-4D2E-B621-1ACD619DC461}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97689C4A-18E9-4D2E-B621-1ACD619DC461}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -48,6 +54,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{D7B9FAA5-ADA3-44D1-BA2A-8A6124CBB50C} = {55CB30C6-E730-4632-9526-69ED16176D2B}
 		{3D49303F-C250-446F-98D4-AAE352083419} = {55CB30C6-E730-4632-9526-69ED16176D2B}
+		{97689C4A-18E9-4D2E-B621-1ACD619DC461} = {55CB30C6-E730-4632-9526-69ED16176D2B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {640AD43C-C0D1-4060-9209-2D2FCDC8EA22}
