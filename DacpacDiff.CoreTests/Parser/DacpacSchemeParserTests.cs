@@ -7,6 +7,25 @@ namespace DacpacDiff.Core.Parser.Tests
     [TestClass]
     public partial class DacpacSchemeParserTests
     {
+        // TODO: dependencies
+        
+        [TestMethod]
+        public void ParseContent__Ignores_unknown_elements()
+        {
+            // Arrange
+            var xml = @"<root><Model>
+    <Element Type=""Invalid"" />
+</Model></root>";
+
+            // Act
+            var res = DacpacSchemeParser.ParseContent("test", xml);
+
+            // Assert
+            Assert.AreEqual("dbo", res.Databases.Values.Single().Schemas.Keys.Single());
+            Assert.AreEqual(0, res.Databases.Values.Single().Schemas["dbo"].Modules.Count);
+            Assert.AreEqual(0, res.Databases.Values.Single().Schemas["dbo"].Tables.Count);
+        }
+
         [TestMethod]
         public void ParseFile__Blank_returns_blank_scheme()
         {
@@ -180,11 +199,11 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.AreEqual("OWNER", proc.ExecuteAs);
             Assert.IsTrue(proc.Definition.Contains("WITH EXECUTE AS OWNER"));
         }
- 
+
         #endregion Procedures
 
         #region Indexes
-        
+
         [TestMethod]
         public void ParseContent__Parses_indexes()
         {
@@ -216,7 +235,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.IsNull(idx.Condition);
             Assert.AreEqual(0, idx.IncludedColumns.Length);
         }
-        
+
         [TestMethod]
         public void ParseContent__Parses_indexes_with_multiple_fields()
         {
@@ -253,7 +272,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.AreEqual(3, idx.IndexedColumns.Length);
             Assert.IsTrue(idx.Definition.Contains("ON [dbo].[Test]([ColA], [ColB], [ColC])"));
         }
-        
+
         [TestMethod]
         [DataRow(false, false)]
         [DataRow(true, false)]
@@ -288,7 +307,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.AreEqual(isClustered, idx.IsClustered);
             Assert.AreEqual(isUnique, idx.IsUnique);
         }
-        
+
         [TestMethod]
         public void ParseContent__Parses_indexes_with_includes()
         {
@@ -322,7 +341,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.IsTrue(idx.IncludedColumns.Contains("ColB"));
             Assert.IsTrue(idx.IncludedColumns.Contains("ColC"));
         }
-        
+
         [TestMethod]
         public void ParseContent__Parses_indexes_with_filter()
         {
@@ -339,9 +358,7 @@ namespace DacpacDiff.Core.Parser.Tests
                 </Element>
             </Entry>
         </Relationship>
-        <Property Name=""FilterPredicate"">
-            <Value>(((CONDITION)))</Value>
-        </Property>
+        <Property Name=""FilterPredicate""><Value>(((CONDITION)))</Value></Property>
     </Element>
 </Model></root>";
 
@@ -355,5 +372,104 @@ namespace DacpacDiff.Core.Parser.Tests
         }
 
         #endregion Indexes
+
+        #region Triggers
+
+        [TestMethod]
+        public void ParseContent__Parses_triggers()
+        {
+            // Arrange
+            var xml = @"<root><Model>
+    <Element Type=""SqlDmlTrigger"" Name=""[dbo].[tr_Test]"">
+        <Relationship Name=""Parent"">
+            <Entry><References Name=""[dbo].[Test]"" /></Entry>
+        </Relationship>
+        <Property Name=""BodyScript""><Value>BODY</Value></Property>
+    </Element>
+</Model></root>";
+
+            // Act
+            var res = DacpacSchemeParser.ParseContent("test", xml);
+            var sch = res.Databases["database"].Schemas["dbo"];
+
+            // Assert
+            var trig = (TriggerModuleModel)sch.Modules["tr_Test"];
+            Assert.AreEqual("tr_Test", trig.Name);
+            Assert.AreEqual(ModuleModel.ModuleType.TRIGGER, trig.Type);
+            Assert.AreEqual("[dbo].[Test]", trig.Parent);
+            Assert.IsNotNull(trig.Definition);
+            //Assert.AreEqual("BODY", trig.Definition);
+            Assert.IsTrue(trig.Before);
+            Assert.IsFalse(trig.ForDelete);
+            Assert.IsFalse(trig.ForInsert);
+            Assert.IsFalse(trig.ForUpdate);
+        }
+
+        [TestMethod]
+        [DataRow(1, false, false, false)]
+        [DataRow(1, true, false, false)]
+        [DataRow(1, false, true, false)]
+        [DataRow(1, true, true, false)]
+        [DataRow(1, false, false, true)]
+        [DataRow(1, true, false, true)]
+        [DataRow(1, false, true, true)]
+        [DataRow(1, true, true, true)]
+        [DataRow(2, false, false, false)]
+        [DataRow(2, true, false, false)]
+        [DataRow(2, false, true, false)]
+        [DataRow(2, true, true, false)]
+        [DataRow(2, false, false, true)]
+        [DataRow(2, true, false, true)]
+        [DataRow(2, false, true, true)]
+        [DataRow(2, true, true, true)]
+        public void ParseContent__Parses_triggers_of_different_types(int type, bool delete, bool insert, bool update)
+        {
+            // Arrange
+            var xml = $@"<root><Model>
+    <Element Type=""SqlDmlTrigger"" Name=""[dbo].[tr_Test]"">
+        <Relationship Name=""Parent"">
+            <Entry><References Name=""[dbo].[Test]"" /></Entry>
+        </Relationship>
+        <Property Name=""SqlTriggerType"" Value=""{type}"" />
+        <Property Name=""IsDeleteTrigger"" Value=""{delete}"" />
+        <Property Name=""IsInsertTrigger"" Value=""{insert}"" />
+        <Property Name=""IsUpdateTrigger"" Value=""{update}"" />
+        <Property Name=""BodyScript""><Value>BODY</Value></Property>
+    </Element>
+</Model></root>";
+
+            // Act
+            var res = DacpacSchemeParser.ParseContent("test", xml);
+            var sch = res.Databases["database"].Schemas["dbo"];
+
+            // Assert
+            var trig = (TriggerModuleModel)sch.Modules["tr_Test"];
+            Assert.AreEqual(type != 2, trig.Before);
+            Assert.AreEqual(delete, trig.ForDelete);
+            Assert.AreEqual(insert, trig.ForInsert);
+            Assert.AreEqual(update, trig.ForUpdate);
+        }
+
+        #endregion Triggers
+
+        [TestMethod]
+        public void ParseContent__Parses_synonyms()
+        {
+            // Arrange
+            var xml = @"<root><Model>
+    <Element Type=""SqlSynonym"" Name=""[dbo].[syn_Test]"">
+        <Property Name=""ForObjectScript""><Value>[dbo].[usp_Test]</Value></Property>
+    </Element>
+</Model></root>";
+
+            // Act
+            var res = DacpacSchemeParser.ParseContent("test", xml);
+            var sch = res.Databases["database"].Schemas["dbo"];
+
+            // Assert
+            var syn = sch.Synonyms["syn_Test"];
+            Assert.AreEqual("syn_Test", syn.Name);
+            Assert.AreEqual("[dbo].[usp_Test]", syn.BaseObject);
+        }
     }
 }

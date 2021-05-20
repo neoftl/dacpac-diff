@@ -398,31 +398,25 @@ namespace DacpacDiff.Core.Parser
             };
             schema.Modules[name] = trig;
 
-            var target = el.Find("Relationship", ("Name", "Parent")).Single()
+            trig.Parent = el.Find("Relationship", ("Name", "Parent")).Single()
                 .Element("Entry")?
                 .Element("References")?
-                .Attribute("Name")?.Value;
+                .Attribute("Name")?.Value ?? string.Empty;
 
-            // TODO: don't build SQL; store as pieces
-            var def = $"CREATE TRIGGER {trig.FullName} ON {target} ";
+            trig.Before = el.Find("Property", ("Name", "SqlTriggerType")).FirstOrDefault()?.Attribute("Value")?.Value != "2";
+            trig.ForDelete = el.Find("Property", ("Name", "IsDeleteTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True";
+            trig.ForInsert = el.Find("Property", ("Name", "IsInsertTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True";
+            trig.ForUpdate = el.Find("Property", ("Name", "IsUpdateTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True";
 
-            var trigTypeId = el.Find("Property", ("Name", "SqlTriggerType")).FirstOrDefault()?.Attribute("Value")?.Value;
-            var trigType = trigTypeId == "2" ? "AFTER " : "BEFORE ";
+            // TODO: don't build SQL
+            var def = $"CREATE TRIGGER {trig.FullName} ON {trig.Parent} ";
 
-            if (el.Find("Property", ("Name", "IsInsertTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True")
-            {
-                trigType += "INSERT, ";
-            }
-            if (el.Find("Property", ("Name", "IsUpdateTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True")
-            {
-                trigType += "UPDATE, ";
-            }
-            if (el.Find("Property", ("Name", "IsDeleteTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True")
-            {
-                trigType += "DELETE, ";
-            }
+            var trigType = trig.Before ? "AFTER " : "BEFORE ";
+            if (trig.ForUpdate) { trigType += "INSERT, "; }
+            if (trig.ForInsert) { trigType += "UPDATE, "; }
+            if (trig.ForDelete) { trigType += "DELETE, "; }
 
-            def += trigType.Trim(',', ' ').TrimEnd()
+            def += trigType.TrimEnd(',', ' ')
                 + "\r\nAS\r\n"
                 + el.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value.TrimStart();
             trig.Definition = def;
@@ -444,12 +438,7 @@ namespace DacpacDiff.Core.Parser
                 .Elements("Entry")
                 .Elements("References")?
                 .Single().Attribute("Name")?.Value;
-            if (refFieldPath is null)
-            {
-                // TODO: log bad ref
-                return;
-            }
-            var dtblName = refFieldPath[..refFieldPath.LastIndexOf('.')];
+            var dtblName = refFieldPath?[..refFieldPath.LastIndexOf('.')] ?? string.Empty;
             if (!db.TryGet<TableModel>(dtblName, out var dtbl)
                 || !dtbl.Fields.TryGetValue(v => v.FullName == refFieldPath, out var dfld))
             {
@@ -461,12 +450,7 @@ namespace DacpacDiff.Core.Parser
                 .Elements("Entry")
                 .Elements("References")?
                 .Single().Attribute("Name")?.Value;
-            if (refFieldPath is null)
-            {
-                // TODO: log bad ref
-                return;
-            }
-            var ftblName = refFieldPath[..refFieldPath.LastIndexOf('.')];
+            var ftblName = refFieldPath?[..refFieldPath.LastIndexOf('.')] ?? string.Empty;
             if (!db.TryGet<TableModel>(ftblName, out var ftbl)
                 || !ftbl.Fields.TryGetValue(v => v.FullName == refFieldPath, out var ffld))
             {
@@ -527,7 +511,7 @@ namespace DacpacDiff.Core.Parser
                 .Elements("References")?.Attributes("Name")?
                 .Select(a => tbl?.Fields.SingleOrDefault(f => f.FullName == a.Value))
                 .NotNull().ToArray() ?? Array.Empty<FieldModel>();
-            if (tbl is null || flds.Length != 1)
+            if (tbl is null || flds.Length == 0)
             {
                 // TODO: log bad unique
                 return;
@@ -571,8 +555,10 @@ namespace DacpacDiff.Core.Parser
                 // TODO: log bad ref
                 return;
             }
-
-            fld.Default = new FieldDefaultModel(fld, null, defValue)
+            
+            var defName = el.Attribute("Name")?.Value;
+            defName = defName != null ? getName(defName, tbl.FullName) : null;
+            fld.Default = new FieldDefaultModel(fld, defName, defValue)
             {
                 Dependencies = resolveDependencies(el, "ExpressionDependencies")
             };
