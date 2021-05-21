@@ -65,7 +65,7 @@ namespace DacpacDiff.Comparer.Comparers
         /// <summary>
         /// Does <paramref name="diff"/> reference something in <paramref name="dict"/>.
         /// </summary>
-        public static bool ReferencesRemain(IEnumerable<IDifference> dict, IDifference diff)
+        internal static bool ReferencesRemain(IEnumerable<IDifference> dict, IDifference diff)
         {
             if (diff.Model is IDependentModel d
                 && dict.Where(m => m != diff).Any(m => d.Dependencies?.Contains(m.Name) == true))
@@ -89,7 +89,7 @@ namespace DacpacDiff.Comparer.Comparers
         }
 
         // TODO: obsolete?
-        public static bool NameInSql(string sql, IModel model)
+        internal static bool NameInSql(string sql, IModel model)
         {
             return model switch
             {
