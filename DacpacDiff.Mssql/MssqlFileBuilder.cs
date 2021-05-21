@@ -1,4 +1,5 @@
-﻿using DacpacDiff.Core.Output;
+﻿using DacpacDiff.Core.Diff;
+using DacpacDiff.Core.Output;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,7 +49,13 @@ namespace DacpacDiff.Mssql
                 var diffNum = (++count).ToString("D" + countMag);
                 var progress = (double)(99.99 / objCount) * count;
 
-                sqlHead.AppendFormat("-- [{0}] {1}: {2}", diffNum, diff.Title, diff.Name).AppendLine();
+                var diffName = diff.Name;
+                if (diff is IDataLossChange dlc && dlc.GetDataLossTable(out _))
+                {
+                    diffName += " (potential data-loss)";
+                }
+
+                sqlHead.AppendFormat("-- [{0}] {1}: {2}", diffNum, diff.Title, diffName).AppendLine();
                 AppendLine().AppendFormat("#print 0, '> [{0}] {1}: {2} ({3}%%)'", diffNum, diff.Title, diff.Name, progress.ToString("0.00")).AppendLine();
 
                 diffFormatter.Format(this);
