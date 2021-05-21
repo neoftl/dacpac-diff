@@ -103,6 +103,7 @@ namespace DacpacDiff.Core.Parser
 
             if (elsByType.Keys.Any())
             {
+                // TODO: unhandled types
             }
 
             return scheme;
@@ -277,7 +278,7 @@ namespace DacpacDiff.Core.Parser
                 .Element("Entry")?
                 .Element("References")?.Attribute("Name")?.Value ?? string.Empty;
             name = getName(el, target);
-
+            
             var idx = new IndexModuleModel(
                 schema: schema,
                 name: name
@@ -306,7 +307,7 @@ namespace DacpacDiff.Core.Parser
             // TODO: don't build SQL
             var def = "CREATE "
                 + (idx.IsUnique ? "UNIQUE " : "")
-                + (idx.IsClustered ? "CLUSTURED " : "")
+                + (idx.IsClustered ? "CLUSTERED " : "")
                 + $"INDEX [{name}] ON {target}"
                 + "([" + string.Join("], [", idx.IndexedColumns) + "])";
             if (idx.IncludedColumns.Length > 0)
@@ -411,7 +412,7 @@ namespace DacpacDiff.Core.Parser
             // TODO: don't build SQL
             var def = $"CREATE TRIGGER {trig.FullName} ON {trig.Parent} ";
 
-            var trigType = trig.Before ? "AFTER " : "BEFORE ";
+            var trigType = trig.Before ? "AFTER " : "FOR ";
             if (trig.ForUpdate) { trigType += "INSERT, "; }
             if (trig.ForInsert) { trigType += "UPDATE, "; }
             if (trig.ForDelete) { trigType += "DELETE, "; }
