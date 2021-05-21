@@ -21,7 +21,7 @@ namespace DacpacDiff.Mssql.Diff
             }
 
             sb.Append($" {fld.Type}")
-                .AppendIf($" DEFAULT ({fld.DefaultValue})", fld.HasDefault)
+                .AppendIf($" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed)
                 .Append(!fld.Nullable && fld.HasDefault ? " NOT NULL" : " NULL")
                 .AppendIf($" REFERENCES {fld.Ref?.TargetField.Table.FullName} ([{fld.Ref?.TargetField.Name}])", fld.Ref?.IsSystemNamed == true);
         }

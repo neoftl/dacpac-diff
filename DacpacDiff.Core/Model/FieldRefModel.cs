@@ -5,7 +5,7 @@ namespace DacpacDiff.Core.Model
 {
     public class FieldRefModel : IModel<FieldRefModel, FieldModel>, IEquatable<FieldRefModel>
     {
-        public static readonly FieldRefModel Empty = new FieldRefModel();
+        public static readonly FieldRefModel Empty = new();
 
         /// <summary>
         /// The field that defines this reference.

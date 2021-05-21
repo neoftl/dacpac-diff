@@ -4,6 +4,8 @@ namespace DacpacDiff.Core.Utility
 {
     internal static class StringExtensions
     {
+        public static string Format(this string format, params object[] args) => string.Format(format, args);
+
         /// <summary>
         /// Remove unnecessary parenthesis from well-formed SQL.
         /// </summary>

@@ -4,9 +4,9 @@ using DacpacDiff.Core.Output;
 
 namespace DacpacDiff.Mssql.Diff
 {
-    public class MssqlFieldAlter : BaseMssqlDiffBlock<DiffFieldAlter>
+    public class MssqlDiffFieldAlter : BaseMssqlDiffBlock<DiffFieldAlter>
     {
-        public MssqlFieldAlter(DiffFieldAlter diff)
+        public MssqlDiffFieldAlter(DiffFieldAlter diff)
             : base(diff)
         { }
 
@@ -21,7 +21,7 @@ namespace DacpacDiff.Mssql.Diff
             }
 
             sb.Append($" {fld.Type}")
-                .AppendIf($" DEFAULT ({fld.DefaultValue})", fld.HasDefault && !fld.IsDefaultSystemNamed)
+                .AppendIf($" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed)
                 .Append(!fld.Nullable && (!existingIsNull || fld.HasDefault) ? " NOT NULL" : " NULL");
         }
 
@@ -30,12 +30,13 @@ namespace DacpacDiff.Mssql.Diff
             var lft = _diff.LeftField;
             var rgt = _diff.RightField;
 
-            if ((lft.Computation?.Length ?? 0) > 0)
+            // Change to/from computed column
+            if ((lft.Computation?.Length > 0) != (rgt.Computation?.Length > 0))
             {
-                sb.AppendLine($"ALTER TABLE {rgt.Table.FullName} DROP COLUMN [{rgt.Name}]")
+                sb.AppendLine(CommonMssql.ALTER_TABLE_DROP_COLUMN(rgt.Table.FullName, rgt.Name))
                     .AppendLine()
                     .Append($"ALTER TABLE {lft.Table.FullName} ADD ");
-                appendFieldSql(lft, sb, rgt.Nullable);
+                appendFieldSql(lft, sb, false);
                 sb.EnsureLine();
                 return;
             }
@@ -65,16 +66,18 @@ namespace DacpacDiff.Mssql.Diff
             }
 
             // Main definition
-            if (!lft.IsSignatureMatch(rgt))
+            var didDefault = false;
+            if (!lft.IsSignatureMatch(rgt, false))
             {
                 sb.Append($"ALTER TABLE {lft.Table.FullName} ALTER COLUMN ");
                 appendFieldSql(lft, sb, rgt.Nullable); // TODO: changing between nullability needs thinking about
-                sb.AppendLine(!lft.Nullable && !lft.HasDefault && rgt.Nullable ? " -- NOTE: Cannot change to NOT NULL column" : string.Empty)
+                sb.AppendLine(!lft.Nullable && !lft.HasDefault && rgt.Nullable ? " -- NOTE: Cannot change to NOT NULL without default" : string.Empty)
                     .AppendLine();
+                didDefault = lft.IsDefaultSystemNamed;
             }
 
             // Default
-            if (!lft.IsDefaultMatch(rgt) && lft.HasDefault)
+            if (!lft.IsDefaultMatch(rgt) && lft.HasDefault && !didDefault)
             {
                 // Add default
                 sb.Append($"ALTER TABLE {lft.Table.FullName} ADD ")
@@ -82,41 +85,36 @@ namespace DacpacDiff.Mssql.Diff
                     .AppendLine($"DEFAULT ({lft.DefaultValue}) FOR [{lft.Name}]");
             }
 
-            // Unique
-            if (lft.IsUnique != rgt.IsUnique)
+            // Make unique (drop is handled elsewhere)
+            if (lft.IsUnique && !rgt.IsUnique)
             {
-                if (lft.IsUnique)
-                {
-                    // Make unique
-                    sb.Append($"ALTER TABLE {lft.Table.FullName} ADD ")
-                        .AppendLine($"UNIQUE ([{lft.Name}])");
-                }
+                sb.AppendLine($"ALTER TABLE {lft.Table.FullName} ADD UNIQUE ([{lft.Name}])");
             }
 
             // Reference
-            var lftRef = lft.Ref is not null ? new FieldRefModel(lft.Ref) : null;
-            var rgtRef = rgt.Ref is not null ? new FieldRefModel(rgt.Ref) : null;
-            if (rgtRef is null || lftRef?.Equals(rgtRef) != false)
+            var lftRef = lft.Ref != null ? new FieldRefModel(lft.Ref) : null;
+            var rgtRef = rgt.Ref != null ? new FieldRefModel(rgt.Ref) : null;
+            if (rgtRef is null || lftRef?.Equals(rgtRef) != true)
             {
-                if (rgtRef is not null)
+                if (rgtRef != null)
                 {
-                    if (!rgtRef.IsSystemNamed || (rgtRef.Name?.Length ?? 0) == 0)
+                    if (rgtRef.IsSystemNamed || rgtRef.Name.Length == 0)
                     {
                         sb.AppendLine($"-- Removing unnamed FKey: {rgtRef.Field.FullName} -> {rgtRef.TargetField.FullName}")
-                            .AppendLine($"DECLARE @FKeyName VARCHAR(MAX) = (SELECT FK.[name] FROM sys.foreign_keys FK JOIN sys.foreign_key_columns KC ON KC.[constraint_object_id] = FK.[object_id] JOIN sys.columns C ON C.[object_id] = FK.[parent_object_id] AND C.[column_id] = KC.[parent_column_id] WHERE FK.[parent_object_id] = OBJECT_ID('{rgtRef.Table.FullName}') AND FK.[type] = 'F' AND C.[name] = '{rgtRef.Field}')") // TODO: Shouldn't this check the target as well?
-                            .AppendLine($"DECLARE @DropConstraintSql VARCHAR(MAX) = CONCAT('ALTER TABLE {rgtRef.Table.FullName} DROP CONSTRAINT ', QUOTENAME(@FKeyName))")
+                            .AppendLine(CommonMssql.REF_GET_FKEYNAME(rgtRef.Table.FullName, rgtRef.Field.Name))
+                            .AppendLine(CommonMssql.REF_GET_DROP_SQL(rgtRef.Table.FullName))
                             .AppendLine("EXEC (@DropConstraintSql)");
                     }
                     else
                     {
-                        sb.AppendLine($"ALTER TABLE {rgtRef.Table.FullName} DROP CONSTRAINT [{rgtRef.Name}]");
+                        sb.AppendLine(CommonMssql.ALTER_TABLE_DROP_CONSTRAINT(rgtRef.Table.FullName, rgtRef.Name));
                     }
                 }
-                if (lftRef is not null)
+                if (lftRef != null)
                 {
                     sb.Append($"ALTER TABLE {lftRef.Table.FullName} WITH NOCHECK ADD ")
-                        .AppendIf($"CONSTRAINT [{lftRef.Name}] FOREIGN KEY ([{lftRef.Field}]) ", lftRef.IsSystemNamed)
-                        .AppendLine($"FOREIGN KEY ([{lftRef.Field}]) REFERENCES {lftRef.TargetField.Table.FullName} ([{lftRef.TargetField.Name}])");
+                        .AppendIf($"CONSTRAINT [{lftRef.Name}] ", !lftRef.IsSystemNamed)
+                        .AppendLine($"FOREIGN KEY ([{lftRef.Field.Name}]) REFERENCES {lftRef.TargetField.Table.FullName} ([{lftRef.TargetField.Name}])");
                 }
             }
         }

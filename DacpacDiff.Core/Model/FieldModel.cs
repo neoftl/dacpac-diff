@@ -74,7 +74,7 @@ namespace DacpacDiff.Core.Model
         }
         public override bool Equals(object? obj) => Equals(obj as FieldModel);
 
-        public bool IsSignatureMatch(FieldModel other)
+        public bool IsSignatureMatch(FieldModel other, bool checkDefault)
         {
             bool eq<T>(Func<FieldModel, T?> fn) where T : IEquatable<T>
             {
@@ -85,7 +85,7 @@ namespace DacpacDiff.Core.Model
             return eq(m => m.Type)
                 && eq(m => m.Computation)
                 && eq(m => m.Nullable)
-                && IsDefaultMatch(other);
+                && (!checkDefault || IsDefaultMatch(other));
         }
 
         public override int GetHashCode()

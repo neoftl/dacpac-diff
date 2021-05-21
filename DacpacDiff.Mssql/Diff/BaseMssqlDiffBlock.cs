@@ -25,7 +25,7 @@ namespace DacpacDiff.Mssql.Diff
 
             var sb = new NullSqlBuilder();
             GetFormat(sb);
-            _sql = sb.ToString();
+            _sql = sb.ToString().Trim();
         }
 
         public void Format(ISqlFileBuilder sb)
