@@ -14,15 +14,15 @@ namespace DacpacDiff.Mssql.Diff
         {
             sb.Append($"[{fld.Name}]");
 
-            if ((fld.Computation?.Length ?? 0) > 0)
+            if (fld.Computation?.Length > 0)
             {
                 sb.Append($" AS {fld.Computation}");
             }
             else
             {
                 sb.Append($" {fld.Type}")
-                    .Append(fld.Nullable ? " NULL" : " NOT NULL ")
-                    .AppendIf($" DEFAULT{fld.Default}", (fld.Default?.Length ?? 0) > 0)
+                    .Append(fld.Nullable ? " NULL" : " NOT NULL")
+                    .AppendIf($" DEFAULT ({fld.Default})", (fld.Default?.Length ?? 0) > 0)
                     .AppendIf(" PRIMARY KEY", fld.IsPrimaryKey)
                     .AppendIf(" IDENTITY(1,1)", fld.Identity);
             }
@@ -44,7 +44,7 @@ namespace DacpacDiff.Mssql.Diff
             var first = true;
             foreach (var fld in _diff.UserType.Fields)
             {
-                sb.AppendIf(",", first)
+                sb.AppendIf(",", !first)
                     .AppendLine()
                     .Append("    ");
                 appendFieldSql(fld, sb);

@@ -4,7 +4,7 @@
     {
         public UserTypeModel UserType { get; }
         public string Name { get; set; }
-        public string Type { get; set; }
+        public string Type { get; set; } = string.Empty;
         public string Computation { get; set; } = string.Empty;
         public string? Default { get; set; }
         public int Order { get; set; }
@@ -16,10 +16,12 @@
         private UserTypeFieldModel()
         {
             UserType = UserTypeModel.Empty;
+            Name = string.Empty;
         }
-        public UserTypeFieldModel(UserTypeModel userType)
+        public UserTypeFieldModel(UserTypeModel userType, string name)
         {
             UserType = userType;
+            Name = name;
         }
     }
 }
