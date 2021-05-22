@@ -21,12 +21,12 @@ namespace DacpacDiff.Comparer.Comparers
             // TODO: others
 
             // Schemas
-            var keys = (lft?.Schemas?.Keys ?? Array.Empty<string>())
+            var keys = (lft?.Schemas.Keys ?? Array.Empty<string>())
                 .Union(rgt?.Schemas.Keys ?? Array.Empty<string>())
                 .Distinct();
             var schCompr = _comparerFactory.GetComparer<SchemaModel>();
             var diffs1 = keys.SelectMany(k =>
-                schCompr.Compare(lft?.Schemas?.Get(k), rgt?.Schemas?.Get(k))
+                schCompr.Compare(lft?.Schemas.Get(k), rgt?.Schemas.Get(k))
             );
 
             return diffs1.ToArray();

@@ -1,13 +1,9 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using DacpacDiff.Comparer.Comparers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Moq;
+﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
-using DacpacDiff.Core.Diff;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using System;
+using System.Linq;
 
 namespace DacpacDiff.Comparer.Comparers.Tests
 {

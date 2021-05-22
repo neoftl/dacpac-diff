@@ -1,5 +1,6 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
+using DacpacDiff.Core.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,8 +18,6 @@ namespace DacpacDiff.Comparer.Comparers
 
         public IEnumerable<IDifference> Compare(TableModel? lft, TableModel? rgt)
         {
-            var diffs = new List<IDifference>();
-
             // May be a drop/create
             if (lft is null)
             {
@@ -31,60 +30,50 @@ namespace DacpacDiff.Comparer.Comparers
                 // TODO: drop indexes?
 
                 // Drop checks
-                diffs.AddRange(rgt.Checks?.Select(c => new DiffTableCheckDrop(c)).ToArray() ?? Array.Empty<IDifference>());
-
-                diffs.Add(new DiffObjectDrop(rgt));
-                return diffs.ToArray();
+                return rgt.Checks.Select(c => (IDifference)new DiffTableCheckDrop(c))
+                    .Append(new DiffObjectDrop(rgt)).ToArray();
             }
             if (rgt is null)
             {
-                diffs.Add(new DiffTableCreate(lft));
-
-                // Will need to create all named references separately
-                diffs.AddRange(lft.Fields.Where(f => f.Ref?.IsSystemNamed == false && f.Ref is not null)
-                    .Select(f => new DiffRefCreate(f.Ref ?? FieldRefModel.Empty)));
-
-                return diffs.ToArray();
+                return new IDifference[] { new DiffTableCreate(lft) };
             }
+
+            var result = new List<IDifference>();
 
             // TODO: Change primary key
             // TODO: Refs
             // TODO: Change temporality?
+            // TODO: Change field order as a specific diff (optional)
 
             // Fields
+            var lftFields = lft.Fields.ToDictionary(f => f.Name);
+            var rgtFields = rgt.Fields.ToDictionary(f => f.Name);
             var fldCompr = _comparerFactory.GetComparer<FieldModel>();
-            foreach (var fldL in lft.Fields ?? Array.Empty<FieldModel>())
-            {
-                var fldR = rgt.Fields?.FirstOrDefault(f => f.Name == fldL.Name);
-                diffs.AddRange(fldCompr.Compare(fldL, fldR) ?? Array.Empty<IDifference>());
-            }
-            foreach (var fldR in rgt.Fields ?? Array.Empty<FieldModel>())
-            {
-                if (!(lft.Fields?.Any(f => f.Name == f.Name) ?? false))
-                {
-                    diffs.AddRange(fldCompr.Compare(null, fldR) ?? Array.Empty<IDifference>());
-                }
-            }
+            var diffs = lftFields.Keys.Union(rgtFields.Keys).Distinct().SelectMany(k =>
+                fldCompr.Compare(lftFields.Get(k), rgtFields.GetValueOrDefault(k))
+            );
+            result.AddRange(diffs);
 
             // Checks
-            // TODO: support unnamed
             var chkCompr = _comparerFactory.GetComparer<TableCheckModel>();
-            foreach (var chkL in lft.Checks ?? Array.Empty<TableCheckModel>())
+            var rgtChecks = rgt.Checks.ToList();
+            foreach (var chkL in lft.Checks)
             {
-                var fldR = rgt.Checks?.FirstOrDefault(c => c.Name == chkL.Name);
-                diffs.AddRange(chkCompr.Compare(chkL, fldR) ?? Array.Empty<IDifference>());
-            }
-            foreach (var chkR in rgt.Checks ?? Array.Empty<TableCheckModel>())
-            {
-                if (!(lft.Checks?.Any(c => c.Name == chkR.Name) ?? false))
+                var chkR = rgtChecks.FirstOrDefault(c => chkL.IsSystemNamed && c.IsSystemNamed ? c.Definition == chkL.Definition : c.Name == chkL.Name);
+                if (chkR != null)
                 {
-                    diffs.AddRange(chkCompr.Compare(null, chkR) ?? Array.Empty<IDifference>());
+                    rgtChecks.Remove(chkR);
                 }
+                result.AddRange(chkCompr.Compare(chkL, chkR));
             }
-            
-            // TODO: If any changes, do we need to drop all indexes and recreate?
+            foreach (var chkR in rgtChecks)
+            {
+                result.AddRange(chkCompr.Compare(null, chkR));
+            }
 
-            return diffs.ToArray();
+            // TODO: If any changes, do we need to drop all indexes and recreate / rebuild
+
+            return result.ToArray();
         }
     }
 }
