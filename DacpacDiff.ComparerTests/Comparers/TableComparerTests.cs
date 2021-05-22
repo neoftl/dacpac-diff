@@ -2,7 +2,6 @@
 using DacpacDiff.Core.Model;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using System;
 using System.Linq;
 
 namespace DacpacDiff.Comparer.Comparers.Tests
@@ -24,7 +23,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         }
 
         [TestMethod]
-        public void Compare__Null_left__Create_table()
+        public void Compare__Null_right__Create_table()
         {
             // Arrange
             var lft = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable");
@@ -42,7 +41,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         }
 
         [TestMethod]
-        public void Compare__Null_right__Drop_table()
+        public void Compare__Null_left__Drop_table()
         {
             // Arrange
             var rgt = new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable");

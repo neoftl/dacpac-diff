@@ -24,7 +24,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         }
 
         [TestMethod]
-        public void Compare__Null_left__Create_schema()
+        public void Compare__Null_right__Create_schema()
         {
             // Arrange
             var lft = new SchemaModel(DatabaseModel.Empty, "LSchema");
@@ -42,7 +42,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         }
 
         [TestMethod]
-        public void Compare__Null_right__Drop_schema()
+        public void Compare__Null_left__Drop_schema()
         {
             // Arrange
             var rgt = new SchemaModel(DatabaseModel.Empty, "RSchema");
@@ -60,7 +60,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         }
         
         [TestMethod]
-        public void Compare__Null_left__Compares_objects_to_null()
+        public void Compare__Null_right__Compares_objects_to_null()
         {
             // Arrange
             var lft = new SchemaModel(DatabaseModel.Empty, "LSchema");
@@ -95,7 +95,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         }
         
         [TestMethod]
-        public void Compare__Null_right__Compares_objects_to_null()
+        public void Compare__Null_left__Compares_objects_to_null()
         {
             // Arrange
             var rgt = new SchemaModel(DatabaseModel.Empty, "RSchema");
