@@ -563,15 +563,10 @@ namespace DacpacDiff.Core.Parser.Tests
 </Model></root>";
 
             // Act
-            try
+            Assert.ThrowsException<InvalidOperationException>(() =>
             {
                 DacpacSchemeParser.ParseContent("test", xml);
-                Assert.Fail();
-            }
-            catch (InvalidOperationException ex)
-            {
-                Assert.IsTrue(ex.Message.Contains("Sequence contains more than one element"));
-            }
+            }, "Sequence contains more than one element");
         }
 
         #endregion Foreign keys
@@ -700,21 +695,16 @@ namespace DacpacDiff.Core.Parser.Tests
 </Model></root>";
 
             // Act
-            try
+            Assert.ThrowsException<InvalidOperationException>(() =>
             {
                 DacpacSchemeParser.ParseContent("test", xml);
-                Assert.Fail();
-            }
-            catch (InvalidOperationException ex)
-            {
-                Assert.AreEqual("Sequence contains more than one element", ex.Message);
-            }
+            }, "Sequence contains more than one element");
         }
 
         #endregion Unique constraints
 
         #region Check constraints
-        
+
         [TestMethod]
         public void ParseContent__Parses_tables_with_unnamed_check_constraint()
         {
@@ -753,7 +743,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.IsTrue(tbl.Checks[0].IsSystemNamed);
             Assert.AreEqual(0, tbl.Checks[0].Name.Length);
         }
-        
+
         [TestMethod]
         public void ParseContent__Parses_tables_with_named_check_constraint()
         {
@@ -792,7 +782,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.IsFalse(tbl.Checks[0].IsSystemNamed);
             Assert.AreEqual("chk_Test", tbl.Checks[0].Name);
         }
-        
+
         [TestMethod]
         public void ParseContent__Check_constraint_maps_dependencies()
         {
@@ -834,7 +824,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.IsTrue(tbl.Checks[0].Dependencies.Contains("[dbo].[TestB]"));
             Assert.IsTrue(tbl.Checks[0].Dependencies.Contains("[dbo].[TestC]"));
         }
-        
+
         [TestMethod]
         [DataRow("[dbx].[Test]")]
         [DataRow("[dbo].[TestX]")]
@@ -874,7 +864,7 @@ namespace DacpacDiff.Core.Parser.Tests
         #endregion Check constraints
 
         #region Default constraints
-        
+
         [TestMethod]
         public void ParseContent__Parses_tables_with_unnamed_default_constraint()
         {
@@ -925,7 +915,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.IsNull(fldB.DefaultName);
             Assert.IsNull(fldB.DefaultValue);
         }
-        
+
         [TestMethod]
         public void ParseContent__Parses_tables_with_named_default_constraint()
         {
@@ -976,7 +966,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.IsNull(fldB.DefaultName);
             Assert.IsNull(fldB.DefaultValue);
         }
-        
+
         [TestMethod]
         public void ParseContent__Default_constraint_maps_dependencies()
         {
@@ -1022,7 +1012,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.IsTrue(fldA.Default.Dependencies.Contains("[dbo].[TestB]"));
             Assert.IsTrue(fldA.Default.Dependencies.Contains("[dbo].[TestC]"));
         }
-        
+
         [TestMethod]
         [DataRow("[dbx].[Test]", "ColA")]
         [DataRow("[dbo].[TestX]", "ColA")]

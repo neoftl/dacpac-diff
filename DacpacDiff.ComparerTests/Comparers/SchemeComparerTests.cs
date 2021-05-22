@@ -26,7 +26,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
 
             var comparerMock = new Mock<IModelComparer<DatabaseModel>>(MockBehavior.Strict);
             comparerMock.Setup(m => m.Compare(lftDb, rgtDb))
-                .Returns(new [] { diffMock.Object });
+                .Returns(new[] { diffMock.Object });
 
             var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
             comparerFactMock.Setup(m => m.GetComparer<DatabaseModel>())
@@ -40,9 +40,8 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             // Assert
             Assert.AreSame(diffMock.Object, res.Single());
         }
-        
+
         [TestMethod]
-        [ExpectedException(typeof(NotSupportedException))]
         public void Compare__Only_supports_single_left_database()
         {
             // Arrange
@@ -59,7 +58,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
 
             var comparerMock = new Mock<IModelComparer<DatabaseModel>>(MockBehavior.Strict);
             comparerMock.Setup(m => m.Compare(lftDb, rgtDb))
-                .Returns(new [] { diffMock.Object });
+                .Returns(new[] { diffMock.Object });
 
             var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
             comparerFactMock.Setup(m => m.GetComparer<DatabaseModel>())
@@ -68,11 +67,13 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var comparer = new SchemeComparer(comparerFactMock.Object);
 
             // Act
-            comparer.Compare(lftScheme, rgtScheme);
+            Assert.ThrowsException<NotSupportedException>(() =>
+            {
+                comparer.Compare(lftScheme, rgtScheme);
+            });
         }
 
         [TestMethod]
-        [ExpectedException(typeof(NotSupportedException))]
         public void Compare__Only_supports_single_right_database()
         {
             // Arrange
@@ -89,7 +90,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
 
             var comparerMock = new Mock<IModelComparer<DatabaseModel>>(MockBehavior.Strict);
             comparerMock.Setup(m => m.Compare(lftDb, rgtDb))
-                .Returns(new [] { diffMock.Object });
+                .Returns(new[] { diffMock.Object });
 
             var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
             comparerFactMock.Setup(m => m.GetComparer<DatabaseModel>())
@@ -98,7 +99,10 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var comparer = new SchemeComparer(comparerFactMock.Object);
 
             // Act
-            comparer.Compare(lftScheme, rgtScheme);
+            Assert.ThrowsException<NotSupportedException>(() =>
+            {
+                comparer.Compare(lftScheme, rgtScheme);
+            });
         }
     }
 }
