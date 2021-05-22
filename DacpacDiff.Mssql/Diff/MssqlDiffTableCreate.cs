@@ -1,7 +1,6 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Output;
-using System;
 using System.Linq;
 
 namespace DacpacDiff.Mssql.Diff
@@ -37,12 +36,14 @@ namespace DacpacDiff.Mssql.Diff
 
                 sb.Append(!fld.Nullable ? " NOT NULL" : " NULL")
                     .AppendIf($" DEFAULT ({fld.DefaultValue})", fld.HasDefault)
+                    .AppendIf($" CONSTRAINT [{fld.Table.PrimaryKeyName}]", fld.IsPrimaryKey && fld.Table.PrimaryKeys.Length == 1 && !fld.Table.IsPrimaryKeySystemNamed)
                     .AppendIf(" PRIMARY KEY", fld.IsPrimaryKey && fld.Table.PrimaryKeys.Length == 1 && !fld.Table.IsPrimaryKeyUnclustered)
                     .AppendIf(" IDENTITY(1,1)", fld.Identity);
             }
 
             sb.AppendIf(" UNIQUE", fld.IsUnique)
-                .AppendIf($" REFERENCES {fld.Ref?.TargetField.Table.FullName} ([{fld.Ref?.TargetField.Name}])", fld.Ref?.IsSystemNamed == true);
+                .AppendIf($" CONSTRAINT [{fld.Ref?.Name}]", fld.Ref?.IsSystemNamed == false)
+                .AppendIf($" REFERENCES {fld.Ref?.TargetField.Table.FullName} ([{fld.Ref?.TargetField.Name}])", fld.Ref != null);
         }
 
         protected override void GetFormat(ISqlFileBuilder sb)
@@ -62,8 +63,13 @@ namespace DacpacDiff.Mssql.Diff
 
             if (_diff.Table.PrimaryKeys.Length > 1 || _diff.Table.IsPrimaryKeyUnclustered)
             {
+                // TODO: Named primary key
                 sb.AppendLine(",")
-                    .Append($"    PRIMARY KEY {(_diff.Table.IsPrimaryKeyUnclustered ? "NONCLUSTERED " : "")}([{String.Join("], [", _diff.Table.PrimaryKeys.Select(f => f.Name))}])");
+                    .Append("    ")
+                    .AppendIf($"CONSTRAINT [{_diff.Table.PrimaryKeyName}] ", !_diff.Table.IsPrimaryKeySystemNamed)
+                    .Append("PRIMARY KEY ")
+                    .AppendIf("NONCLUSTERED ", _diff.Table.IsPrimaryKeyUnclustered)
+                    .Append($"([{string.Join("], [", _diff.Table.PrimaryKeys.Select(f => f.Name))}])");
             }
 
             if (_diff.Table.Temporality.PeriodFieldFrom != null)
@@ -79,8 +85,6 @@ namespace DacpacDiff.Mssql.Diff
                 sb.AppendLine()
                     .Append(')');
             }
-
-            // TODO: refs?
         }
     }
 }
