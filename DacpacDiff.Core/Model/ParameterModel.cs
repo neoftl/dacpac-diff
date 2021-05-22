@@ -5,8 +5,6 @@ namespace DacpacDiff.Core.Model
 {
     public class ParameterModel : IModel<ParameterModel, IParameterisedModuleModel>, IEquatable<ParameterModel>
     {
-        public static readonly ParameterModel Empty = new();
-
         public IParameterisedModuleModel? Parent { get; }
         public string Name { get; }
         public string FullName => $"{Parent?.FullName}.[{Name}]";
@@ -19,10 +17,6 @@ namespace DacpacDiff.Core.Model
         public bool IsReadOnly { get; set; }
         public bool IsOutput { get; set; }
 
-        private ParameterModel()
-        {
-            Name = string.Empty;
-        }
         public ParameterModel(IParameterisedModuleModel parent, string name)
         {
             Parent = parent;
@@ -51,20 +45,6 @@ namespace DacpacDiff.Core.Model
         }
         public override bool Equals(object? obj) => Equals(obj as ParameterModel);
 
-        public bool IsSignatureMatch(ParameterModel other)
-        {
-            bool eq<T>(Func<ParameterModel, T?> fn) where T : IEquatable<T>
-            {
-                var l = fn(this);
-                var r = fn(other);
-                return (l is null && r is null) || l?.Equals(r) == true;
-            }
-            return eq(m => m.Type)
-                && eq(m => m.IsReadOnly)
-                && eq(m => m.IsOutput)
-                && IsDefaultMatch(other);
-        }
-
         public override int GetHashCode()
         {
             return new object?[]
@@ -81,18 +61,19 @@ namespace DacpacDiff.Core.Model
 
         public bool IsDefaultMatch(ParameterModel field)
         {
-            if (!field.HasDefault && !HasDefault)
+            if (DefaultValue != null)
             {
-                return true;
-            }
-            if (field.HasDefault != HasDefault)
-            {
-                return false;
+                if (field.DefaultValue == null)
+                {
+                    return false;
+                }
+
+                var dbL = DefaultValue.ScrubSQL();
+                var dbR = field.DefaultValue.ScrubSQL();
+                return dbL == dbR;
             }
 
-            var dbL = DefaultValue?.ScrubSQL();
-            var dbR = field.DefaultValue?.ScrubSQL();
-            return dbL == dbR;
+            return !field.HasDefault;
         }
     }
 }
