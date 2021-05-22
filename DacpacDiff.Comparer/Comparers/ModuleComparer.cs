@@ -9,7 +9,6 @@ namespace DacpacDiff.Comparer.Comparers
     {
         public IEnumerable<IDifference> Compare(ModuleModel? lft, ModuleModel? rgt)
         {
-            var diffs = new List<IDifference>();
             if (lft is null)
             {
                 if (rgt is null)
@@ -17,39 +16,39 @@ namespace DacpacDiff.Comparer.Comparers
                     return Array.Empty<IDifference>();
                 }
 
-                diffs.Add(new DiffObjectDrop(rgt));
-                return diffs.ToArray();
+                return new IDifference[] { new DiffObjectDrop(rgt) };
             }
 
-            if (rgt is not null && lft.Type != rgt.Type)
+            var diffs = new List<IDifference>();
+
+            if (rgt != null && lft.Type != rgt.Type)
             {
                 diffs.Add(new DiffObjectDrop(rgt));
                 rgt = null;
             }
 
-            DiffModuleCreate? diffCreate = null;
             if (rgt is null)
             {
                 // TODO: Clustered index must be only one per object
 
-                diffCreate = new DiffModuleCreate(lft);
+                var diffCreate = new DiffModuleCreate(lft);
                 diffs.Add(diffCreate);
+                if (diffCreate.NeedsStub)
+                {
+                    diffs.Add(new DiffModuleAlter(lft));
+                }
             }
             else if (!lft.IsSimilarDefinition(rgt))
             {
                 if (lft.Type == ModuleModel.ModuleType.INDEX)
                 {
-                    diffs.Add(new DiffObjectDrop(rgt));
-                    diffCreate = new DiffModuleCreate(lft);
-                    diffs.Add(diffCreate);
+                    return new IDifference[]
+                    {
+                        new DiffObjectDrop(rgt),
+                        new DiffModuleCreate(lft)
+                    };
                 }
-                else
-                {
-                    diffs.Add(new DiffModuleAlter(lft));
-                }
-            }
-            if (diffCreate?.NeedsStub == true)
-            {
+
                 diffs.Add(new DiffModuleAlter(lft));
             }
 
