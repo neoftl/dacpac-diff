@@ -1,0 +1,192 @@
+﻿using DacpacDiff.Core.Diff;
+using DacpacDiff.Core.Model;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+
+namespace DacpacDiff.Mssql.Diff.Tests
+{
+    [TestClass()]
+    public class MssqlDiffModuleCreateTests
+    {
+        [TestMethod]
+        public void MssqlDiffModuleCreate__Function__Args()
+        {
+            // Arrange
+            var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            {
+                ReturnType = "LType",
+                Definition = "ModuleDefinition"
+            };
+            lft.Parameters = new []
+            {
+                new ParameterModel(lft, "@ArgA") { Type = "INT" },
+                new ParameterModel(lft, "@ArgB") { Type = "BIT", DefaultValue = "NULL" },
+                new ParameterModel(lft, "@ArgC") { Type = "VARCHAR(MAX)", IsOutput = true },
+                new ParameterModel(lft, "@ArgD") { Type = "DECIMAL(19, 5)", IsReadOnly = true },
+            };
+
+            var diff = new DiffModuleCreate(lft);
+
+            // Act
+            var res = new MssqlDiffModuleCreate(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            // Assert
+            CollectionAssert.AreEqual(new[]
+            {
+                "CREATE FUNCTION [LSchema].[LMod] (",
+                "    @ArgA INT,",
+                "    @ArgB BIT = NULL,",
+                "    @ArgC VARCHAR(MAX) OUTPUT,",
+                "    @ArgD DECIMAL(19, 5) READONLY",
+                ") RETURNS LType",
+                "AS BEGIN",
+                "    RETURN NULL",
+                "END"
+            }, res, string.Join("\n", res));
+        }
+
+        [TestMethod]
+        public void MssqlDiffModuleCreate__Scalar_function__Creates_stub()
+        {
+            // Arrange
+            var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            {
+                ReturnType = "LType",
+                Definition = "ModuleDefinition"
+            };
+
+            var diff = new DiffModuleCreate(lft);
+
+            // Act
+            var res = new MssqlDiffModuleCreate(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            // Assert
+            CollectionAssert.AreEqual(new[]
+            {
+                "CREATE FUNCTION [LSchema].[LMod] (",
+                ") RETURNS LType",
+                "AS BEGIN",
+                "    RETURN NULL",
+                "END"
+            }, res, string.Join("\n", res));
+        }
+
+        [TestMethod]
+        public void MssqlDiffModuleCreate__Unnamed_table_function__Creates_stub()
+        {
+            // Arrange
+            var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            {
+                ReturnType = "TABLE",
+                Definition = "ModuleDefinition"
+            };
+
+            var diff = new DiffModuleCreate(lft);
+
+            // Act
+            var res = new MssqlDiffModuleCreate(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            // Assert
+            CollectionAssert.AreEqual(new[]
+            {
+                "CREATE FUNCTION [LSchema].[LMod] (",
+                ") RETURNS TABLE",
+                "AS",
+                "    RETURN SELECT 1 A"
+            }, res, string.Join("\n", res));
+        }
+
+        [TestMethod]
+        public void MssqlDiffModuleCreate__Named_table_function__Creates_stub()
+        {
+            // Arrange
+            var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            {
+                ReturnType = "@TableVar",
+                ReturnTable = new TableModel(SchemaModel.Empty, "LMod"),
+                Definition = "ModuleDefinition"
+            };
+
+            lft.ReturnTable.Fields = new[]
+            {
+                new FieldModel(lft.ReturnTable, "FldA") { Type = "INT", IsPrimaryKey = true },
+                new FieldModel(lft.ReturnTable, "FldB") { Type = "VARCHAR(MAX)", Nullable = true },
+            };
+
+            var diff = new DiffModuleCreate(lft);
+
+            // Act
+            var res = new MssqlDiffModuleCreate(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            // Assert
+            CollectionAssert.AreEqual(new[]
+            {
+                "CREATE FUNCTION [LSchema].[LMod] (",
+                ") RETURNS @TableVar TABLE (",
+                "    [FldA] INT NOT NULL,",
+                "    [FldB] VARCHAR(MAX)",
+                ") AS BEGIN",
+                "    RETURN",
+                "END"
+            }, res, string.Join("\n", res));
+        }
+
+        [TestMethod]
+        public void MssqlDiffModuleCreate__Procedure__Creates_stub()
+        {
+            // Arrange
+            var lft = new ProcedureModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            {
+                Definition = "ModuleDefinition"
+            };
+
+            var diff = new DiffModuleCreate(lft);
+
+            // Act
+            var res = new MssqlDiffModuleCreate(diff).ToString().Trim();
+
+            // Assert
+            Assert.AreEqual("CREATE PROCEDURE [LSchema].[LMod] AS RETURN 0", res);
+        }
+
+        [TestMethod]
+        public void MssqlDiffModuleCreate__View__Creates_stub()
+        {
+            // Arrange
+            var lft = new ViewModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            {
+                Definition = "ModuleDefinition"
+            };
+
+            var diff = new DiffModuleCreate(lft);
+
+            // Act
+            var res = new MssqlDiffModuleCreate(diff).ToString().Trim();
+
+            // Assert
+            Assert.AreEqual("CREATE VIEW [LSchema].[LMod] AS SELECT 1 A", res);
+        }
+
+        [TestMethod]
+        [DataRow(ModuleModel.ModuleType.INDEX)]
+        [DataRow(ModuleModel.ModuleType.NONE)]
+        [DataRow(ModuleModel.ModuleType.SEQUENCE)]
+        [DataRow(ModuleModel.ModuleType.TRIGGER)]
+        public void MssqlDiffModuleCreate__Other__Uses_definition(ModuleModel.ModuleType type)
+        {
+            // Arrange
+            var lft = new ModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod", type)
+            {
+                Definition = "ModuleDefinition"
+            };
+
+            var diff = new DiffModuleCreate(lft);
+
+            // Act
+            var res = new MssqlDiffModuleCreate(diff).ToString().Trim();
+
+            // Assert
+            Assert.AreEqual(lft.Definition, res);
+        }
+    }
+}

@@ -41,7 +41,7 @@ namespace DacpacDiff.Core.Parser
         public SchemeModel? ParseFile(string filename)
         {
             var name = Path.GetFileNameWithoutExtension(filename);
-            if (filename == "blank.dacpac")
+            if (name == "blank")
             {
                 return ParseContent("blank", "<blank />");
             }

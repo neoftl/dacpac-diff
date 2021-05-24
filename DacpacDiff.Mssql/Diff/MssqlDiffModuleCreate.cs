@@ -1,8 +1,7 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Output;
-using DacpacDiff.Core.Utility;
-using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace DacpacDiff.Mssql.Diff
 {
@@ -14,32 +13,50 @@ namespace DacpacDiff.Mssql.Diff
 
         protected override void GetFormat(ISqlFileBuilder sb)
         {
-            switch (_diff.Module.Type)
+            switch (_diff.Module)
             {
-                case ModuleModel.ModuleType.FUNCTION:
-                    sb.AppendLine("BEGIN").AppendLine("    RETURN NULL").Append("END");
-
-                    var m = Regex.Match(_diff.Module.Definition, @"(?is)^(.*?\sAS\s)");
-                    var sql = m.Groups[1].Value;
-                    sb.AppendLine(sql.Trim());
-
-                    if (sql.TryMatch(@"(?i)RETURNS\s+(@\w+\s+)?TABLE\s", out m))
+                case FunctionModuleModel funcMod:
+                    // Function SQL
+                    sb.AppendLine($"CREATE FUNCTION {funcMod.FullName} (");
+                    if (funcMod.Parameters.Length > 0)
                     {
-                        if (m.Groups[1].Success)
-                        {
-                            sb.AppendLine("BEGIN").AppendLine("    RETURN").AppendLine("END");
-                        }
-                        else
-                        {
-                            sb.AppendLine("    RETURN SELECT 1 A");
-                        }
+                        var argSql = funcMod.Parameters.Select(p => $"    {p.Name} {p.Type}"
+                            + (p.HasDefault ? $" = {p.DefaultValue}" : "")
+                            + (p.IsReadOnly ? " READONLY" : "")
+                            + (p.IsOutput ? " OUTPUT" : "")).ToArray();
+                        sb.AppendLine(string.Join(",\r\n", argSql));
+                    }
+                    sb.Append(") RETURNS ");
+
+                    if (funcMod.ReturnTable != null)
+                    {
+                        var tblFields = funcMod.ReturnTable.Fields.Select(f => $"    [{f.Name}] {f.Type}"
+                            + (!f.Nullable ? " NOT NULL" : ""));
+                        sb.AppendLine($"{funcMod.ReturnType} TABLE (")
+                            .AppendLine(string.Join(",\r\n", tblFields))
+                            .AppendLine(") AS BEGIN")
+                            .AppendLine("    RETURN")
+                            .AppendLine("END");
+                    }
+                    else if (funcMod.ReturnType == "TABLE")
+                    {
+                        sb.AppendLine("TABLE")
+                            .AppendLine("AS")
+                            .AppendLine("    RETURN SELECT 1 A");
+                    }
+                    else
+                    {
+                        sb.AppendLine(funcMod.ReturnType)
+                            .AppendLine("AS BEGIN")
+                            .AppendLine("    RETURN NULL")
+                            .AppendLine("END");
                     }
                     return;
-                case ModuleModel.ModuleType.PROCEDURE:
-                    sb.AppendLine($"CREATE PROCEDURE {_diff.Module.FullName} AS RETURN 0");
+                case ProcedureModuleModel procMod:
+                    sb.AppendLine($"CREATE PROCEDURE {procMod.FullName} AS RETURN 0");
                     return;
-                case ModuleModel.ModuleType.VIEW:
-                    sb.AppendLine($"CREATE VIEW {_diff.Module.FullName} AS SELECT 1 A");
+                case ViewModuleModel viewMod:
+                    sb.AppendLine($"CREATE VIEW {viewMod.FullName} AS SELECT 1 A");
                     return;
             }
 
