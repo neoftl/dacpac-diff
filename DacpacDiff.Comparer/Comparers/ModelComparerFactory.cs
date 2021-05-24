@@ -2,14 +2,16 @@
 using DacpacDiff.Core.Utility;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace DacpacDiff.Comparer.Comparers
 {
     public class ModelComparerFactory : IModelComparerFactory
     {
-        private readonly IDictionary<Type, Func<IModelComparer>> _modelComparers = new Dictionary<Type, Func<IModelComparer>>();
+        private readonly Dictionary<Type, Func<IModelComparer>> _modelComparers = new();
 
+        [ExcludeFromCodeCoverage(Justification = "Not currently possible to test; will need Shimterface")] // TODO
         public ModelComparerFactory()
         {
             // Find all comparers
@@ -19,11 +21,9 @@ namespace DacpacDiff.Comparer.Comparers
             _modelComparers.Merge(comparerTypes, getModelType, t =>
                 {
                     var constr = t.GetConstructor(new[] { typeof(IModelComparerFactory) });
-                    if (constr is not null)
-                    {
-                        return () => Activator.CreateInstance(t, new object[] { this }) as IModelComparer ?? throw new NullReferenceException();
-                    }
-                    return () => Activator.CreateInstance(t) as IModelComparer ?? throw new NullReferenceException();
+                    return constr is not null
+                        ? () => (IModelComparer)Activator.CreateInstance(t, new object[] { this })
+                        : () => (IModelComparer)Activator.CreateInstance(t);
                 });
 
             static Type getModelType(Type t)
