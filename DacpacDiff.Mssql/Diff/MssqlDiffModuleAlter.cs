@@ -26,6 +26,7 @@ namespace DacpacDiff.Mssql.Diff
             }
 
             // TODO: maintain comment
+            // TODO: function return null as null
             // TODO: execute as
 
             sb.EnsureLine().Append(m.Groups[1].Value.Trim()).EnsureLine()

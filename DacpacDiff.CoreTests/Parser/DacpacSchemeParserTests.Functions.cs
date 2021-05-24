@@ -33,6 +33,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.AreEqual(ModuleModel.ModuleType.FUNCTION, fn.Type);
             Assert.AreEqual("varchar", fn.ReturnType);
             Assert.AreEqual(0, fn.Parameters.Length);
+            Assert.IsFalse(fn.ReturnNullForNullInput);
             Assert.IsNull(fn.ReturnTable);
             Assert.IsNull(fn.ExecuteAs);
             Assert.IsNotNull(fn.Definition);
@@ -63,6 +64,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.AreEqual(ModuleModel.ModuleType.FUNCTION, fn.Type);
             Assert.AreEqual("TABLE", fn.ReturnType);
             Assert.AreEqual(0, fn.Parameters.Length);
+            Assert.IsFalse(fn.ReturnNullForNullInput);
             Assert.IsNull(fn.ReturnTable);
             Assert.IsNull(fn.ExecuteAs);
             Assert.IsNotNull(fn.Definition);
@@ -100,6 +102,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.AreEqual(ModuleModel.ModuleType.FUNCTION, fn.Type);
             Assert.AreEqual("@retvar", fn.ReturnType);
             Assert.AreEqual(0, fn.Parameters.Length);
+            Assert.IsFalse(fn.ReturnNullForNullInput);
             Assert.IsNotNull(fn.ReturnTable);
             Assert.IsNull(fn.ExecuteAs);
             Assert.IsNotNull(fn.Definition);
@@ -278,6 +281,36 @@ namespace DacpacDiff.Core.Parser.Tests
 
             // Assert
             Assert.AreEqual("OWNER", fn.ExecuteAs);
+        }
+
+        [TestMethod]
+        [DataRow("SqlScalarFunction")]
+        [DataRow("SqlInlineTableValuedFunction")]
+        [DataRow("SqlMultiStatementTableValuedFunction")]
+        public void ParseContent__Parses_functions_with_NullAsNull(string type)
+        {
+            // Arrange
+            var xml = $@"<root><Model>
+    <Element Type=""{type}"" Name=""[dbo].[fn_Test]"">
+        <Property Name=""DoReturnNullForNullInput"" Value=""True"" />
+        <Relationship Name=""Type"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Relationship>
+        <Property Name=""ReturnTableVariable"" Value=""@retvar"" />
+        <Relationship Name=""Columns"" />
+        <Property Name=""BodyScript""><Value>BODY</Value></Property>
+    </Element>
+</Model></root>";
+
+            // Act
+            var res = DacpacSchemeParser.ParseContent("test", xml);
+            var sch = res.Databases["database"].Schemas["dbo"];
+            var fn = (FunctionModuleModel)sch.Modules["fn_Test"];
+
+            // Assert
+            Assert.IsTrue(fn.ReturnNullForNullInput);
         }
 
         #endregion Shared

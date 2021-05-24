@@ -341,6 +341,7 @@ namespace DacpacDiff.Core.Parser
                 ? "CALLER"
                 : el.Find("Property", ("Name", "IsOwner"), ("Value", "True"))?.Any() == true
                 ? "OWNER" : null;
+            func.ReturnNullForNullInput = el.Find("Property", ("Name", "DoReturnNullForNullInput"), ("Value", "True"))?.Any() == true;
 
             var idx = 0;
             func.Parameters = el.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?

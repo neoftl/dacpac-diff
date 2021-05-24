@@ -44,7 +44,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
                 "END"
             }, res, string.Join("\n", res));
         }
-
+        
         [TestMethod]
         public void MssqlDiffModuleCreate__Scalar_function__Creates_stub()
         {
@@ -129,6 +129,57 @@ namespace DacpacDiff.Mssql.Diff.Tests
                 "    RETURN",
                 "END"
             }, res, string.Join("\n", res));
+        }
+        
+        [TestMethod]
+        public void MssqlDiffModuleCreate__Scalar_function__ReturnNullForNullInput()
+        {
+            // Arrange
+            var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            {
+                ReturnType = "LType",
+                Definition = "ModuleDefinition",
+                ReturnNullForNullInput = true
+            };
+
+            var diff = new DiffModuleCreate(lft);
+
+            // Act
+            var res = new MssqlDiffModuleCreate(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            // Assert
+            CollectionAssert.AreEqual(new[]
+            {
+                "CREATE FUNCTION [LSchema].[LMod] (",
+                ") RETURNS LType",
+                "WITH RETURNS NULL ON NULL INPUT",
+                "AS BEGIN",
+                "    RETURN NULL",
+                "END"
+            }, res, string.Join("\n", res));
+        }
+        
+        [TestMethod]
+        [DataRow("TABLE", false)]
+        [DataRow("@Table", true)]
+        public void MssqlDiffModuleCreate__Nonscalar_function__ReturnNullForNullInput_no_effect(string returnType, bool withTable)
+        {
+            // Arrange
+            var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            {
+                ReturnType = returnType,
+                ReturnTable = withTable ? new TableModel(SchemaModel.Empty, "LMod") : null,
+                Definition = "ModuleDefinition",
+                ReturnNullForNullInput = true
+            };
+
+            var diff = new DiffModuleCreate(lft);
+
+            // Act
+            var res = new MssqlDiffModuleCreate(diff).ToString();
+
+            // Assert
+            Assert.IsFalse(res.Contains("WITH RETURNS NULL ON NULL INPUT"));
         }
 
         [TestMethod]

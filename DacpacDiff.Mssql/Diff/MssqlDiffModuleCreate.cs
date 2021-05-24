@@ -47,6 +47,7 @@ namespace DacpacDiff.Mssql.Diff
                     else
                     {
                         sb.AppendLine(funcMod.ReturnType)
+                            .AppendIf("WITH RETURNS NULL ON NULL INPUT", funcMod.ReturnNullForNullInput).EnsureLine()
                             .AppendLine("AS BEGIN")
                             .AppendLine("    RETURN NULL")
                             .AppendLine("END");
