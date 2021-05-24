@@ -93,9 +93,7 @@ Parser.Default.ParseArguments<Options>(args)
 
         if (o.StandardiseLineEndings)
         {
-            result = result.Replace("\r\n", "\n")
-                .Replace('\r', '\n')
-                .Replace("\n", "\r\n");
+            result = result.StandardiseLineEndings("\r\n");
         }
 
         if (outputFile != null)

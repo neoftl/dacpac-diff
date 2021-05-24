@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Text.RegularExpressions;
 
 namespace DacpacDiff.Core.Utility
 {
@@ -62,6 +63,15 @@ namespace DacpacDiff.Core.Utility
                 .Replace("(", "").Replace(")", "")
                 .Replace("[", "").Replace("]", "")
                 .ToLower();
+        }
+
+        public static string StandardiseLineEndings(this string str)
+            => StandardiseLineEndings(str, Environment.NewLine);
+        public static string StandardiseLineEndings(this string str, string eol)
+        {
+            return str.Replace("\r\n", "\n")
+                .Replace('\r', '\n')
+                .Replace("\n", eol);
         }
 
         public static bool TryMatch(this string input, string pattern, out Match match)

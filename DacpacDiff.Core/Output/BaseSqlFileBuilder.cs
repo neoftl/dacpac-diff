@@ -10,7 +10,7 @@ namespace DacpacDiff.Core.Output
     {
         public IOutputOptions? Options { get; set; }
 
-        protected StringBuilder _sql = new StringBuilder();
+        protected readonly StringBuilder _sql = new();
 
         public ISqlFileBuilder Append(char value)
         {
@@ -77,5 +77,7 @@ namespace DacpacDiff.Core.Output
         }
 
         public abstract string Generate(string leftFileName, string rightFileName, string targetVersion, IEnumerable<ISqlFormattable> diffs);
+
+        public override string ToString() => _sql.ToString();
     }
 }

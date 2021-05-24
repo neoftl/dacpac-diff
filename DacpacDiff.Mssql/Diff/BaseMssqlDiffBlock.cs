@@ -2,6 +2,7 @@
 using DacpacDiff.Core.Output;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DacpacDiff.Mssql.Diff
 {
@@ -13,6 +14,7 @@ namespace DacpacDiff.Mssql.Diff
 
         private class NullSqlBuilder : BaseSqlFileBuilder
         {
+            [ExcludeFromCodeCoverage(Justification = "Not application logic")]
             public override string Generate(string leftFileName, string rightFileName, string targetVersion, IEnumerable<ISqlFormattable> diffs)
                 => throw new NotImplementedException();
 
