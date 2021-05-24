@@ -3,6 +3,7 @@ using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Output;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -77,18 +78,10 @@ namespace DacpacDiff.Comparer.Comparers
             var sql = diff.ToString() ?? string.Empty;
             var refs = dict.Where(o => o.Model is not null && o != diff && NameInSql(sql, o.Model)).ToArray();
             return refs.Any();
-
-            //if (diff.Model is IDependentModel dm
-            //    && (dm.Dependents?.Any(d => dict.Keys.Any(o => o.Name == d.Name)) ?? false))
-            //{
-            //    return true;
-            //}
-
-            //return dict.Any(k => k.Key != diff
-            //    && k.Value.Contains(diff.Name));
         }
 
         // TODO: obsolete?
+        [ExcludeFromCodeCoverage(Justification = "To be removed")]
         internal static bool NameInSql(string sql, IModel model)
         {
             return model switch
@@ -115,29 +108,34 @@ namespace DacpacDiff.Comparer.Comparers
             foreach (var inOrder in DiffOrder)
             {
                 ++partL; partR = 0;
-                IDifference[] matches;
-                while (true)
-                {
-                    matches = remain.Where(r => inOrder(remain, r)).ToArray();
-                    if (matches.Length == 0)
-                    {
-                        break;
-                    }
-
-                    result.Add(new SqlComment { Comment = $"{Environment.NewLine}L{partL}R{partR} ({matches.Length} | Rem {remain.Count})" });
-                    result.AddRange(matches);
-                    remain.RemoveAll(d => matches.Any(m => m == d));
-                    ++partR;
-                }
+                processMatcher(inOrder);
             }
 
             if (remain.Count > 0)
             {
                 Console.Error.WriteLine($"[WARN] Including {remain.Count} unordered changes. First: {remain.First().GetType().FullName}");
+                processMatcher((a, d) => !ReferencesRemain(a, d));
+                result.AddRange(remain);
             }
-            result.AddRange(remain);
 
             return result.ToArray();
+
+            void processMatcher(Func<IEnumerable<IDifference>, IDifference, bool> matcher)
+            {
+                while (true)
+                {
+                    var matches = remain.Where(r => matcher(remain, r)).ToArray();
+                    if (matches.Length == 0)
+                    {
+                        break;
+                    }
+
+                    //result.Add(new SqlComment { Comment = $"{Environment.NewLine}L{partL}R{partR} ({matches.Length} | Rem {remain.Count})" });
+                    result.AddRange(matches);
+                    remain.RemoveAll(d => matches.Any(m => m == d));
+                    ++partR;
+                }
+            }
         }
     }
 }
