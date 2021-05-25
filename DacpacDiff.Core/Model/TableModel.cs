@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DacpacDiff.Core.Utility;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -30,6 +31,14 @@ namespace DacpacDiff.Core.Model
         {
             Schema = schema;
             Name = name;
+        }
+
+        public override int GetHashCode()
+        {
+            return new object?[]
+            {
+                FullName
+            }.CalculateHashCode();
         }
     }
 }

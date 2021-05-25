@@ -413,7 +413,7 @@ namespace DacpacDiff.Core.Model.Tests
             };
 
             // Act
-            var res = p1.Equals(p2);
+            var res = p1.IsDefaultMatch(p2);
 
             // Assert
             Assert.IsTrue(res);
@@ -439,7 +439,7 @@ namespace DacpacDiff.Core.Model.Tests
             };
 
             // Act
-            var res = p1.Equals(p2);
+            var res = p1.IsDefaultMatch(p2);
 
             // Assert
             Assert.IsTrue(res);
@@ -466,7 +466,7 @@ namespace DacpacDiff.Core.Model.Tests
             };
 
             // Act
-            var res = p1.Equals(p2);
+            var res = p1.IsDefaultMatch(p2);
 
             // Assert
             Assert.IsFalse(res);

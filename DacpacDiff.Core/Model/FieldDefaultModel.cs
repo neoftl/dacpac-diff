@@ -18,5 +18,16 @@ namespace DacpacDiff.Core.Model
             IsSystemNamed = Name.Length == 0;
             Value = value.ReduceBrackets();
         }
+
+        public override int GetHashCode()
+        {
+            return new object?[]
+            {
+                Field,
+                Name,
+                IsSystemNamed,
+                Value
+            }.CalculateHashCode();
+        }
     }
 }

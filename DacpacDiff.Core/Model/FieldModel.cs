@@ -27,12 +27,8 @@ namespace DacpacDiff.Core.Model
 
         public FieldRefModel? Ref { get; set; }
         public bool HasReference => Ref is not null;
-        public string? RefName => Ref?.Name;
-        public string? RefTargetTable => Ref?.TargetField.Table.Name;
-        public string? RefTargetField => Ref?.TargetField.Name;
-        public bool IsNamedReference => Ref?.IsSystemNamed ?? false;
 
-        public string[] Dependencies => RefTargetTable == null ? Array.Empty<string>() : new[] { RefTargetTable };
+        public string[] Dependencies => Ref == null ? Array.Empty<string>() : new[] { Ref.TargetField.Table.Name };
 
         private FieldModel()
         {
@@ -66,11 +62,7 @@ namespace DacpacDiff.Core.Model
                 //&& eq(m => m.Order) // TODO: Table field ordering to separate option and diff
                 && eq(m => m.Nullable)
                 && eq(m => m.Identity)
-                && eq(m => m.HasReference)
-                && eq(m => m.RefName)
-                && eq(m => m.RefTargetTable)
-                && eq(m => m.RefTargetField)
-                && eq(m => m.IsNamedReference);
+                && ((Ref == null) == (other.Ref == null) && Ref?.Equals(other.Ref) != false);
         }
         public override bool Equals(object? obj) => Equals(obj as FieldModel);
 
@@ -92,8 +84,7 @@ namespace DacpacDiff.Core.Model
         {
             return new object?[]
             {
-                Table,
-                Name,
+                FullName,
                 Type,
                 Computation,
                 Default,
@@ -107,27 +98,19 @@ namespace DacpacDiff.Core.Model
 
         public bool IsDefaultMatch(FieldModel field)
         {
-            if (!field.HasDefault && !HasDefault)
+            if (DefaultValue != null)
             {
-                return true;
-            }
-            if (field.HasDefault != HasDefault)
-            {
-                return false;
+                if (field.DefaultValue == null)
+                {
+                    return false;
+                }
+
+                var dbL = DefaultValue.ScrubSQL();
+                var dbR = field.DefaultValue.ScrubSQL();
+                return dbL == dbR;
             }
 
-            var dbL = DefaultValue?.ScrubSQL();
-            var dbR = field.DefaultValue?.ScrubSQL();
-            if (dbL != dbR)
-            {
-                return false;
-            }
-
-            if (field.IsDefaultSystemNamed && IsDefaultSystemNamed)
-            {
-                return true;
-            }
-            return field.DefaultName == DefaultName;
+            return !field.HasDefault;
         }
     }
 }

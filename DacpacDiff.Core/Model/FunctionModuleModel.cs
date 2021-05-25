@@ -6,6 +6,8 @@ namespace DacpacDiff.Core.Model
     {
         public static FunctionModuleModel Empty => new(SchemaModel.Empty, string.Empty);
 
+        public bool ReturnNullForNullInput { get; set; }
+
         public string? ExecuteAs { get; set; }
 
         public ParameterModel[] Parameters { get; set; } = Array.Empty<ParameterModel>();

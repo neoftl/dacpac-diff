@@ -2,6 +2,7 @@
 using DacpacDiff.Core.Utility;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using IFormatProvider = DacpacDiff.Core.IFormatProvider;
 
@@ -11,15 +12,16 @@ namespace DacpacDiff.Mssql
     {
         public string FormatName => "mssql";
 
-        private readonly IDictionary<Type, Func<ISqlFormattable, ISqlFormatter>> _sqlFormatters = new Dictionary<Type, Func<ISqlFormattable, ISqlFormatter>>();
+        private readonly Dictionary<Type, Func<ISqlFormattable, ISqlFormatter>> _sqlFormatters = new();
 
+        [ExcludeFromCodeCoverage(Justification = "Not currently possible to test; will need Shimterface")] // TODO
         public MssqlFormatProvider()
         {
             // Find all formatters
             var sqlFormatters = GetType().Assembly.GetTypes()
                 .Where(t => !t.IsAbstract && typeof(ISqlFormatter).IsAssignableFrom(t))
                 .ToArray();
-            _sqlFormatters.Merge(sqlFormatters, getFormattableType, t => (f) => Activator.CreateInstance(t, new object[] { f }) as ISqlFormatter ?? throw new NullReferenceException());
+            _sqlFormatters.Merge(sqlFormatters, getFormattableType, t => (f) => (ISqlFormatter)Activator.CreateInstance(t, new object[] { f }));
 
             static Type getFormattableType(Type t)
             {
