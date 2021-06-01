@@ -9,9 +9,9 @@ namespace DacpacDiff.Core
 {
     public class FormatProviderFactory
     {
-        private static readonly IDictionary<string, Func<IFormatProvider>> _formatProviders = new Dictionary<string, Func<IFormatProvider>>();
+        private readonly Dictionary<string, Func<IFormatProvider>> _formatProviders = new();
 
-        internal static void Initialise()
+        internal void Initialise()
         {
             // Find all assemblies referencing DacpacDiff.Core
             var dacpacDiffAsm = typeof(IFormatProvider).Assembly;
@@ -30,7 +30,7 @@ namespace DacpacDiff.Core
                 .ToDictionary(p => p.FormatName, (Func<IFormatProvider, Func<IFormatProvider>>)(p => () => p)));
         }
 
-        public static IFormatProvider GetFormat(string format)
+        public IFormatProvider GetFormat(string format)
         {
             if (_formatProviders.Count == 0)
             {

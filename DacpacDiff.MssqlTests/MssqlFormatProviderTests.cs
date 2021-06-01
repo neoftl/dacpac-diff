@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace DacpacDiff.Mssql.Tests
@@ -11,8 +12,11 @@ namespace DacpacDiff.Mssql.Tests
     public class MssqlFormatProviderTests
     {
         private MssqlFormatProvider _factory = new();
-        private Dictionary<Type, Func<ISqlFormattable, ISqlFormatter>> _sqlFormatters = new();
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        private IDictionary<Type, Func<ISqlFormattable, ISqlFormatter>> _sqlFormatters;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
+        [ExcludeFromCodeCoverage]
         public class TestSql : ISqlFormattable
         {
             public string? Title { get; } = string.Empty;
@@ -27,28 +31,22 @@ namespace DacpacDiff.Mssql.Tests
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
 #pragma warning disable CS8601 // Possible null reference assignment.
-            _sqlFormatters = (Dictionary<Type, Func<ISqlFormattable, ISqlFormatter>>)typeof(MssqlFormatProvider).GetField("_sqlFormatters", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(_factory);
+            _sqlFormatters = (IDictionary<Type, Func<ISqlFormattable, ISqlFormatter>>)typeof(MssqlFormatProvider).GetField("_sqlFormatters", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(_factory);
             _sqlFormatters.Clear();
 #pragma warning restore CS8601 // Possible null reference assignment.
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-
-            _ = new MssqlFormatProvider().FormatName;
-            _ = new TestSql().Title;
-            _ = new TestSql().Name;
         }
 
         [TestMethod]
         public void GetSqlFileBuilder()
         {
-            // Arrange
-            var prov = new MssqlFormatProvider();
-
             // Act
-            var res = prov.GetSqlFileBuilder();
+            var res = _factory.GetSqlFileBuilder();
 
             // Assert
             Assert.IsInstanceOfType(res, typeof(MssqlFileBuilder));
+            Assert.AreEqual("mssql", _factory.FormatName);
         }
 
         [TestMethod()]

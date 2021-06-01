@@ -45,7 +45,7 @@ Parser.Default.ParseArguments<Options>(args)
 
         var schemeParserFactory = new SchemeParserFactory();
         var comparerFactory = new ModelComparerFactory();
-        var formatProvider = FormatProviderFactory.GetFormat("mssql");
+        var formatProvider = new FormatProviderFactory().GetFormat("mssql");
 
         // Source scheme
         var rightFmt = schemeParserFactory.GetFileFormat(rightSchemeFile);
