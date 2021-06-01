@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Text;
 
 namespace DacpacDiff.Core.Utility.Tests
@@ -48,19 +49,11 @@ namespace DacpacDiff.Core.Utility.Tests
             // Arrange
             var sb = new StringBuilder("start-");
             
-            var isResolved = false;
-            string getString()
-            {
-                isResolved = true;
-                return "append";
-            }
-
             // Act
-            var res = sb.AppendIf(getString, false);
+            var res = sb.AppendIf(() => throw new NotImplementedException(), false);
 
             // Assert
             Assert.AreSame(sb, res);
-            Assert.IsFalse(isResolved);
             Assert.AreEqual("start-", sb.ToString());
         }
 

@@ -7,20 +7,16 @@ namespace DacpacDiff.Mssql.Diff
     {
         private readonly SqlComment _diff;
 
-        public MssqlComment(SqlComment diff)
+        public MssqlComment(SqlComment sql)
         {
-            _diff = diff ?? throw new ArgumentNullException(nameof(diff));
+            _diff = sql ?? throw new ArgumentNullException(nameof(sql));
         }
 
         public void Format(ISqlFileBuilder sb)
         {
             if (_diff.Comment.Length > 0)
             {
-                var res = "-- " + _diff.Comment.Replace("\r\n", "\r\n-- ");
-                if (res.StartsWith("-- \r\n--"))
-                {
-                    res = res[3..];
-                }
+                var res = "-- " + _diff.Comment.Trim().Replace("\r\n", "\r\n-- ");
                 sb.AppendLine(res);
             }
         }
