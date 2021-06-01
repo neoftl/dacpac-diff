@@ -6,6 +6,8 @@ namespace DacpacDiff.Core.Model
 {
     public class SchemeModel : IModel
     {
+        public const string UNKNOWN_VER = "(unknown)";
+
         public string Name { get; }
         public IDictionary<string, DatabaseModel> Databases { get; } = new Dictionary<string, DatabaseModel>();
 
@@ -16,17 +18,19 @@ namespace DacpacDiff.Core.Model
 
         public string GetDatabaseVersion()
         {
-            var db = Databases.Values.Single();
-
-            // Resolve the version of the scheme from the automatic object
-            ModuleModel? fnVer = null;
-            if (db.Schemas.TryGetValue("dbo", out var dboSchema)
-                && dboSchema.Modules?.TryGetValue("tfn_DatabaseVersion", out fnVer) == true && fnVer != null
-                && fnVer.Definition.TryMatch(@"'([\d\.]+)'\s+\[BuildNumber\]", out var m) == true && m != null)
+            if (Databases.Count == 1)
             {
-                return m.Groups[1].Value;
+                var db = Databases.Values.Single(); // TODO
+
+                // Resolve the version of the scheme from the automatic object
+                if (db.Schemas.TryGetValue("dbo", out var dboSchema)
+                    && dboSchema.Modules.TryGetValue("tfn_DatabaseVersion", out var fnVer) == true && fnVer != null
+                    && fnVer.Definition.TryMatch(@"'([\d\.]+)'\s+\[BuildNumber\]", out var m) == true && m != null)
+                {
+                    return m.Groups[1].Value;
+                }
             }
-            return "(unknown)";
+            return UNKNOWN_VER;
         }
     }
 }
