@@ -65,7 +65,7 @@ namespace DacpacDiff.Core.Parser
             return modelData != null ? ParseContent(name, modelData) : null;
         }
 
-        internal static SchemeModel? ParseContent(string name, string content)
+        internal static SchemeModel ParseContent(string name, string content)
         {
             var scheme = new SchemeModel(name);
 

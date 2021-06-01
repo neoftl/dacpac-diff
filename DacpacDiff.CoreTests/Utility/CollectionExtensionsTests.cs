@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
 namespace DacpacDiff.Core.Utility.Tests
 {
     [TestClass]
@@ -44,7 +45,7 @@ namespace DacpacDiff.Core.Utility.Tests
         public void Get__Null_dict__Null()
         {
             // Act
-            var res = ((IDictionary<string, object>)null).Get("key");
+            var res = ((IDictionary<string, object>?)null).Get("key");
 
             // Assert
             Assert.IsNull(res);
@@ -85,7 +86,7 @@ namespace DacpacDiff.Core.Utility.Tests
         public void Merge_1__Null_dict__Null()
         {
             // Act
-            var res = ((IDictionary<string, object>)null).Merge(Array.Empty<KeyValuePair<string, object>>());
+            var res = ((IDictionary<string, object>?)null).Merge(Array.Empty<KeyValuePair<string, object>>());
 
             // Assert
             Assert.IsNull(res);
@@ -101,7 +102,8 @@ namespace DacpacDiff.Core.Utility.Tests
             };
 
             // Act
-            var res = dict.Merge((IDictionary<string, object>)null);
+            IDictionary<string, object>? arg = null;
+            var res = dict.Merge(arg);
 
             // Assert
             Assert.AreSame(dict, res);
@@ -140,7 +142,7 @@ namespace DacpacDiff.Core.Utility.Tests
         public void Merge_2__Null_dict__Null()
         {
             // Act
-            var res = ((IDictionary<string, object>)null).Merge(Array.Empty<object>(), null, null);
+            var res = ((IDictionary<string, object>?)null).Merge(Array.Empty<object>(), (o) => throw new NotImplementedException(), (o) => throw new NotImplementedException());
 
             // Assert
             Assert.IsNull(res);
@@ -156,7 +158,7 @@ namespace DacpacDiff.Core.Utility.Tests
             };
 
             // Act
-            var res = dict.Merge((IDictionary<string, object>)null, e => e.Key, e => e.Value);
+            var res = dict.Merge((IDictionary<string, object>?)null, e => e.Key, e => e.Value);
 
             // Assert
             Assert.AreSame(dict, res);
@@ -195,7 +197,7 @@ namespace DacpacDiff.Core.Utility.Tests
         public void NotNull__Keeps_only_not_null_items()
         {
             // Arrange
-            var arr = new object[]
+            var arr = new object?[]
             {
                 1,
                 "str",
@@ -218,7 +220,7 @@ namespace DacpacDiff.Core.Utility.Tests
         public void TryGetValue__Null_coll__False()
         {
             // Act
-            var res = ((object[])null).TryGetValue(e => true, out var value);
+            var res = ((object[]?)null).TryGetValue(e => true, out var value);
 
             // Assert
             Assert.IsFalse(res);

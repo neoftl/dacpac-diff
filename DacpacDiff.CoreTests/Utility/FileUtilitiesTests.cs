@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
 
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
 namespace DacpacDiff.Core.Utility.Tests
 {
     [TestClass]

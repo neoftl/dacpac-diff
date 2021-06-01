@@ -1,5 +1,6 @@
 ﻿using DacpacDiff.Core.Model;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 
 namespace DacpacDiff.Core.Parser.Tests
 {
@@ -151,7 +152,7 @@ namespace DacpacDiff.Core.Parser.Tests
             var fn = (FunctionModuleModel)sch.Modules["fn_Test"];
 
             // Assert
-            var rtbl = fn.ReturnTable;
+            var rtbl = fn.ReturnTable ?? throw new NullReferenceException();
             Assert.AreEqual(4, rtbl.Fields.Length);
             Assert.AreEqual(new FieldModel(rtbl, "VarcharMax") { Type = "varchar(MAX)", Identity = true, Nullable = true, Order = 1 }, rtbl.Fields[0]);
             Assert.AreEqual(new FieldModel(rtbl, "Char10") { Type = "char(10)", Nullable = true, Order = 2 }, rtbl.Fields[1]);

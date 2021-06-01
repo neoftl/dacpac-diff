@@ -1,6 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Xml.Linq;
 
+#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 namespace DacpacDiff.Core.Utility.Tests
 {
     [TestClass]

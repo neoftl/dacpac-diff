@@ -14,7 +14,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         public void Compare__Both_null__Noop()
         {
             // Arrange
-            var comp = new SchemaComparer(null);
+            var comp = new SchemaComparer(new Mock<IModelComparerFactory>().Object);
 
             // Act
             var res = comp.Compare(null, null).ToArray();

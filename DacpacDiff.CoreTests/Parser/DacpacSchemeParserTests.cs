@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
 namespace DacpacDiff.Core.Parser.Tests
 {
     [TestClass]

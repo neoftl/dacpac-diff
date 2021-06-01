@@ -55,7 +55,9 @@ namespace DacpacDiff.Core.Diff.Tests
         {
             Assert.ThrowsException<ArgumentNullException>(() =>
             {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 _ = new DiffFieldDrop(null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
             });
         }
 

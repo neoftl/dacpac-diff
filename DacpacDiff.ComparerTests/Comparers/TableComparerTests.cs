@@ -13,7 +13,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         public void Compare__Both_null__Noop()
         {
             // Arrange
-            var comp = new TableComparer(null);
+            var comp = new TableComparer(new Mock<IModelComparerFactory>().Object);
 
             // Act
             var res = comp.Compare(null, null).ToArray();
