@@ -1,4 +1,5 @@
 ﻿using DacpacDiff.Core.Model;
+using System;
 
 namespace DacpacDiff.Core.Diff
 {
@@ -12,7 +13,7 @@ namespace DacpacDiff.Core.Diff
 
         public DiffSynonymAlter(SynonymModel synonym)
         {
-            Synonym = synonym;
+            Synonym = synonym ?? throw new ArgumentNullException(nameof(synonym));
         }
     }
 }

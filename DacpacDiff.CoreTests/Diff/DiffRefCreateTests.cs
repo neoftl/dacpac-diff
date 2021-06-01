@@ -11,14 +11,8 @@ namespace DacpacDiff.Core.Diff.Tests
         public void DiffRefCreate__Unnamed()
         {
             // Arrange
-            var lft = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable"), "LField")
-            {
-                Type = "LType"
-            };
-            var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
-            {
-                Computation = "COMPUTATION"
-            };
+            var lft = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable"), "LField");
+            var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField");
 
             var fref = new FieldRefModel(lft, rgt);
 
