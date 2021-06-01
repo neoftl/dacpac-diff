@@ -32,7 +32,7 @@ namespace DacpacDiff.Core.Output
             _sql.EnsureLine().AppendLine("GO");
             return this;
         }
-        public ISqlFileBuilder AppendIf(string? value, bool condition)
+        public ISqlFileBuilder AppendIf(Func<string?> value, bool condition)
         {
             _sql.AppendIf(value, condition);
             return this;

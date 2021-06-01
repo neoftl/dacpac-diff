@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace DacpacDiff.Core.Output
 {
@@ -12,7 +13,7 @@ namespace DacpacDiff.Core.Output
         ISqlFileBuilder Append(string? value);
         ISqlFileBuilder AppendFormat(string format, params object?[] args);
         ISqlFileBuilder AppendGo();
-        ISqlFileBuilder AppendIf(string? value, bool condition);
+        ISqlFileBuilder AppendIf(Func<string?> value, bool condition);
         ISqlFileBuilder AppendLine();
         ISqlFileBuilder AppendLine(string? value);
         ISqlFileBuilder EnsureLine(int num = 1);

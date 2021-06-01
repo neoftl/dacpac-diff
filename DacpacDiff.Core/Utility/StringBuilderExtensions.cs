@@ -1,16 +1,17 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace DacpacDiff.Core.Utility
 {
     internal static class StringBuilderExtensions
     {
-        public static readonly string NL = System.Environment.NewLine;
-
-        public static StringBuilder AppendIf(this StringBuilder sb, string? value, bool condition)
+        public static readonly string NL = Environment.NewLine;
+        
+        public static StringBuilder AppendIf(this StringBuilder sb, Func<string?> value, bool condition)
         {
             if (condition)
             {
-                sb.Append(value);
+                sb.Append(value());
             }
             return sb;
         }

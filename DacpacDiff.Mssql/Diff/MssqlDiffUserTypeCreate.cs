@@ -22,12 +22,12 @@ namespace DacpacDiff.Mssql.Diff
             {
                 sb.Append($" {fld.Type}")
                     .Append(fld.Nullable ? " NULL" : " NOT NULL")
-                    .AppendIf($" DEFAULT ({fld.Default})", (fld.Default?.Length ?? 0) > 0)
-                    .AppendIf(" PRIMARY KEY", fld.IsPrimaryKey)
-                    .AppendIf(" IDENTITY(1,1)", fld.Identity);
+                    .AppendIf(() => $" DEFAULT ({fld.Default})", (fld.Default?.Length ?? 0) > 0)
+                    .AppendIf(() => " PRIMARY KEY", fld.IsPrimaryKey)
+                    .AppendIf(() => " IDENTITY(1,1)", fld.Identity);
             }
 
-            sb.AppendIf(" UNIQUE", fld.IsUnique);
+            sb.AppendIf(() => " UNIQUE", fld.IsUnique);
         }
 
         protected override void GetFormat(ISqlFileBuilder sb)
@@ -44,7 +44,7 @@ namespace DacpacDiff.Mssql.Diff
             var first = true;
             foreach (var fld in _diff.UserType.Fields)
             {
-                sb.AppendIf(",", !first)
+                sb.AppendIf(() => ",", !first)
                     .AppendLine()
                     .Append("    ");
                 appendFieldSql(fld, sb);

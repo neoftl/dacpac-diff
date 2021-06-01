@@ -12,11 +12,19 @@ namespace DacpacDiff.Core.Utility.Tests
             // Arrange
             var sb = new StringBuilder("start-");
 
+            var isResolved = false;
+            string getString()
+            {
+                isResolved = true;
+                return "append";
+            }
+
             // Act
-            var res = sb.AppendIf("append", true);
+            var res = sb.AppendIf(getString, true);
 
             // Assert
             Assert.AreSame(sb, res);
+            Assert.IsTrue(isResolved);
             Assert.AreEqual("start-append", sb.ToString());
         }
 
@@ -27,7 +35,7 @@ namespace DacpacDiff.Core.Utility.Tests
             var sb = new StringBuilder("start-");
 
             // Act
-            var res = sb.AppendIf(null, true);
+            var res = sb.AppendIf(() => null, true);
 
             // Assert
             Assert.AreSame(sb, res);
@@ -39,12 +47,20 @@ namespace DacpacDiff.Core.Utility.Tests
         {
             // Arrange
             var sb = new StringBuilder("start-");
+            
+            var isResolved = false;
+            string getString()
+            {
+                isResolved = true;
+                return "append";
+            }
 
             // Act
-            var res = sb.AppendIf("append", false);
+            var res = sb.AppendIf(getString, false);
 
             // Assert
             Assert.AreSame(sb, res);
+            Assert.IsFalse(isResolved);
             Assert.AreEqual("start-", sb.ToString());
         }
 

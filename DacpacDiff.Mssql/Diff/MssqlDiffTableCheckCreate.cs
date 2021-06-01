@@ -12,7 +12,7 @@ namespace DacpacDiff.Mssql.Diff
         protected override void GetFormat(ISqlFileBuilder sb)
         {
             sb.Append($"ALTER TABLE {_diff.TableCheck.Table.FullName} ADD ")
-                .AppendIf($"CONSTRAINT [{_diff.TableCheck.Name}] ", !_diff.TableCheck.IsSystemNamed)
+                .AppendIf(() => $"CONSTRAINT [{_diff.TableCheck.Name}] ", !_diff.TableCheck.IsSystemNamed)
                 .AppendLine($"CHECK ({_diff.TableCheck.Definition})");
         }
     }

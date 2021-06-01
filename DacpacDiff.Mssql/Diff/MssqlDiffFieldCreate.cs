@@ -22,8 +22,8 @@ namespace DacpacDiff.Mssql.Diff
 
             sb.Append($" {fld.Type}")
                 .Append(!fld.Nullable && fld.HasDefault ? " NOT NULL" : " NULL")
-                .AppendIf($" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed)
-                .AppendIf($" REFERENCES {fld.Ref?.TargetField.Table.FullName} ([{fld.Ref?.TargetField.Name}])", fld.Ref?.IsSystemNamed == true);
+                .AppendIf(() => $" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed)
+                .AppendIf(() => $" REFERENCES {fld.Ref?.TargetField.Table.FullName} ([{fld.Ref?.TargetField.Name}])", fld.Ref?.IsSystemNamed == true);
         }
 
         protected override void GetFormat(ISqlFileBuilder sb)
@@ -33,7 +33,7 @@ namespace DacpacDiff.Mssql.Diff
             var fld = _diff.Field;
             sb.Append($"ALTER TABLE {fld.Table.FullName} ADD ");
             appendFieldSql(fld, sb);
-            sb.AppendIf(" -- NOTE: Cannot create NOT NULL column", !fld.Nullable && !fld.HasDefault)
+            sb.AppendIf(() => " -- NOTE: Cannot create NOT NULL column", !fld.Nullable && !fld.HasDefault)
                 .AppendLine();
 
             // TODO: Way to provide transformation method for adding NOT NULL column

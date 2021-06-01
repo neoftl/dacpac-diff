@@ -6,7 +6,7 @@ namespace DacpacDiff.Core.Model
 {
     public class SchemaModel : IModel<SchemaModel, DatabaseModel>
     {
-        public static readonly SchemaModel Empty = new SchemaModel(DatabaseModel.Empty, string.Empty);
+        public static readonly SchemaModel Empty = new(DatabaseModel.Empty, string.Empty);
 
         public DatabaseModel Db { get; private set; }
         public string Name { get; private set; }

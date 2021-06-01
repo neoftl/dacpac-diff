@@ -21,7 +21,7 @@ namespace DacpacDiff.Mssql.Diff
             }
 
             sb.Append($" {fld.Type}")
-                .AppendIf($" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed)
+                .AppendIf(() => $" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed)
                 .Append(!fld.Nullable && (!existingIsNull || fld.HasDefault) ? " NOT NULL" : " NULL");
         }
 
@@ -81,7 +81,7 @@ namespace DacpacDiff.Mssql.Diff
             {
                 // Add default
                 sb.Append($"ALTER TABLE {lft.Table.FullName} ADD ")
-                    .AppendIf($"CONSTRAINT [{lft.DefaultName}] ", !lft.IsDefaultSystemNamed)
+                    .AppendIf(() => $"CONSTRAINT [{lft.DefaultName}] ", !lft.IsDefaultSystemNamed)
                     .AppendLine($"DEFAULT ({lft.DefaultValue}) FOR [{lft.Name}]");
             }
 
@@ -113,7 +113,7 @@ namespace DacpacDiff.Mssql.Diff
                 if (lftRef != null)
                 {
                     sb.Append($"ALTER TABLE {lftRef.Table.FullName} WITH NOCHECK ADD ")
-                        .AppendIf($"CONSTRAINT [{lftRef.Name}] ", !lftRef.IsSystemNamed)
+                        .AppendIf(() => $"CONSTRAINT [{lftRef.Name}] ", !lftRef.IsSystemNamed)
                         .AppendLine($"FOREIGN KEY ([{lftRef.Field.Name}]) REFERENCES {lftRef.TargetField.Table.FullName} ([{lftRef.TargetField.Name}])");
                 }
             }
