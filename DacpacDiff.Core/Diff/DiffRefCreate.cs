@@ -9,7 +9,7 @@ namespace DacpacDiff.Core.Diff
         public IModel Model => Ref;
 
         public string Title => "Create reference";
-        public string Name => $"{Ref.Field.FullName}:[{(Ref.IsSystemNamed ? "*" : Ref.Name)}]";
+        public string Name => $"{Ref.Field.FullName}:{(Ref.IsSystemNamed ? "*" : $"[{Ref.Name}]")}";
 
         public DiffRefCreate(FieldRefModel fref)
         {
