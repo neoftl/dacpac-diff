@@ -1,4 +1,5 @@
 ﻿using DacpacDiff.Core.Model;
+using System;
 
 namespace DacpacDiff.Core.Diff
 {
@@ -8,11 +9,11 @@ namespace DacpacDiff.Core.Diff
 
         public IModel Model => TableCheck;
         public string Title => "Create check constraint";
-        public string Name => $"{TableCheck.Table.FullName}.[{(TableCheck.IsSystemNamed ? "*" : TableCheck.Name)}]";
+        public string Name => $"{TableCheck.Table.FullName}.{(TableCheck.IsSystemNamed ? "*" : $"[{TableCheck.Name}]")}";
 
         public DiffTableCheckCreate(TableCheckModel tableCheck)
         {
-            TableCheck = tableCheck;
+            TableCheck = tableCheck ?? throw new ArgumentNullException(nameof(tableCheck));
         }
     }
 }
