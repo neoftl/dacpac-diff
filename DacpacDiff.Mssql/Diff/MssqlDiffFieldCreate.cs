@@ -21,8 +21,8 @@ namespace DacpacDiff.Mssql.Diff
             }
 
             sb.Append($" {fld.Type}")
-                .AppendIf($" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed)
                 .Append(!fld.Nullable && fld.HasDefault ? " NOT NULL" : " NULL")
+                .AppendIf($" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed)
                 .AppendIf($" REFERENCES {fld.Ref?.TargetField.Table.FullName} ([{fld.Ref?.TargetField.Name}])", fld.Ref?.IsSystemNamed == true);
         }
 
@@ -35,6 +35,8 @@ namespace DacpacDiff.Mssql.Diff
             appendFieldSql(fld, sb);
             sb.AppendIf(" -- NOTE: Cannot create NOT NULL column", !fld.Nullable && !fld.HasDefault)
                 .AppendLine();
+
+            // TODO: Way to provide transformation method for adding NOT NULL column
         }
     }
 }
