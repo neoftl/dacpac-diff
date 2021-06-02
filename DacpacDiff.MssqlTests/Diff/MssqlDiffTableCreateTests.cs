@@ -247,7 +247,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
         }
 
         [TestMethod]
-        public void MssqlDiffTableCreate_Temporal_table_with_unnamed_history()
+        public void MssqlDiffTableCreate__Temporal_table_with_unnamed_history()
         {
             // Arrange
             var tbl = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable")
@@ -284,7 +284,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
         }
 
         [TestMethod]
-        public void MssqlDiffTableCreate_Temporal_table_with_named_history()
+        public void MssqlDiffTableCreate__Temporal_table_with_named_history()
         {
             // Arrange
             var tbl = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable")

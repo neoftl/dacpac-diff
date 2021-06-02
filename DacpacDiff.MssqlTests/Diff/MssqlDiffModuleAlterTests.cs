@@ -1,7 +1,6 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Collections.Generic;
 
 namespace DacpacDiff.Mssql.Diff.Tests
@@ -21,17 +20,6 @@ namespace DacpacDiff.Mssql.Diff.Tests
             };
         }
         
-        [ExcludeFromCodeCovarage]
-        class FakeModuleModel : ModuleModel
-        {
-            public FakeModuleModel(SchemaModel schema, string name, ModuleType type)
-                : base(schema, name, type)
-            {
-            }
-
-            public override bool IsSimilarDefinition(ModuleModel other) => throw new NotImplementedException();
-        }
-
         [TestMethod]
         [DynamicData(nameof(getModules), DynamicDataSourceType.Method)]
         public void MssqlDiffModuleAlter__Alter_nonIndex(ModuleModel mod)
@@ -70,23 +58,5 @@ namespace DacpacDiff.Mssql.Diff.Tests
             // Assert
             StringAssert.StartsWith(res, $"ALTER {exp} [LMod] ON ");
         }
-
-        //[TestMethod]
-        //[DynamicData(nameof(getModules), DynamicDataSourceType.Method)]
-        //public void MssqlDiffModuleAlter__Unhandled_type(ModuleModel mod)
-        //{
-        //    if (mod.Type == ModuleModel.ModuleType.INDEX) { return; }
-
-        //    // Arrange
-        //    var mod = new FakeModuleModel(SchemaModel.Empty, string.Empty, ModuleModel.ModuleType.NONE);
-
-        //    var diff = new DiffModuleAlter(mod);
-
-        //    // Act
-        //    var res = new MssqlDiffModuleAlter(diff).ToString().Trim();
-
-        //    // Assert
-        //    StringAssert.StartsWith(res, $"ALTER {mod.Type} [LSchema].[LMod]");
-        //}
     }
 }

@@ -170,7 +170,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         [DynamicData(nameof(getTwoModules), DynamicDataSourceType.Method)]
         public void Compare__Non_index_definition_change__Alter(ModuleModel lft, ModuleModel rgt)
         {
-            if (lft.Type != rgt.Type || lft.Type == ModuleModel.ModuleType.INDEX)
+            if (lft.Type == ModuleModel.ModuleType.INDEX)
             {
                 return;
             }
