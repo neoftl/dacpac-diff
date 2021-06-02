@@ -28,7 +28,7 @@ namespace DacpacDiff.Core.Model
         public FieldRefModel? Ref { get; set; }
         public bool HasReference => Ref is not null;
 
-        public string[] Dependencies => Ref == null ? Array.Empty<string>() : new[] { Ref.TargetField.Table.Name };
+        public string[] Dependencies => Ref == null || Ref.TargetField.Table == Table ? Array.Empty<string>() : new[] { Ref.TargetField.Table.Name };
 
         private FieldModel()
         {
