@@ -15,7 +15,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
             var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
                 ReturnType = "LType",
-                Definition = "ModuleDefinition"
+                Body = "ModuleDefinition"
             };
             lft.Parameters = new []
             {
@@ -52,7 +52,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
             var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
                 ReturnType = "LType",
-                Definition = "ModuleDefinition"
+                Body = "ModuleDefinition"
             };
 
             var diff = new DiffModuleCreate(lft);
@@ -78,7 +78,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
             var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
                 ReturnType = "TABLE",
-                Definition = "ModuleDefinition"
+                Body = "ModuleDefinition"
             };
 
             var diff = new DiffModuleCreate(lft);
@@ -104,7 +104,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
             {
                 ReturnType = "@TableVar",
                 ReturnTable = new TableModel(SchemaModel.Empty, "LMod"),
-                Definition = "ModuleDefinition"
+                Body = "ModuleDefinition"
             };
 
             lft.ReturnTable.Fields = new[]
@@ -138,7 +138,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
             var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
                 ReturnType = "LType",
-                Definition = "ModuleDefinition",
+                Body = "ModuleDefinition",
                 ReturnNullForNullInput = true
             };
 
@@ -169,7 +169,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
             {
                 ReturnType = returnType,
                 ReturnTable = withTable ? new TableModel(SchemaModel.Empty, "LMod") : null,
-                Definition = "ModuleDefinition",
+                Body = "ModuleDefinition",
                 ReturnNullForNullInput = true
             };
 
@@ -188,7 +188,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
             // Arrange
             var lft = new ProcedureModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
-                Definition = "ModuleDefinition"
+                Body = "ModuleDefinition"
             };
 
             var diff = new DiffModuleCreate(lft);
@@ -206,7 +206,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
             // Arrange
             var lft = new ViewModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
-                Definition = "ModuleDefinition"
+                Body = "ModuleDefinition"
             };
 
             var diff = new DiffModuleCreate(lft);
@@ -216,28 +216,6 @@ namespace DacpacDiff.Mssql.Diff.Tests
 
             // Assert
             Assert.AreEqual("CREATE VIEW [LSchema].[LMod] AS SELECT 1 A", res);
-        }
-
-        [TestMethod]
-        [DataRow(ModuleModel.ModuleType.INDEX)]
-        [DataRow(ModuleModel.ModuleType.NONE)]
-        [DataRow(ModuleModel.ModuleType.SEQUENCE)]
-        [DataRow(ModuleModel.ModuleType.TRIGGER)]
-        public void MssqlDiffModuleCreate__Other__Uses_definition(ModuleModel.ModuleType type)
-        {
-            // Arrange
-            var lft = new ModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod", type)
-            {
-                Definition = "ModuleDefinition"
-            };
-
-            var diff = new DiffModuleCreate(lft);
-
-            // Act
-            var res = new MssqlDiffModuleCreate(diff).ToString().Trim();
-
-            // Assert
-            Assert.AreEqual(lft.Definition, res);
         }
     }
 }

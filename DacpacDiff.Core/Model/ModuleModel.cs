@@ -1,9 +1,8 @@
-﻿using DacpacDiff.Core.Utility;
-using System;
+﻿using System;
 
 namespace DacpacDiff.Core.Model
 {
-    public class ModuleModel : IModel<ModuleModel, SchemaModel>, IDependentModel, IModelInSchema
+    public abstract class ModuleModel : IModel<ModuleModel, SchemaModel>, IDependentModel, IModelInSchema
     {
         public enum ModuleType
         {
@@ -21,7 +20,6 @@ namespace DacpacDiff.Core.Model
         public string FullName => $"[{Schema.Name}].[{Name}]";
         public ModuleType Type { get; }
         public string[] Dependencies { get; init; } = Array.Empty<string>();
-        public string Definition { get; set; } = string.Empty;
 
         public ModuleModel(SchemaModel schema, string name, ModuleType type)
         {
@@ -30,11 +28,6 @@ namespace DacpacDiff.Core.Model
             Type = type;
         }
 
-        public bool IsSimilarDefinition(ModuleModel alt)
-        {
-            var def1 = Definition.ScrubSQL();
-            var def2 = alt.Definition.ScrubSQL();
-            return def1 == def2;
-        }
+        public abstract bool IsSimilarDefinition(ModuleModel other);
     }
 }

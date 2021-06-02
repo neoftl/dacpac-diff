@@ -227,9 +227,7 @@ namespace DacpacDiff.Core.Parser
             };
             schema.Modules[name] = view;
 
-            var def = $"CREATE VIEW {view.FullName}\r\nAS\r\n"; // TODO: not here
-            def += el.Find("Property", ("Name", "QueryScript")).First().Element("Value")?.Value;
-            view.Definition = def;
+            view.Body = el.Find("Property", ("Name", "QueryScript")).First().Element("Value")?.Value ?? string.Empty;
         }
 
         private static void parseProcedureElement(SchemaModel schema, XElement el, string name)
@@ -253,23 +251,7 @@ namespace DacpacDiff.Core.Parser
                 : el.Find("Property", ("Name", "IsOwner"), ("Value", "True"))?.Any() == true
                 ? "OWNER" : null;
 
-            // TODO: don't build SQL
-            var def = $"CREATE PROCEDURE {proc.FullName}\r\n";
-
-            if (proc.Parameters.Length > 0)
-            {
-                var argSql = proc.Parameters.Select(p => $"{p.Name} {p.Type}"
-                    + (p.HasDefault ? $" = {p.DefaultValue}" : "")
-                    + (p.IsReadOnly ? " READONLY" : "")
-                    + (p.IsOutput ? " OUTPUT" : "")).ToArray();
-                def += "    " + string.Join(",\r\n    ", argSql);
-            }
-
-            if (proc.ExecuteAs != null) { def += $"\r\nWITH EXECUTE AS {proc.ExecuteAs}"; }
-
-            def += "\r\nAS\r\n";
-            def += el.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value.Trim();
-            proc.Definition = def;
+            proc.Body = el.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value.Trim() ?? string.Empty;
         }
 
         private static void parseIndexElement(SchemaModel schema, XElement el, string name)
@@ -304,26 +286,12 @@ namespace DacpacDiff.Core.Parser
                 .SelectMany(e => e.Elements("Entry").Select(r => getName(r.Element("References"), target)))
                 .ToArray();
 
-            // TODO: don't build SQL
-            var def = "CREATE "
-                + (idx.IsUnique ? "UNIQUE " : "")
-                + (idx.IsClustered ? "CLUSTERED " : "")
-                + $"INDEX [{name}] ON {target}"
-                + "([" + string.Join("], [", idx.IndexedColumns) + "])";
-            if (idx.IncludedColumns.Length > 0)
-            {
-                def += " INCLUDE ([" + string.Join("], [", idx.IncludedColumns) + "])";
-            }
-
             var predsXml = el.Find("Property", ("Name", "FilterPredicate")).FirstOrDefault();
             if (predsXml != null)
             {
                 var script = predsXml.Element("Value")?.Value ?? string.Empty;
                 idx.Condition = $"({script.ReduceBrackets()})";
-                def += " WHERE " + idx.Condition;
             }
-
-            idx.Definition = def;
         }
 
         private static void parseFunctionElement(SchemaModel schema, XElement el, string name)
@@ -369,24 +337,7 @@ namespace DacpacDiff.Core.Parser
                 func.ReturnType = getSqlType(typeXml);
             }
 
-            // TODO: don't build SQL
-            var def = $"CREATE FUNCTION {func.FullName} (\r\n";
-
-            if (func.Parameters.Length > 0)
-            {
-                var argSql = func.Parameters.Select(p => $"{p.Name} {p.Type}"
-                    + (p.HasDefault ? $" = {p.DefaultValue}" : "")
-                    + (p.IsReadOnly ? " READONLY" : "")
-                    + (p.IsOutput ? " OUTPUT" : "")).ToArray();
-                def += string.Join(", ", argSql);
-            }
-
-            def += $"\r\n) RETURNS {(func.ReturnTable is null ? func.ReturnType : $"{func.ReturnType} TABLE ({string.Join(", ", func.ReturnTable.Fields.Select(f => $"[{f.Name}] {f.Type}" + (!f.Nullable ? " NOT NULL" : "")))})")}"
-                + (func.ExecuteAs != null ? $"\r\nWITH EXECUTE AS {func.ExecuteAs}" : "")
-                + " AS \r\n";
-            if (func.ReturnType == "TABLE") { def += "RETURN "; }
-            def += el.Find(true, "Property", ("Name", "BodyScript"))?.First().Element("Value")?.Value;
-            func.Definition = def;
+            func.Body = el.Find(true, "Property", ("Name", "BodyScript"))?.First().Element("Value")?.Value ?? string.Empty;
         }
 
         private static void parseTriggerElement(SchemaModel schema, XElement el, string name)
@@ -410,18 +361,7 @@ namespace DacpacDiff.Core.Parser
             trig.ForInsert = el.Find("Property", ("Name", "IsInsertTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True";
             trig.ForUpdate = el.Find("Property", ("Name", "IsUpdateTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True";
 
-            // TODO: don't build SQL
-            var def = $"CREATE TRIGGER {trig.FullName} ON {trig.Parent} ";
-
-            var trigType = trig.Before ? "AFTER " : "FOR ";
-            if (trig.ForUpdate) { trigType += "INSERT, "; }
-            if (trig.ForInsert) { trigType += "UPDATE, "; }
-            if (trig.ForDelete) { trigType += "DELETE, "; }
-
-            def += trigType.TrimEnd(',', ' ')
-                + "\r\nAS\r\n"
-                + el.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value.TrimStart();
-            trig.Definition = def;
+            trig.Body = el.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value.TrimStart() ?? string.Empty;
         }
 
         private static void parseSynonymElement(SchemaModel schema, XElement el, string name)

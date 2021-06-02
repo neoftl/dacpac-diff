@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -33,6 +34,32 @@ namespace DacpacDiff.Core.Utility
                 return default;
             }
             return value;
+        }
+        
+        // TODO: wrong place
+        public static bool IsEqual<T>(this T obj, [NotNullWhen(true)] T? other, params Func<T, object?>[] preds)
+        {
+            if (other == null)
+            {
+                return false;
+            }
+
+            return preds.All(p =>
+            {
+                var l = p(obj);
+                var r = p(other);
+
+                if (l is IEnumerable<object> arrL && r is IEnumerable<object> arrR)
+                {
+                    if (arrL.Count() != arrR.Count())
+                    {
+                        return false;
+                    }
+                    return arrL.All(e => arrR.Contains(e));
+                }
+
+                return (l is null && r is null) || l?.Equals(r) == true;
+            });
         }
 
         /// <summary>

@@ -3,7 +3,7 @@ using System;
 
 namespace DacpacDiff.Core.Model
 {
-    public class TableCheckModel : IModel<TableCheckModel, TableModel>, IDependentModel
+    public class TableCheckModel : IModel<TableCheckModel, TableModel>, IDependentModel, IEquatable<TableCheckModel>
     {
         public TableModel Table { get; }
         public string Name { get; }
@@ -18,6 +18,25 @@ namespace DacpacDiff.Core.Model
             Name = name ?? string.Empty;
             IsSystemNamed = Name.Length == 0;
             Definition = definition.ReduceBrackets();
+        }
+
+        public bool Equals(TableCheckModel? other)
+        {
+            return this.IsEqual(other,
+                m => m.FullName,
+                m => m.IsSystemNamed,
+                m => m.Definition);
+        }
+        public override bool Equals(object? obj) => Equals(obj as TableCheckModel);
+
+        public override int GetHashCode()
+        {
+            return new object?[]
+            {
+                FullName,
+                IsSystemNamed,
+                Definition
+            }.CalculateHashCode();
         }
     }
 }

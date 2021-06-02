@@ -24,8 +24,9 @@ namespace DacpacDiff.Core.Model
 
                 // Resolve the version of the scheme from the automatic object
                 if (db.Schemas.TryGetValue("dbo", out var dboSchema)
-                    && dboSchema.Modules.TryGetValue("tfn_DatabaseVersion", out var fnVer) == true && fnVer != null
-                    && fnVer.Definition.TryMatch(@"'([\d\.]+)'\s+\[BuildNumber\]", out var m) == true && m != null)
+                    && dboSchema.Modules.TryGetValue("tfn_DatabaseVersion", out var mod) == true
+                    && mod is FunctionModuleModel fnVer
+                    && fnVer.Body.TryMatch(@"'([\d\.]+)'\s+\[BuildNumber\]", out var m) == true && m != null)
                 {
                     return m.Groups[1].Value;
                 }

@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace DacpacDiff.Core.Diff.Tests
 {
@@ -14,35 +15,42 @@ namespace DacpacDiff.Core.Diff.Tests
             return Enum.GetValues<DiffObjectDrop.ObjectType>()
                 .Select(e => new object[] { e });
         }
-        private static IEnumerable<object[]> getNotNoneModuleTypes()
+        private static IEnumerable<object[]> getModules()
         {
-            return Enum.GetValues<ModuleModel.ModuleType>()
-                .Where(e => e != ModuleModel.ModuleType.NONE)
-                .Select(e => new object[] { e });
+            return new[]
+            {
+                new object[] { new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod") },
+                new object[] { new IndexModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod") },
+                new object[] { new ProcedureModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod") },
+                new object[] { new TriggerModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod") },
+                new object[] { new ViewModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod") },
+            };
         }
 
         [TestMethod]
-        [DynamicData(nameof(getNotNoneModuleTypes), DynamicDataSourceType.Method)]
-        public void DiffObjectDrop_Module__Maps_module_types(ModuleModel.ModuleType modType)
+        [DynamicData(nameof(getModules), DynamicDataSourceType.Method)]
+        public void DiffObjectDrop_Module__Maps_module_types(ModuleModel mod)
         {
-            // Arrange
-            var mod = new ModuleModel(new SchemaModel(DatabaseModel.Empty, "schema"), "RObject", modType);
-
             // Act
             var obj = new DiffObjectDrop(mod);
 
             // Assert
             Assert.AreSame(mod, obj.Model);
-            Assert.AreEqual("[schema].[RObject]", obj.Name);
-            Assert.AreEqual("Drop " + modType.ToString().ToLower(), obj.Title);
-            Assert.AreEqual(modType.ToString(), obj.Type.ToString());
+            Assert.AreEqual("[LSchema].[LMod]", obj.Name);
+            Assert.AreEqual("Drop " + mod.Type.ToString().ToLower(), obj.Title);
+            Assert.AreEqual(mod.Type.ToString(), obj.Type.ToString());
         }
 
+        class NoneModuleModel : ModuleModel
+        {
+            public NoneModuleModel() : base(SchemaModel.Empty, string.Empty, ModuleType.NONE) { }
+            public override bool IsSimilarDefinition(ModuleModel other) => throw new NotImplementedException();
+        }
         [TestMethod]
         public void DiffObjectDrop_Module__Does_not_support_NONE()
         {
             // Arrange
-            var mod = new ModuleModel(new SchemaModel(DatabaseModel.Empty, "schema"), "RObject", ModuleModel.ModuleType.NONE);
+            var mod = new NoneModuleModel();
 
             // Act
             Assert.ThrowsException<NotSupportedException>(() => new DiffObjectDrop(mod));
@@ -105,11 +113,9 @@ namespace DacpacDiff.Core.Diff.Tests
             // Arrange
             var sch = new SchemaModel(DatabaseModel.Empty, "schema");
 
-            var obj = new DiffObjectDrop(sch)
-            {
-                Type = objType
-            };
-            
+            var obj = new DiffObjectDrop(sch);
+            typeof(DiffObjectDrop).GetField("<Type>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(obj, objType);
+
             // Act
             var res = obj.GetDataLossTable(out _);
 
@@ -125,11 +131,9 @@ namespace DacpacDiff.Core.Diff.Tests
             // Arrange
             var sch = new SchemaModel(DatabaseModel.Empty, "schema");
 
-            var obj = new DiffObjectDrop(sch)
-            {
-                Type = objType
-            };
-            
+            var obj = new DiffObjectDrop(sch);
+            typeof(DiffObjectDrop).GetField("<Type>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(obj, objType);
+
             // Act
             var res = obj.GetDataLossTable(out var tableName);
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DacpacDiff.Core.Utility;
+using System;
 
 namespace DacpacDiff.Core.Model
 {
@@ -16,6 +17,22 @@ namespace DacpacDiff.Core.Model
         public IndexModuleModel(SchemaModel schema, string name)
             : base(schema, name, ModuleType.INDEX)
         {
+        }
+
+        public override bool IsSimilarDefinition(ModuleModel other)
+        {
+            if (other is not IndexModuleModel idx)
+            {
+                return false;
+            }
+
+            return this.IsEqual(idx,
+                m => m.IsClustered,
+                m => m.IsUnique,
+                m => m.IndexedObject,
+                m => m.IndexedColumns,
+                m => m.IncludedColumns,
+                m => m.Condition?.ScrubSQL());
         }
     }
 }

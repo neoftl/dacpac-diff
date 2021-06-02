@@ -9,9 +9,9 @@ namespace DacpacDiff.Core.Model.Tests
         {
             var db = new DatabaseModel("db");
             var sch = new SchemaModel(db, "dbo");
-            sch.Modules["tfn_DatabaseVersion"] = new ModuleModel(sch, "tfn_DatabaseVersion", ModuleModel.ModuleType.PROCEDURE)
+            sch.Modules["tfn_DatabaseVersion"] = new FunctionModuleModel(sch, "tfn_DatabaseVersion")
             {
-                Definition = ">>>'123.456.789' [BuildNumber]<<<"
+                Body = ">>>'123.456.789' [BuildNumber]<<<"
             };
             db.Schemas[sch.Name] = sch;
             return db;
@@ -88,10 +88,30 @@ namespace DacpacDiff.Core.Model.Tests
         {
             // Arrange
             var scheme = new SchemeModel("scheme");
-            
+
             var db = getVersionedDatabase();
             db.Schemas["dbo"].Modules["tfn_DatabaseVersionX"] = db.Schemas["dbo"].Modules["tfn_DatabaseVersion"];
             db.Schemas["dbo"].Modules.Remove("tfn_DatabaseVersion");
+            scheme.Databases[db.Name] = db;
+
+            // Act
+            var res = scheme.GetDatabaseVersion();
+
+            // Assert
+            Assert.AreEqual(SchemeModel.UNKNOWN_VER, res);
+        }
+
+        [TestMethod]
+        public void GetDatabaseVersion__DatabaseVersion_not_a_function__Unknown()
+        {
+            // Arrange
+            var scheme = new SchemeModel("scheme");
+
+            var db = getVersionedDatabase();
+            db.Schemas["dbo"].Modules["tfn_DatabaseVersion"] = new ProcedureModuleModel(db.Schemas["dbo"], "tfn_DatabaseVersion")
+            {
+                Body = ">>>'123.456.789' [BuildNumber]<<<"
+            };
             scheme.Databases[db.Name] = db;
 
             // Act
@@ -108,7 +128,7 @@ namespace DacpacDiff.Core.Model.Tests
             var scheme = new SchemeModel("scheme");
 
             var db = getVersionedDatabase();
-            db.Schemas["dbo"].Modules["tfn_DatabaseVersion"].Definition = ">>>'123.456.789' [BuildNumberX]<<<";
+            ((FunctionModuleModel)db.Schemas["dbo"].Modules["tfn_DatabaseVersion"]).Body = ">>>'123.456.789' [BuildNumberX]<<<";
             scheme.Databases[db.Name] = db;
 
             // Act

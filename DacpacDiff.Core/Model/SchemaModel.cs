@@ -8,8 +8,8 @@ namespace DacpacDiff.Core.Model
     {
         public static readonly SchemaModel Empty = new(DatabaseModel.Empty, string.Empty);
 
-        public DatabaseModel Db { get; private set; }
-        public string Name { get; private set; }
+        public DatabaseModel Db { get; set; }
+        public string Name { get; set; }
         public IDictionary<string, ModuleModel> Modules { get; } = new Dictionary<string, ModuleModel>();
         public IDictionary<string, SynonymModel> Synonyms { get; } = new Dictionary<string, SynonymModel>();
         public IDictionary<string, TableModel> Tables { get; } = new Dictionary<string, TableModel>();

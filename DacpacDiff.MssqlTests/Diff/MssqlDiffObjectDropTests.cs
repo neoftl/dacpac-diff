@@ -1,12 +1,9 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using DacpacDiff.Mssql.Diff;
+﻿using DacpacDiff.Core.Diff;
+using DacpacDiff.Core.Model;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DacpacDiff.Core.Model;
-using DacpacDiff.Core.Diff;
 
 namespace DacpacDiff.Mssql.Diff.Tests
 {
@@ -20,6 +17,16 @@ namespace DacpacDiff.Mssql.Diff.Tests
                 .Select(e => new object[] { e });
         }
 
+        class FakeModuleModel : ModuleModel
+        {
+            public FakeModuleModel(SchemaModel schema, string name, ModuleType type)
+                : base(schema, name, type)
+            {
+            }
+
+            public override bool IsSimilarDefinition(ModuleModel other) => throw new NotImplementedException();
+        }
+
         [TestMethod]
         [DynamicData(nameof(getNotNoneModuleTypes), DynamicDataSourceType.Method)]
         public void MssqlDiffObjectDrop__NonIndex_drops(ModuleModel.ModuleType modType)
@@ -27,7 +34,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
             if (modType == ModuleModel.ModuleType.INDEX) { return; }
 
             // Arrange
-            var mod = new ModuleModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RMod", modType);
+            var mod = new FakeModuleModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RMod", modType);
 
             var diff = new DiffObjectDrop(mod);
 

@@ -1,6 +1,7 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Output;
+using System;
 using System.Linq;
 
 namespace DacpacDiff.Mssql.Diff
@@ -15,8 +16,7 @@ namespace DacpacDiff.Mssql.Diff
         {
             switch (_diff.Module)
             {
-                case FunctionModuleModel funcMod:
-                    // Function SQL
+                case FunctionModuleModel funcMod: // Stub
                     sb.AppendLine($"CREATE FUNCTION {funcMod.FullName} (");
                     if (funcMod.Parameters.Length > 0)
                     {
@@ -53,15 +53,43 @@ namespace DacpacDiff.Mssql.Diff
                             .AppendLine("END");
                     }
                     return;
-                case ProcedureModuleModel procMod:
+
+                case IndexModuleModel idxMod:
+                    sb.Append("CREATE ")
+                        .AppendIf(() => "UNIQUE ", idxMod.IsUnique)
+                        .AppendIf(() => "CLUSTERED ", idxMod.IsClustered)
+                        .Append($"INDEX [{idxMod.Name}] ON {idxMod.IndexedObject} ([")
+                        .Append(string.Join("], [", idxMod.IndexedColumns))
+                        .Append("])")
+                        .AppendIf(() => " INCLUDE ([" + string.Join("], [", idxMod.IncludedColumns) + "])", idxMod.IncludedColumns.Length > 0)
+                        .AppendIf(() => " WHERE " + idxMod.Condition, idxMod.Condition != null)
+                        .AppendLine();
+                    return;
+
+                case ProcedureModuleModel procMod: // Stub
                     sb.AppendLine($"CREATE PROCEDURE {procMod.FullName} AS RETURN 0");
                     return;
-                case ViewModuleModel viewMod:
+
+                case TriggerModuleModel trigMod:
+                    sb.Append($"CREATE TRIGGER {trigMod.FullName} ON {trigMod.Parent} ")
+                        .Append(trigMod.Before ? "AFTER " : "FOR ")
+                        .AppendIf(() => "INSERT", trigMod.ForUpdate)
+                        .AppendIf(() => ", ", trigMod.ForUpdate && (trigMod.ForInsert || trigMod.ForDelete))
+                        .AppendIf(() => "UPDATE", trigMod.ForInsert)
+                        .AppendIf(() => ", ", trigMod.ForInsert && trigMod.ForDelete)
+                        .AppendIf(() => "DELETE", trigMod.ForDelete)
+                        .Append("\r\nAS\r\n")
+                        .Append(trigMod.Body)
+                        .EnsureLine();
+                    return;
+
+                case ViewModuleModel viewMod: // Stub
+                    // TODO: SCHEMABINDING
                     sb.AppendLine($"CREATE VIEW {viewMod.FullName} AS SELECT 1 A");
                     return;
             }
 
-            sb.Append(_diff.Module.Definition).EnsureLine();
+            throw new NotImplementedException(_diff.Module.GetType().ToString());
         }
     }
 }

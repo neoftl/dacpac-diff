@@ -25,23 +25,13 @@ namespace DacpacDiff.Core.Model
 
         public bool Equals(ParameterModel? other)
         {
-            if (other is null)
-            {
-                return false;
-            }
-
-            bool eq<T>(Func<ParameterModel, T?> fn) where T : IEquatable<T>
-            {
-                var l = fn(this);
-                var r = fn(other);
-                return (l is null && r is null) || l?.Equals(r) == true;
-            }
-            return eq(m => m.FullName)
-                && eq(m => m.Type)
-                && IsDefaultMatch(other)
-                && eq(m => m.Order)
-                && eq(m => m.IsReadOnly)
-                && eq(m => m.IsOutput);
+            return this.IsEqual(other,
+                m => m.FullName,
+                m => m.Type,
+                m => m.DefaultValue?.ScrubSQL(),
+                m => m.Order,
+                m => m.IsReadOnly,
+                m => m.IsOutput);
         }
         public override bool Equals(object? obj) => Equals(obj as ParameterModel);
 
@@ -57,23 +47,6 @@ namespace DacpacDiff.Core.Model
                 IsReadOnly,
                 IsOutput
             }.CalculateHashCode();
-        }
-
-        public bool IsDefaultMatch(ParameterModel field)
-        {
-            if (DefaultValue != null)
-            {
-                if (field.DefaultValue == null)
-                {
-                    return false;
-                }
-
-                var dbL = DefaultValue.ScrubSQL();
-                var dbR = field.DefaultValue.ScrubSQL();
-                return dbL == dbR;
-            }
-
-            return !field.HasDefault;
         }
     }
 }

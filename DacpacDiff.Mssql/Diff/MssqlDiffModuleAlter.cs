@@ -20,17 +20,18 @@ namespace DacpacDiff.Mssql.Diff
                 ModuleModel.ModuleType.PROCEDURE => "PROC(?:EDURE)?",
                 _ => _diff.Module.Type.ToString(),
             };
-            if (!_diff.Module.Definition.TryMatch($@"^(?is)(.*?\b)?CREATE\s+{type}\s+(.+)$", out var m))
-            {
-                throw new InvalidOperationException($"Could not locate 'CREATE {_diff.Module.Type}' for [{_diff.Module.Schema.Name}].[{_diff.Module.Name}]");
-            }
+            //if (!_diff.Module.Definition.TryMatch($@"^(?is)(.*?\b)?CREATE\s+{type}\s+(.+)$", out var m))
+            //{
+            //    throw new InvalidOperationException($"Could not locate 'CREATE {_diff.Module.Type}' for [{_diff.Module.Schema.Name}].[{_diff.Module.Name}]");
+            //}
 
             // TODO: maintain comment
             // TODO: function return null as null
             // TODO: execute as
+            // TODO: view SCHEMABINDING
 
-            sb.EnsureLine().Append(m.Groups[1].Value.Trim()).EnsureLine()
-                .AppendLine($"ALTER {_diff.Module.Type} " + m.Groups[2].Value);
+            //sb.EnsureLine().Append(m.Groups[1].Value.Trim()).EnsureLine()
+            //    .AppendLine($"ALTER {_diff.Module.Type} " + m.Groups[2].Value);
         }
     }
 }

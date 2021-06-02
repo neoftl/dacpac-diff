@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace DacpacDiff.Core.Model
 {
-    public class TableModel : IModel, IDependentModel, IModelInSchema
+    public class TableModel : IModel, IDependentModel, IModelInSchema, IEquatable<TableModel>
     {
         public static readonly TableModel Empty = new();
 
@@ -40,5 +40,18 @@ namespace DacpacDiff.Core.Model
                 FullName
             }.CalculateHashCode();
         }
+
+        public bool Equals(TableModel? other)
+        {
+            return this.IsEqual(other,
+                m => m.FullName,
+                m => m.Checks,
+                m => m.Fields,
+                m => m.PrimaryKeys,
+                m => m.PrimaryKeyName,
+                m => m.IsPrimaryKeyUnclustered,
+                m => m.Temporality);
+        }
+        public override bool Equals(object? obj) => Equals(obj as TableModel);
     }
 }

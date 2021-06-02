@@ -37,7 +37,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.IsFalse(fn.ReturnNullForNullInput);
             Assert.IsNull(fn.ReturnTable);
             Assert.IsNull(fn.ExecuteAs);
-            Assert.IsNotNull(fn.Definition);
+            Assert.AreEqual("BODY", fn.Body);
         }
 
         #endregion Scalar
@@ -68,7 +68,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.IsFalse(fn.ReturnNullForNullInput);
             Assert.IsNull(fn.ReturnTable);
             Assert.IsNull(fn.ExecuteAs);
-            Assert.IsNotNull(fn.Definition);
+            Assert.AreEqual("BODY", fn.Body);
         }
 
         #endregion Inline table
@@ -106,7 +106,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.IsFalse(fn.ReturnNullForNullInput);
             Assert.IsNotNull(fn.ReturnTable);
             Assert.IsNull(fn.ExecuteAs);
-            Assert.IsNotNull(fn.Definition);
+            Assert.AreEqual("BODY", fn.Body);
         }
 
         [TestMethod]

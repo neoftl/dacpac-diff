@@ -1,11 +1,10 @@
-﻿using System;
+﻿using DacpacDiff.Core.Utility;
+using System;
 
 namespace DacpacDiff.Core.Model
 {
-    public class FunctionModuleModel : ModuleModel, IParameterisedModuleModel
+    public class FunctionModuleModel : ModuleModel, IParameterisedModuleModel, IModuleWithBody
     {
-        public static FunctionModuleModel Empty => new(SchemaModel.Empty, string.Empty);
-
         public bool ReturnNullForNullInput { get; set; }
 
         public string? ExecuteAs { get; set; }
@@ -16,9 +15,26 @@ namespace DacpacDiff.Core.Model
 
         public TableModel? ReturnTable { get; set; }
 
+        public string Body { get; set; } = string.Empty;
+
         public FunctionModuleModel(SchemaModel schema, string name)
             : base(schema, name, ModuleType.FUNCTION)
         {
+        }
+
+        public override bool IsSimilarDefinition(ModuleModel other)
+        {
+            if (other is not FunctionModuleModel func)
+            {
+                return false;
+            }
+            
+            return this.IsEqual(func,
+                m => m.ReturnNullForNullInput,
+                m => m.ExecuteAs,
+                m => m.ReturnType,
+                m => m.ReturnTable,
+                m => m.Body.ScrubSQL());
         }
     }
 }

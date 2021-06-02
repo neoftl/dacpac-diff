@@ -19,10 +19,10 @@ namespace DacpacDiff.Core.Diff
             VIEW,
         }
 
-        public IModel Model { get; set; }
+        public IModel Model { get; }
         public string Title => "Drop " + Type.ToString().ToLower();
-        public string Name { get; set; }
-        public ObjectType Type { get; set; }
+        public string Name { get; }
+        public ObjectType Type { get; }
 
         public DiffObjectDrop(ModuleModel module)
         {

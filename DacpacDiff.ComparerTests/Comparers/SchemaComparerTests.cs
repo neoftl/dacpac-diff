@@ -64,7 +64,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         {
             // Arrange
             var lft = new SchemaModel(DatabaseModel.Empty, "LSchema");
-            lft.Modules["LMod1"] = new ModuleModel(lft, "LMod1", ModuleModel.ModuleType.NONE);
+            lft.Modules["LMod1"] = new FunctionModuleModel(lft, "LMod1");
             lft.Synonyms["LSyn1"] = new SynonymModel(lft, "LSyn1", "");
             lft.Tables["LTbl1"] = new TableModel(lft, "LTbl1");
             lft.UserTypes["LUType1"] = new UserTypeModel(lft, "LUType1");
@@ -99,7 +99,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         {
             // Arrange
             var rgt = new SchemaModel(DatabaseModel.Empty, "RSchema");
-            rgt.Modules["RMod1"] = new ModuleModel(rgt, "RMod1", ModuleModel.ModuleType.NONE);
+            rgt.Modules["RMod1"] = new FunctionModuleModel(rgt, "RMod1" );
             rgt.Synonyms["RSyn1"] = new SynonymModel(rgt, "RSyn1", "");
             rgt.Tables["RTbl1"] = new TableModel(rgt, "RTbl1");
             rgt.UserTypes["RUType1"] = new UserTypeModel(rgt, "RUType1");
@@ -134,12 +134,12 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         {
             // Arrange
             var lft = new SchemaModel(DatabaseModel.Empty, "LSchema");
-            lft.Modules["LMod1"] = new ModuleModel(lft, "LMod1", ModuleModel.ModuleType.NONE);
-            lft.Modules["XMod2"] = new ModuleModel(lft, "XMod2", ModuleModel.ModuleType.NONE);
+            lft.Modules["LMod1"] = new FunctionModuleModel(lft, "LMod1");
+            lft.Modules["XMod2"] = new FunctionModuleModel(lft, "XMod2");
 
             var rgt = new SchemaModel(DatabaseModel.Empty, "RSchema");
-            rgt.Modules["XMod2"] = new ModuleModel(rgt, "XMod2", ModuleModel.ModuleType.NONE);
-            rgt.Modules["RMod3"] = new ModuleModel(rgt, "RMod3", ModuleModel.ModuleType.NONE);
+            rgt.Modules["XMod2"] = new FunctionModuleModel(rgt, "XMod2");
+            rgt.Modules["RMod3"] = new FunctionModuleModel(rgt, "RMod3");
 
             var comparerMock = new Mock<IModelComparer<ModuleModel>>();
             comparerMock.Setup(m => m.Compare(It.IsAny<ModuleModel>(), It.IsAny<ModuleModel>()))

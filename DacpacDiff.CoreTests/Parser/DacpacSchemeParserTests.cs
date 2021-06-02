@@ -9,7 +9,7 @@ namespace DacpacDiff.Core.Parser.Tests
     public partial class DacpacSchemeParserTests
     {
         // TODO: dependencies
-        
+
         [TestMethod]
         public void ParseContent__Ignores_unknown_elements()
         {
@@ -79,10 +79,10 @@ namespace DacpacDiff.Core.Parser.Tests
             var sch = res.Databases["database"].Schemas["dbo"];
 
             // Assert
-            var mod = sch.Modules["vw_Test"];
-            Assert.AreEqual("vw_Test", mod.Name);
-            Assert.AreEqual(ModuleModel.ModuleType.VIEW, mod.Type);
-            Assert.IsTrue(mod.Definition.Length > 0);
+            var vw = (ViewModuleModel)sch.Modules["vw_Test"];
+            Assert.AreEqual("vw_Test", vw.Name);
+            Assert.AreEqual(ModuleModel.ModuleType.VIEW, vw.Type);
+            Assert.AreEqual("BODY", vw.Body);
         }
 
         #region Procedures
@@ -105,7 +105,7 @@ namespace DacpacDiff.Core.Parser.Tests
             var proc = (ProcedureModuleModel)sch.Modules["usp_Test"];
             Assert.AreEqual("usp_Test", proc.Name);
             Assert.AreEqual(ModuleModel.ModuleType.PROCEDURE, proc.Type);
-            Assert.IsTrue(proc.Definition.Length > 0);
+            Assert.AreEqual("BODY", proc.Body);
             Assert.IsNull(proc.ExecuteAs);
         }
 
@@ -177,7 +177,6 @@ namespace DacpacDiff.Core.Parser.Tests
             // Assert
             var proc = (ProcedureModuleModel)sch.Modules["usp_Test"];
             Assert.AreEqual("CALLER", proc.ExecuteAs);
-            Assert.IsTrue(proc.Definition.Contains("WITH EXECUTE AS CALLER"));
         }
 
         [TestMethod]
@@ -198,7 +197,6 @@ namespace DacpacDiff.Core.Parser.Tests
             // Assert
             var proc = (ProcedureModuleModel)sch.Modules["usp_Test"];
             Assert.AreEqual("OWNER", proc.ExecuteAs);
-            Assert.IsTrue(proc.Definition.Contains("WITH EXECUTE AS OWNER"));
         }
 
         #endregion Procedures
@@ -270,8 +268,7 @@ namespace DacpacDiff.Core.Parser.Tests
 
             // Assert
             var idx = (IndexModuleModel)sch.Modules["ix_Test"];
-            Assert.AreEqual(3, idx.IndexedColumns.Length);
-            Assert.IsTrue(idx.Definition.Contains("ON [dbo].[Test]([ColA], [ColB], [ColC])"));
+            CollectionAssert.AreEquivalent(new[] { "ColA", "ColB", "ColC" }, idx.IndexedColumns);
         }
 
         [TestMethod]
@@ -398,8 +395,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.AreEqual("tr_Test", trig.Name);
             Assert.AreEqual(ModuleModel.ModuleType.TRIGGER, trig.Type);
             Assert.AreEqual("[dbo].[Test]", trig.Parent);
-            Assert.IsNotNull(trig.Definition);
-            //Assert.AreEqual("BODY", trig.Definition);
+            Assert.AreEqual("BODY", trig.Body);
             Assert.IsTrue(trig.Before);
             Assert.IsFalse(trig.ForDelete);
             Assert.IsFalse(trig.ForInsert);
