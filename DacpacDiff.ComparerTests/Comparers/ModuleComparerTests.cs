@@ -143,7 +143,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         }
 
         [TestMethod]
-        [DynamicData(nameof(getTwoModules), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(getAnyTwoModules), DynamicDataSourceType.Method)]
         public void Compare__Type_change__Drop_right_Create_left_With_stub(ModuleModel lft, ModuleModel rgt)
         {
             if (lft.Type == rgt.Type
