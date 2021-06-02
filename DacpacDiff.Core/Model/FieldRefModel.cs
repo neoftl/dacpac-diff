@@ -5,8 +5,6 @@ namespace DacpacDiff.Core.Model
 {
     public class FieldRefModel : IModel<FieldRefModel, FieldModel>, IEquatable<FieldRefModel>
     {
-        public static readonly FieldRefModel Empty = new();
-
         /// <summary>
         /// The field that defines this reference.
         /// </summary>
@@ -27,12 +25,6 @@ namespace DacpacDiff.Core.Model
         /// </summary>
         public bool IsSystemNamed { get; init; }
 
-        private FieldRefModel()
-        {
-            Name = string.Empty;
-            Field = FieldModel.Empty;
-            TargetField = FieldModel.Empty;
-        }
         public FieldRefModel(FieldRefModel fref)
         {
             Name = fref.Name;
