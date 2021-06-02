@@ -227,6 +227,7 @@ namespace DacpacDiff.Core.Parser
             };
             schema.Modules[name] = view;
 
+            // TODO: maintain comment
             view.Body = el.Find("Property", ("Name", "QueryScript")).First().Element("Value")?.Value ?? string.Empty;
         }
 
@@ -251,6 +252,7 @@ namespace DacpacDiff.Core.Parser
                 : el.Find("Property", ("Name", "IsOwner"), ("Value", "True"))?.Any() == true
                 ? "OWNER" : null;
 
+            // TODO: maintain comment
             proc.Body = el.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value.Trim() ?? string.Empty;
         }
 
@@ -337,6 +339,7 @@ namespace DacpacDiff.Core.Parser
                 func.ReturnType = getSqlType(typeXml);
             }
 
+            // TODO: maintain comment
             func.Body = el.Find(true, "Property", ("Name", "BodyScript"))?.First().Element("Value")?.Value ?? string.Empty;
         }
 
@@ -361,6 +364,7 @@ namespace DacpacDiff.Core.Parser
             trig.ForInsert = el.Find("Property", ("Name", "IsInsertTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True";
             trig.ForUpdate = el.Find("Property", ("Name", "IsUpdateTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True";
 
+            // TODO: maintain comment
             trig.Body = el.Find("Property", ("Name", "BodyScript")).First().Element("Value")?.Value.TrimStart() ?? string.Empty;
         }
 
