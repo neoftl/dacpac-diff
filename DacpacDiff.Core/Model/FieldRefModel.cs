@@ -16,6 +16,7 @@ namespace DacpacDiff.Core.Model
         /// </summary>
         public FieldModel TargetField { get; }
 
+        public string FullName => $"{Field.FullName}:[{Name}]";
         /// <summary>
         /// The name of this reference, if any.
         /// </summary>

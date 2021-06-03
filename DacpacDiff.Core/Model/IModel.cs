@@ -9,5 +9,6 @@
         where TModel : IModel
         where TParent : IModel
     {
+        string FullName { get; }
     }
 }

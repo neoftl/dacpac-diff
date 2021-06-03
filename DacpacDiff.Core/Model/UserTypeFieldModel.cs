@@ -3,6 +3,7 @@
     public class UserTypeFieldModel : IModel<UserTypeFieldModel, UserTypeModel>
     {
         public UserTypeModel UserType { get; }
+        public string FullName => $"{UserType.FullName}.[{Name}]";
         public string Name { get; set; }
         public string Type { get; set; } = string.Empty;
         public string Computation { get; set; } = string.Empty;
