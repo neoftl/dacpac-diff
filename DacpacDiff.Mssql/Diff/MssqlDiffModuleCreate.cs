@@ -25,7 +25,7 @@ namespace DacpacDiff.Mssql.Diff
 
             switch (_diff.Module)
             {
-                case FunctionModuleModel funcMod: // Stub
+                case FunctionModuleModel funcMod:
                     sb.AppendLine($"FUNCTION {funcMod.FullName} (");
                     if (funcMod.Parameters.Length > 0)
                     {
@@ -48,7 +48,8 @@ namespace DacpacDiff.Mssql.Diff
                     else if (funcMod.ReturnType == "TABLE")
                     {
                         sb.AppendLine("TABLE")
-                            .AppendLine("AS");
+                            .AppendLine("AS")
+                            .Append("    RETURN ");
                     }
                     else
                     {
@@ -63,7 +64,7 @@ namespace DacpacDiff.Mssql.Diff
                     }
                     else
                     {
-                        sb.Append(funcMod.Body.Trim());
+                        sb.Append(funcMod.Body);
                     }
                     return;
 
@@ -78,8 +79,19 @@ namespace DacpacDiff.Mssql.Diff
                         .AppendLine();
                     return;
 
-                case ProcedureModuleModel procMod: // Stub
-                    sb.Append($"PROCEDURE {procMod.FullName} AS ");
+                case ProcedureModuleModel procMod:
+                    sb.AppendLine($"PROCEDURE {procMod.FullName}");
+
+                    if (procMod.Parameters.Length > 0)
+                    {
+                        var argSql = procMod.Parameters.Select(p => $"    {p.Name} {p.Type}"
+                            + (p.HasDefault ? $" = {p.DefaultValue}" : "")
+                            + (p.IsReadOnly ? " READONLY" : "")
+                            + (p.IsOutput ? " OUTPUT" : "")).ToArray();
+                        sb.AppendLine(string.Join(",\r\n", argSql));
+                    }
+
+                    sb.Append("AS ");
 
                     if (UseStub)
                     {
@@ -87,7 +99,7 @@ namespace DacpacDiff.Mssql.Diff
                     }
                     else
                     {
-                        sb.Append(procMod.Body.Trim());
+                        sb.Append(procMod.Body);
                     }
                     return;
 
@@ -104,7 +116,7 @@ namespace DacpacDiff.Mssql.Diff
                         .EnsureLine();
                     return;
 
-                case ViewModuleModel viewMod: // Stub
+                case ViewModuleModel viewMod:
                     // TODO: SCHEMABINDING
                     sb.Append($"VIEW {viewMod.FullName} AS ");
 
@@ -114,7 +126,7 @@ namespace DacpacDiff.Mssql.Diff
                     }
                     else
                     {
-                        sb.Append(viewMod.Body.Trim());
+                        sb.Append(viewMod.Body);
                     }
                     return;
             }

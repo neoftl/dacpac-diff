@@ -340,7 +340,7 @@ namespace DacpacDiff.Core.Parser
             }
 
             // TODO: maintain comment
-            func.Body = el.Find(true, "Property", ("Name", "BodyScript"))?.First().Element("Value")?.Value ?? string.Empty;
+            func.Body = el.Find(true, "Property", ("Name", "BodyScript"))?.First().Element("Value")?.Value.Trim() ?? string.Empty;
         }
 
         private static void parseTriggerElement(SchemaModel schema, XElement el, string name)

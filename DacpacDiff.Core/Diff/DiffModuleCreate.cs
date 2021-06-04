@@ -9,13 +9,14 @@ namespace DacpacDiff.Core.Diff
         public ModuleModel Module { get; }
 
         public IModel Model => Module;
-        public string Title => "Create " + Module.Type.ToString().ToLower() + (Module.StubOnCreate ? " stub" : "");
+        public string Title { get; }
         public string Name => Module.FullName;
         public bool DoAsAlter { get; set; }
 
         public DiffModuleCreate(ModuleModel module)
         {
             Module = module;
+            Title = (Module.StubOnCreate ? "Stub " : "Create ") + Module.Type.ToString().ToLower();
         }
 
         public IEnumerable<IDifference> GetAdditionalChanges()
