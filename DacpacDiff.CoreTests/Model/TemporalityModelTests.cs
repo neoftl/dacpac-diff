@@ -11,17 +11,16 @@ namespace DacpacDiff.Core.Model.Tests
         public void Equals__Same__True()
         {
             // Arrange
-            var mdl1 = new TemporalityModel
+            var tbl = new TableModel(new SchemaModel(DatabaseModel.Empty, "schema"), "Table");
+            var mdl1 = new TemporalityModel(tbl)
             {
-                Name = "Name",
                 PeriodFieldFrom = "From",
                 PeriodFieldTo = "To",
                 HistoryTable = "History"
             };
 
-            var mdl2 = new TemporalityModel
+            var mdl2 = new TemporalityModel(tbl)
             {
-                Name = "Name",
                 PeriodFieldFrom = "From",
                 PeriodFieldTo = "To",
                 HistoryTable = "History"
@@ -35,24 +34,23 @@ namespace DacpacDiff.Core.Model.Tests
         }
 
         [TestMethod]
-        [DataRow(1), DataRow(2), DataRow(3), DataRow(4)]
+        [DataRow(1), DataRow(2), DataRow(3)]
         public void Equals__Diff_value__True(int diff)
         {
             // Arrange
-            var mdl1 = new TemporalityModel
+            var tbl = new TableModel(new SchemaModel(DatabaseModel.Empty, "schema"), "Table");
+            var mdl1 = new TemporalityModel(tbl)
             {
-                Name = "Name",
                 PeriodFieldFrom = "From",
                 PeriodFieldTo = "To",
                 HistoryTable = "History"
             };
 
-            var mdl2 = new TemporalityModel
+            var mdl2 = new TemporalityModel(tbl)
             {
-                Name = diff != 1 ? "Name" : "NameX",
-                PeriodFieldFrom = diff != 2 ? "From" : "FromX",
-                PeriodFieldTo = diff != 3 ? "To" : "ToX",
-                HistoryTable = diff != 4 ? "History" : "HistoryX"
+                PeriodFieldFrom = diff != 1 ? "From" : "FromX",
+                PeriodFieldTo = diff != 2 ? "To" : "ToX",
+                HistoryTable = diff != 3 ? "History" : "HistoryX"
             };
 
             // Act
@@ -66,7 +64,8 @@ namespace DacpacDiff.Core.Model.Tests
         public void Equals__Other_model__False()
         {
             // Arrange
-            var mdl = new TemporalityModel();
+            var tbl = new TableModel(new SchemaModel(DatabaseModel.Empty, "schema"), "Table");
+            var mdl = new TemporalityModel(tbl);
 
             // Act
             var res = mdl.Equals(DatabaseModel.Empty);
@@ -81,18 +80,15 @@ namespace DacpacDiff.Core.Model.Tests
             // Arrange
             var hashcodes = new List<int>(10);
             
-            var mdl = new TemporalityModel
+            var tbl = new TableModel(new SchemaModel(DatabaseModel.Empty, "schema"), "Table");
+            var mdl = new TemporalityModel(tbl)
             {
-                Name = "Name",
                 PeriodFieldFrom = "From",
                 PeriodFieldTo = "To",
                 HistoryTable = "History"
             };
 
             // Act
-            hashcodes.Add(mdl.GetHashCode());
-
-            mdl.Name = "NameX";
             hashcodes.Add(mdl.GetHashCode());
 
             mdl.PeriodFieldFrom = "FromX";
@@ -105,7 +101,7 @@ namespace DacpacDiff.Core.Model.Tests
             hashcodes.Add(mdl.GetHashCode());
 
             // Assert
-            Assert.AreEqual(5, hashcodes.Distinct().Count());
+            Assert.AreEqual(4, hashcodes.Distinct().Count());
         }
     }
 }

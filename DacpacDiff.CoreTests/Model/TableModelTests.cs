@@ -69,8 +69,8 @@ namespace DacpacDiff.Core.Model.Tests
                 Fields = new FieldModel[2],
                 PrimaryKeyName = "PKey",
                 IsPrimaryKeyUnclustered = true,
-                Temporality = new TemporalityModel() { Name = "Temporality" }
             };
+            tbl1.Temporality = new TemporalityModel(tbl1);
             tbl1.Fields[0] = new FieldModel(tbl1, "Field1");
             tbl1.Fields[1] = new FieldModel(tbl1, "Field2") { IsPrimaryKey = true };
             tbl1.Checks.Add(new TableCheckModel(tbl1, null, "CHECK"));
@@ -80,8 +80,8 @@ namespace DacpacDiff.Core.Model.Tests
                 Fields = new FieldModel[2],
                 PrimaryKeyName = "PKey",
                 IsPrimaryKeyUnclustered = true,
-                Temporality = new TemporalityModel() { Name = "Temporality" }
             };
+            tbl2.Temporality = new TemporalityModel(tbl2);
             tbl2.Fields[0] = new FieldModel(tbl2, "Field1");
             tbl2.Fields[1] = new FieldModel(tbl2, "Field2") { IsPrimaryKey = true };
             tbl2.Checks.Add(new TableCheckModel(tbl2, null, "CHECK"));
@@ -106,8 +106,8 @@ namespace DacpacDiff.Core.Model.Tests
                 Fields = new FieldModel[2],
                 PrimaryKeyName = "PKey",
                 IsPrimaryKeyUnclustered = true,
-                Temporality = new TemporalityModel() { Name = "Temporality" }
             };
+            tbl1.Temporality = new TemporalityModel(tbl1);
             tbl1.Fields[0] = new FieldModel(tbl1, "Field1");
             tbl1.Fields[1] = new FieldModel(tbl1, "Field2") { IsPrimaryKey = true };
             tbl1.Checks.Add(new TableCheckModel(tbl1, null, "CHECK"));
@@ -117,8 +117,8 @@ namespace DacpacDiff.Core.Model.Tests
                 Fields = new FieldModel[2],
                 PrimaryKeyName = s(2, "PKey"),
                 IsPrimaryKeyUnclustered = b(3),
-                Temporality = new TemporalityModel() { Name = s(4, "Temporality") }
             };
+            tbl2.Temporality = new TemporalityModel(tbl2);
             tbl2.Fields[0] = new FieldModel(tbl2, s(5, "Field1"));
             tbl2.Fields[1] = new FieldModel(tbl2, "Field2") { IsPrimaryKey = b(6) };
             tbl2.Checks.Add(new TableCheckModel(tbl2, null, s(7, "CHECK")));
@@ -181,11 +181,11 @@ namespace DacpacDiff.Core.Model.Tests
                     Fields = new FieldModel[2],
                     PrimaryKeyName = s(1, "PKey"),
                     IsPrimaryKeyUnclustered = b(2),
-                    Temporality = new TemporalityModel() { Name = s(3, "Temporality") }
                 };
-                tbl.Fields[0] = new FieldModel(tbl, s(4, "Field1"));
-                tbl.Fields[1] = new FieldModel(tbl, "Field2") { IsPrimaryKey = b(5) };
-                tbl.Checks.Add(new TableCheckModel(tbl, null, s(6, "CHECK")));
+                tbl.Fields[0] = new FieldModel(tbl, s(3, "Field1"));
+                tbl.Fields[1] = new FieldModel(tbl, "Field2") { IsPrimaryKey = b(4) };
+                tbl.Checks.Add(new TableCheckModel(tbl, null, s(5, "CHECK")));
+                tbl.Temporality = diff == 6 ? new TemporalityModel(tbl) : TemporalityModel.Empty;
                 return tbl;
             }
 

@@ -15,6 +15,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         
         public class TestModel : IModel
         {
+            public string FullName { get; } = string.Empty;
             public string Name { get; } = string.Empty;
         }
 

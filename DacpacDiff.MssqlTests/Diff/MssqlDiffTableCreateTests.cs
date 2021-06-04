@@ -61,7 +61,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
                 ")"
             }, res, string.Join("\n", res));
         }
-        
+
         [TestMethod]
         public void MssqlDiffTableCreate__Simple_unnamed_primary_key()
         {
@@ -250,13 +250,11 @@ namespace DacpacDiff.Mssql.Diff.Tests
         public void MssqlDiffTableCreate__Temporal_table_with_unnamed_history()
         {
             // Arrange
-            var tbl = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable")
+            var tbl = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable");
+            tbl.Temporality = new(tbl)
             {
-                Temporality = new()
-                {
-                    PeriodFieldFrom = "TemporalFrom",
-                    PeriodFieldTo = "TemporalTo",
-                }
+                PeriodFieldFrom = "TemporalFrom",
+                PeriodFieldTo = "TemporalTo",
             };
             tbl.Fields = new[]
             {
@@ -287,14 +285,12 @@ namespace DacpacDiff.Mssql.Diff.Tests
         public void MssqlDiffTableCreate__Temporal_table_with_named_history()
         {
             // Arrange
-            var tbl = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable")
+            var tbl = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable");
+            tbl.Temporality = new(tbl)
             {
-                Temporality = new()
-                {
-                    HistoryTable = "[HSchema].[HTable]",
-                    PeriodFieldFrom = "TemporalFrom",
-                    PeriodFieldTo = "TemporalTo",
-                }
+                HistoryTable = "[HSchema].[HTable]",
+                PeriodFieldFrom = "TemporalFrom",
+                PeriodFieldTo = "TemporalTo",
             };
             tbl.Fields = new[]
             {

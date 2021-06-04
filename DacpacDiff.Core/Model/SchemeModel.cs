@@ -9,6 +9,7 @@ namespace DacpacDiff.Core.Model
         public const string UNKNOWN_VER = "(unknown)";
 
         public string Name { get; }
+        public string FullName => Name;
         public IDictionary<string, DatabaseModel> Databases { get; } = new Dictionary<string, DatabaseModel>();
 
         public SchemeModel(string name)

@@ -207,7 +207,7 @@ namespace DacpacDiff.Core.Parser
             var temporalXml = el.Find("Relationship", ("Name", "TemporalSystemVersioningHistoryTable")).FirstOrDefault();
             if (temporalXml != null)
             {
-                table.Temporality = new TemporalityModel
+                table.Temporality = new TemporalityModel(table)
                 {
                     HistoryTable = temporalXml.Element("Entry")?.Element("References")?.Attribute("Name")?.Value ?? string.Empty,
                     PeriodFieldFrom = getName(colsXml.FirstOrDefault(e => e.Find("Property", ("Name", "GeneratedAlwaysType"), ("Value", "1")).Any()), table.FullName),

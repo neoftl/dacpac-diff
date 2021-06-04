@@ -3,19 +3,26 @@ using System;
 
 namespace DacpacDiff.Core.Model
 {
-    public class TemporalityModel : IModel, IEquatable<TemporalityModel>
+    public class TemporalityModel : IModel<TemporalityModel, TableModel>, IEquatable<TemporalityModel>
     {
-        public static readonly TemporalityModel Empty = new();
+        public static readonly TemporalityModel Empty = new(TableModel.Empty);
 
-        public string Name { get; set; } = string.Empty;
+        public TableModel Table { get; }
+        public string Name => $"{Table.FullName} temporality";
+        public string FullName => Name;
         public string? PeriodFieldFrom { get; set; }
         public string? PeriodFieldTo { get; set; }
         public string? HistoryTable { get; set; }
 
+        public TemporalityModel(TableModel table)
+        {
+            Table = table;
+        }
+
         public bool Equals(TemporalityModel? other)
         {
             return this.IsEqual(other,
-                m => m.Name,
+                m => m.Table.FullName,
                 m => m.PeriodFieldFrom,
                 m => m.PeriodFieldTo,
                 m => m.HistoryTable);
@@ -26,7 +33,7 @@ namespace DacpacDiff.Core.Model
         {
             return new object?[]
             {
-                Name,
+                Table.FullName,
                 PeriodFieldFrom,
                 PeriodFieldTo,
                 HistoryTable,

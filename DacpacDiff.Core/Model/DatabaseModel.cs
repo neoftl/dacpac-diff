@@ -9,7 +9,8 @@ namespace DacpacDiff.Core.Model
     {
         public static readonly DatabaseModel Empty = new();
 
-        public string Name { get; set; }
+        public string Name { get; }
+        public string FullName => Name;
         public string? Version { get; set; } // Database version (for reference only)
         public object? Users { get; set; } // TODO
         public object? Logins { get; set; } // TODO
@@ -43,9 +44,7 @@ namespace DacpacDiff.Core.Model
             return model != null;
         }
 
-        public IModel[] FindAllDependents<T, U>(IModel<T, U> me)
-            where T : IModel<T, U>
-            where U : IModel
+        public IModel[] FindAllDependents(IModel me)
         {
             var mods = Schemas.Values.SelectMany(s => s.Modules.Values).ToArray();
             var tbls = Schemas.Values.SelectMany(s => s.Tables.Values).ToArray();

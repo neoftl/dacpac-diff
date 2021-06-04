@@ -1,5 +1,6 @@
 ﻿using DacpacDiff.Core.Utility;
 using System;
+using System.Linq;
 
 namespace DacpacDiff.Core.Model
 {
@@ -28,7 +29,9 @@ namespace DacpacDiff.Core.Model
         public FieldRefModel? Ref { get; set; }
         public bool HasReference => Ref is not null;
 
-        public string[] Dependencies => Ref == null || Ref.TargetField.Table == Table ? Array.Empty<string>() : new[] { Ref.TargetField.Table.Name };
+        public string[] Dependencies => (Default?.Dependencies ?? Array.Empty<string>())
+            .Append(Ref == null || Ref.TargetField.Table == Table ? null : Ref.TargetField.Table.Name)
+            .NotNull().ToArray();
 
         private FieldModel()
         {
@@ -39,6 +42,31 @@ namespace DacpacDiff.Core.Model
         {
             Table = table;
             Name = name;
+        }
+        public FieldModel(FieldModel field)
+        {
+            Table = field.Table;
+            Name = field.Name;
+            Type = field.Type;
+            Computation = field.Computation;
+            Order = field.Order;
+            Nullable = field.Nullable;
+            IsUnique = field.IsUnique;
+            IsPrimaryKey = field.IsPrimaryKey;
+            Identity = field.Identity;
+
+            if (field.Default != null)
+            {
+                Default = new FieldDefaultModel(this, field.Default.Name, field.Default.Value);
+            }
+            if (field.Ref != null)
+            {
+                Ref = new FieldRefModel(this, field.Ref.TargetField)
+                {
+                    Name = field.Ref.Name,
+                    IsSystemNamed = field.Ref.IsSystemNamed,
+                };
+            }
         }
 
         public bool Equals(FieldModel? other)
