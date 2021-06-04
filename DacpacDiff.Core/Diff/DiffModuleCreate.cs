@@ -1,4 +1,5 @@
 ﻿using DacpacDiff.Core.Model;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace DacpacDiff.Core.Diff
@@ -8,9 +9,8 @@ namespace DacpacDiff.Core.Diff
         public ModuleModel Module { get; }
 
         public IModel Model => Module;
-        public string Title => "Create " + Module.Type.ToString().ToLower() + (NeedsStub ? " stub" : "");
+        public string Title => "Create " + Module.Type.ToString().ToLower() + (Module.StubOnCreate ? " stub" : "");
         public string Name => Module.FullName;
-        public bool NeedsStub => new[] { ModuleModel.ModuleType.FUNCTION, ModuleModel.ModuleType.PROCEDURE, ModuleModel.ModuleType.VIEW }.Contains(Module.Type);
 
         public DiffModuleCreate(ModuleModel module)
         {

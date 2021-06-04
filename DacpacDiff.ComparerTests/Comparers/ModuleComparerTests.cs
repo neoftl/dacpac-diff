@@ -75,7 +75,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             // Assert
             var diff = (DiffModuleCreate)res.First();
             Assert.AreSame(lft, diff.Module);
-            if (diff.NeedsStub)
+            if (diff.Module.StubOnCreate)
             {
                 var diff2 = (DiffModuleAlter)res.Skip(1).Single();
                 Assert.AreSame(lft, diff2.Module);
@@ -139,7 +139,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             Assert.AreEqual(2, res.Length);
             Assert.AreSame(rgt, ((DiffObjectDrop)res[0]).Model);
             Assert.AreSame(lft, ((DiffModuleCreate)res[1]).Model);
-            Assert.IsFalse(((DiffModuleCreate)res[1]).NeedsStub); // Based on type
+            Assert.IsFalse(((DiffModuleCreate)res[1]).Module.StubOnCreate); // Based on type
         }
 
         [TestMethod]
@@ -162,7 +162,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             Assert.AreEqual(3, res.Length);
             Assert.AreSame(rgt, ((DiffObjectDrop)res[0]).Model);
             Assert.AreSame(lft, ((DiffModuleCreate)res[1]).Module);
-            Assert.IsTrue(((DiffModuleCreate)res[1]).NeedsStub); // Based on type
+            Assert.IsTrue(((DiffModuleCreate)res[1]).Module.StubOnCreate); // Based on type
             Assert.AreSame(lft, ((DiffModuleAlter)res[2]).Module);
         }
 

@@ -34,6 +34,8 @@ namespace DacpacDiff.Mssql
             }
         }
 
+        // TODO: some diff ordering and chaining logic should be provided based on target DBMS
+
         public ISqlFileBuilder GetSqlFileBuilder() => new MssqlFileBuilder(this);
 
         public ISqlFormatter GetSqlFormatter(ISqlFormattable sqlObj)

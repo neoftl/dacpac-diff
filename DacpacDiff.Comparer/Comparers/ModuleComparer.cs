@@ -33,7 +33,7 @@ namespace DacpacDiff.Comparer.Comparers
 
                 var diffCreate = new DiffModuleCreate(lft);
                 diffs.Add(diffCreate);
-                if (diffCreate.NeedsStub)
+                if (lft.StubOnCreate)
                 {
                     diffs.Add(new DiffModuleAlter(lft));
                 }
