@@ -35,8 +35,12 @@ namespace DacpacDiff.Core.Model
             }
             return schema;
         }
-        public T? Get<T>(string fullName) where T : class, IModel => Get(fullName) as T;
-
+        
+        public bool TryGet(string fullName, [MaybeNullWhen(false)] out IModel model)
+        {
+            model = Get(fullName);
+            return model != null;
+        }
         public bool TryGet<T>(string fullName, [MaybeNullWhen(false)] out T model)
             where T : class, IModel
         {

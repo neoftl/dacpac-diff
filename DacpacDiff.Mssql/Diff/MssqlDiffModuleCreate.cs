@@ -154,6 +154,7 @@ namespace DacpacDiff.Mssql.Diff
             }
         }
 
+#pragma warning disable IDE0060 // Remove unused parameter
         private static void appendStub(ProcedureModuleModel procMod, ISqlFileBuilder sb)
         {
             sb.AppendLine("RETURN 0");
@@ -163,5 +164,6 @@ namespace DacpacDiff.Mssql.Diff
         {
             sb.AppendLine("SELECT 1 A");
         }
+#pragma warning restore IDE0060 // Remove unused parameter
     }
 }

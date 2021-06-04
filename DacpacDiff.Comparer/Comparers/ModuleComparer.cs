@@ -38,14 +38,7 @@ namespace DacpacDiff.Comparer.Comparers
             }
             else if (!lft.IsSimilarDefinition(rgt))
             {
-                // Alter index is a recreate
-                if (lft.Type == ModuleModel.ModuleType.INDEX)
-                {
-                    return new IDifference[] { new RecreateObject<ModuleModel>(lft, rgt) };
-                }
-
-                // Alter other module types
-                diffs.Add(new RecreateObject<ModuleModel>(lft, rgt));
+                diffs.Add(new AlterObject<ModuleModel>(lft, rgt));
             }
 
             return diffs;

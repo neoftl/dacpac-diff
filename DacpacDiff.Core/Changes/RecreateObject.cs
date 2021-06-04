@@ -9,54 +9,27 @@ namespace DacpacDiff.Core.Changes
     /// Fully recreate the target object
     /// Often this is a drop-create
     /// </summary>
-    public class RecreateObject<T> : INoopDifference, IChangeProvider
+    public class RecreateObject<T> : AlterObject<T>
         where T : IModel
     {
-        public IModel Model { get; }
-        public IModel OldModel { get; }
-
-        public string Title => "Recreate " + Model.Name;
-        public string Name => Model.Name;
+        public override string Title => "Recreate " + Model.Name;
 
         public RecreateObject(T lft, T rgt)
+            : base(lft, rgt)
         {
-            Model = lft ?? throw new ArgumentNullException(nameof(lft));
-            OldModel = rgt ?? throw new ArgumentNullException(nameof(rgt));
         }
 
-        public IEnumerable<IDifference> GetAdditionalChanges()
+        public override IEnumerable<IDifference> GetAdditionalChanges()
         {
             var diffs = new List<IDifference>();
-
-            // Must drop all function dependencies in order to alter function
-            if (Model is FunctionModuleModel func)
-            {
-                var deps = func.Schema.Db.FindAllDependents(func);
-                foreach (var dep in deps)
-                {
-                    switch (dep)
-                    {
-                        case FieldDefaultModel def:
-                            diffs.Add(new RecreateObject<FieldDefaultModel>(def, def));
-                            break;
-                        case ModuleModel mod:
-                            diffs.Add(new RecreateObject<ModuleModel>(mod, mod));
-                            break;
-                        case TableCheckModel chk:
-                            diffs.Add(new RecreateObject<TableCheckModel>(chk, chk));
-                            break;
-                        default:
-                            throw new NotImplementedException();
-                    }
-                }
-            }
+            AddChangesToDependents(diffs);
 
             // We know that OldModel is the same type as Model
             switch (Model)
             {
                 case FieldDefaultModel def:
                     // TODO: Specific changes for defaults?
-                    var fieldWithoutDefault = new FieldModel(def.Field.Table, def.Field.Name)
+                    var fieldWithoutDefault = new FieldModel(def.Field)
                     {
                         Default = null
                     };

@@ -19,7 +19,7 @@ namespace DacpacDiff.Comparer.Comparers
             (a, d) => d is DiffSchemaCreate,
             (a, d) => d is DiffUserTypeCreate,
             (a, d) => d is DiffModuleCreate create && create.Module.StubOnCreate,
-            (a, d) => d is DiffFieldAlter,
+            (a, d) => d is DiffFieldAlter && !ReferencesRemain(a, d),
             (a, d) => d is DiffModuleAlter && !ReferencesRemain(a, d),
             (a, d) => d is DiffSynonymAlter,
             (a, d) => d is DiffFieldDrop,

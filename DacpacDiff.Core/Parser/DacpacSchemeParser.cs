@@ -177,7 +177,10 @@ namespace DacpacDiff.Core.Parser
         {
             var name = el.Attribute("Name")?.Value ?? throw new InvalidDataException($"Element {el.Name} missing required 'Name' attribute");
             var schemaName = getName(name.Split('.')[0]);
-            var schema = db.Get<SchemaModel>(schemaName) ?? throw new IndexOutOfRangeException($"Unknown schema: {schemaName}");
+            if (!db.TryGet<SchemaModel>(schemaName, out var schema))
+            {
+                throw new IndexOutOfRangeException($"Unknown schema: {schemaName}");
+            }
             name = getName(name, schema.Name);
             parser(schema, el, name);
         }
@@ -262,7 +265,7 @@ namespace DacpacDiff.Core.Parser
                 .Element("Entry")?
                 .Element("References")?.Attribute("Name")?.Value ?? string.Empty;
             name = getName(el, target);
-            
+
             var idx = new IndexModuleModel(
                 schema: schema,
                 name: name
@@ -501,7 +504,7 @@ namespace DacpacDiff.Core.Parser
                 // TODO: log bad ref
                 return;
             }
-            
+
             var defName = el.Attribute("Name")?.Value;
             defName = defName != null ? getName(defName, tbl.FullName) : null;
             fld.Default = new FieldDefaultModel(fld, defName, defValue)
