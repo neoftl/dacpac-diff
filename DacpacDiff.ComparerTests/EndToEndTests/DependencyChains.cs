@@ -113,7 +113,7 @@ namespace DacpacDiff.Comparer.Tests.EndToEndTests
         }
 
         [TestMethod]
-        public void Function_alter_requires_all_dependents_to_be_dropped_and_recreated()
+        public void Function_alter_requires_some_dependents_to_be_dropped_and_recreated()
         {
             /// Arrange
             var oldScheme = getScheme1();
@@ -123,7 +123,11 @@ namespace DacpacDiff.Comparer.Tests.EndToEndTests
 
             if (!newDB.TryGet<FunctionModuleModel>("[dbo].[sfn_Func1]", out var fn1)
                 || !newDB.TryGet<FunctionModuleModel>("[dbo].[sfn_Func3]", out var fn3)
-                || !newDB.TryGet<TableModel>("[dbo].[Table1]", out var tbl1))
+                || !newDB.TryGet<ProcedureModuleModel>("[dbo].[usp_Procedure1]", out var sp1)
+                || !newDB.TryGet<TableModel>("[dbo].[Table1]", out var tbl1)
+                || !newDB.TryGet<TableModel>("[dbo].[Table2]", out var tbl2)
+                || !newDB.TryGet<TriggerModuleModel>("[dbo].[tr_Trigger1]", out var tr1)
+                || !newDB.TryGet<ViewModuleModel>("[dbo].[vw_View1]", out var vw1))
             {
                 Assert.Fail();
                 return;
@@ -139,13 +143,17 @@ namespace DacpacDiff.Comparer.Tests.EndToEndTests
 
             /// Assert
             var chg = res.Single(e => e is DiffModuleAlter d && d.Model == fn1);
-            //Assert.AreEqual(0, res.Length);
             Assert.That.DoesNotContain(res, e => e is DiffObjectDrop d && d.Model == fn1);
             Assert.That.DoesNotContain(res, e => e is DiffModuleCreate d && d.Model == fn1);
+            Assert.That.DoesNotContain(res, e => e is IDifference d && d.Model == sp1);
+            Assert.That.DoesNotContain(res, e => e is IDifference d && d.Model == tr1);
+            Assert.That.DoesNotContain(res, e => e is IDifference d && d.Model == vw1);
             Assert.That.ItemAppearsBefore(res, e => e is DiffFieldAlter d && d.RightField == tbl1.Fields[0], chg);
-            Assert.That.ItemAppearsBefore(res, chg, e => e is DiffFieldAlter d && d.LeftField == tbl1.Fields[0]);
             Assert.That.ItemAppearsBefore(res, e => e is DiffModuleCreate d && d.Model == fn3, chg);
-            // TODO: rest
+            Assert.That.ItemAppearsBefore(res, e => e is DiffTableCheckDrop d && d.Model == tbl2.Checks[0], chg);
+            Assert.That.ItemAppearsBefore(res, chg, e => e is DiffFieldAlter d && d.LeftField == tbl1.Fields[0]);
+            Assert.That.ItemAppearsBefore(res, chg, e => e is DiffModuleAlter d && d.Model == fn3);
+            Assert.That.ItemAppearsBefore(res, chg, e => e is DiffTableCheckCreate d && d.Model == tbl2.Checks[0]);
         }
 
         [TestMethod]
@@ -184,7 +192,6 @@ namespace DacpacDiff.Comparer.Tests.EndToEndTests
 
             /// Assert
             var chg = res.Single(e => e is DiffModuleAlter d && d.Model == fn1);
-            //Assert.AreEqual(0, res.Length);
             Assert.That.DoesNotContain(res, e => e is DiffObjectDrop);
             Assert.That.ItemAppearsBefore(res, chg, e => e != chg && e is DiffModuleAlter);
         }

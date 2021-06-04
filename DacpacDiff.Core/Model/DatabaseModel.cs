@@ -1,4 +1,5 @@
 ﻿using DacpacDiff.Core.Utility;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -36,11 +37,11 @@ namespace DacpacDiff.Core.Model
             return schema;
         }
         
-        public bool TryGet(string fullName, [MaybeNullWhen(false)] out IModel model)
-        {
-            model = Get(fullName);
-            return model != null;
-        }
+        //public bool TryGet(string fullName, [MaybeNullWhen(false)] out IModel model)
+        //{
+        //    model = Get(fullName);
+        //    return model != null;
+        //}
         public bool TryGet<T>(string fullName, [MaybeNullWhen(false)] out T model)
             where T : class, IModel
         {
@@ -48,22 +49,34 @@ namespace DacpacDiff.Core.Model
             return model != null;
         }
 
-        public IModel[] FindAllDependents(IModel me)
+        public IModel[] FindAllDependents(IModel me, params Type[] dependentTypes)
         {
-            var mods = Schemas.Values.SelectMany(s => s.Modules.Values).ToArray();
-            var tbls = Schemas.Values.SelectMany(s => s.Tables.Values).ToArray();
-            var chks = tbls.SelectMany(t => t.Checks).ToArray();
-            var defs = tbls.SelectMany(t => t.Fields.Select(f => f.Default).NotNull()).ToArray();
+            // Find all items
+            var mods = Schemas.Values.SelectMany(s => s.Modules.Values);
+            var tbls = Schemas.Values.SelectMany(s => s.Tables.Values);
+            var flds = tbls.SelectMany(t => t.Fields);
+            var chks = tbls.SelectMany(t => t.Checks);
+            var defs = flds.Select(f => f.Default).NotNull();
 
-            var fullName = me.FullName;
-            var deps = mods.OfType<IDependentModel>()
-                .Union(tbls.OfType<IDependentModel>())
-                .Union(chks.OfType<IDependentModel>())
-                .Union(defs.OfType<IDependentModel>())
-                .Where(d => d.Dependencies.Contains(fullName))
+            // Only want items that can be dependent
+            IEnumerable<IDependentModel> deps = mods.OfType<IDependentModel>()
+                .Concat(tbls.OfType<IDependentModel>())
+                .Concat(flds.OfType<IDependentModel>())
+                .Concat(chks.OfType<IDependentModel>())
+                .Concat(defs.OfType<IDependentModel>())
                 .ToArray();
 
-            return deps;
+            // Ignore unwanted types
+            if (dependentTypes.Length > 0)
+            {
+                deps = deps.Where(d => dependentTypes.Contains(d.GetType()));
+            }
+
+            // Filter to actual dependents
+            var fullName = me.FullName;
+            deps = deps.Where(d => d.Dependencies.Contains(fullName));
+
+            return deps.ToArray();
         }
     }
 }

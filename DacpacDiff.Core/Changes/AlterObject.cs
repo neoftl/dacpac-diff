@@ -55,8 +55,24 @@ namespace DacpacDiff.Core.Changes
             if (Model is FunctionModuleModel func)
             {
                 // Need all existing dependents that will remain after update
-                var deps = func.Schema.Db.FindAllDependents(Model);
-                deps = deps.Where(d => ((FunctionModuleModel)OldModel).Schema.Db.TryGet<IModel>(d.FullName, out _)).ToArray();
+                var deps = func.Schema.Db.FindAllDependents(Model, typeof(FieldDefaultModel), typeof(TableCheckModel), typeof(FunctionModuleModel));
+
+                // TODO: don't like this
+                deps = deps.Where(d =>
+                {
+                    var oldDB = ((FunctionModuleModel)OldModel).Schema.Db;
+
+                    if (d is TableCheckModel chk)
+                    {
+                        return oldDB.TryGet<TableModel>(chk.Table.FullName, out var tbl) && tbl.Checks.Contains(chk); // If def changing, will already have a drop
+                    }
+                    if (d is FieldDefaultModel def)
+                    {
+                        return oldDB.TryGet<TableModel>(def.Field.Table.FullName, out var tbl) && tbl.Fields.Any(f => f.Name == def.Field.Name && f.IsDefaultMatch(def.Field));
+                    }
+
+                    return oldDB.TryGet<IModel>(d.FullName, out _);
+                }).ToArray();
 
                 foreach (var dep in deps)
                 {
