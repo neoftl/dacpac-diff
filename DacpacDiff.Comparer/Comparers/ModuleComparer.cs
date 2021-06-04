@@ -1,4 +1,5 @@
-﻿using DacpacDiff.Core.Diff;
+﻿using DacpacDiff.Core.Changes;
+using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
 using System;
 using System.Collections.Generic;
@@ -16,11 +17,13 @@ namespace DacpacDiff.Comparer.Comparers
                     return Array.Empty<IDifference>();
                 }
 
+                // Dropped
                 return new IDifference[] { new DiffObjectDrop(rgt) };
             }
 
             var diffs = new List<IDifference>();
 
+            // Type changing, drop existing
             if (rgt != null && lft.Type != rgt.Type)
             {
                 diffs.Add(new DiffObjectDrop(rgt));
@@ -29,30 +32,23 @@ namespace DacpacDiff.Comparer.Comparers
 
             if (rgt is null)
             {
+                // Create
                 // TODO: Clustered index must be only one per object
-
-                var diffCreate = new DiffModuleCreate(lft);
-                diffs.Add(diffCreate);
-                if (lft.StubOnCreate)
-                {
-                    diffs.Add(new DiffModuleAlter(lft));
-                }
+                diffs.Add(new DiffModuleCreate(lft));
             }
             else if (!lft.IsSimilarDefinition(rgt))
             {
+                // Alter index is a recreate
                 if (lft.Type == ModuleModel.ModuleType.INDEX)
                 {
-                    return new IDifference[]
-                    {
-                        new DiffObjectDrop(rgt),
-                        new DiffModuleCreate(lft)
-                    };
+                    return new IDifference[] { new RecreateObject<ModuleModel>(lft, rgt) };
                 }
 
-                diffs.Add(new DiffModuleAlter(lft));
+                // Alter other module types
+                diffs.Add(new RecreateObject<ModuleModel>(lft, rgt));
             }
 
-            return diffs.ToArray();
+            return diffs;
         }
     }
 }

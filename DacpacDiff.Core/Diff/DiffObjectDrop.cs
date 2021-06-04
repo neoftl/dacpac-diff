@@ -60,6 +60,25 @@ namespace DacpacDiff.Core.Diff
             // TODO: if temporal, will need to do both
         }
 
+        //private static readonly Dictionary<Type, Func<IModel, DiffObjectDrop>> _constructors = new();
+        //public static DiffObjectDrop Create(IModel model)
+        //{
+        //    if (_constructors.Count == 0)
+        //    {
+        //        foreach (var c in typeof(DiffObjectDrop).GetConstructors().Where(c => c.GetParameters().All(p => typeof(IModel).IsInstanceOfType( p.ParameterType))))
+        //        {
+        //            _constructors[c.GetParameters().First().ParameterType] = (IModel o) => (DiffObjectDrop)c.Invoke(new object[] { o });
+        //        }
+        //    }
+
+        //    if (!_constructors.TryGetValue(model.GetType(), out var constr))
+        //    {
+        //        throw new NotImplementedException("No DiffObjectDrop constructor to handle type " + model.GetType());
+        //    }
+
+        //    return constr(model);
+        //}
+
         public bool GetDataLossTable(out string tableName)
         {
             tableName = Name;

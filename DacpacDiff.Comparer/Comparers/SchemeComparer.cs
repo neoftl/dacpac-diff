@@ -11,13 +11,14 @@ namespace DacpacDiff.Comparer.Comparers
 {
     public class SchemeComparer
     {
+        // TODO: move to IDifference as a comparison
         public static readonly Func<IEnumerable<IDifference>, IDifference, bool>[] DiffOrder = new Func<IEnumerable<IDifference>, IDifference, bool>[] {
             (a, d) => d is DiffTableCheckDrop,
             (a, d) => d is DiffObjectDrop drop && drop.Type != DiffObjectDrop.ObjectType.SCHEMA,
             (a, d) => d is DiffObjectDrop drop && drop.Type == DiffObjectDrop.ObjectType.SCHEMA,
             (a, d) => d is DiffSchemaCreate,
             (a, d) => d is DiffUserTypeCreate,
-            (a, d) => d is DiffModuleCreate create && create.NeedsStub,
+            (a, d) => d is DiffModuleCreate create && create.Module.StubOnCreate,
             (a, d) => d is DiffFieldAlter,
             (a, d) => d is DiffModuleAlter && !ReferencesRemain(a, d),
             (a, d) => d is DiffSynonymAlter,
@@ -54,11 +55,28 @@ namespace DacpacDiff.Comparer.Comparers
             }
             var rightDb = rgt.Databases.Values.Single();
 
+            // Generate diffs
+            var diffs = _comparerFactory.GetComparer<DatabaseModel>()
+                .Compare(leftDb, rightDb).ToList();
+
+            // Ensure all chained diffs are added
+            var diffQueue = new Queue<IChangeProvider>(diffs.OfType<IChangeProvider>());
+            while (diffQueue.TryDequeue(out var d))
+            {
+                var cdiffs = d.GetAdditionalChanges();
+                // TODO: ignore duplicate items already in diffs
+                diffs.AddRange(cdiffs);
+                cdiffs.OfType<IChangeProvider>().ToList().ForEach(diffQueue.Enqueue);
+            }
+
+            // Remove non-changes
+            diffs.RemoveAll(d => d is INoopDifference);
+
+            // TODO: Remove duplicate diffs
+
             // TODO: Group related diffs (e.g., small alters to same table)
 
-            // Produce diffs in execution order
-            var diffs = _comparerFactory.GetComparer<DatabaseModel>()
-                .Compare(leftDb, rightDb);
+            // Put diffs in execution order
             var sqlParts = OrderDiffsByDependency(diffs).ToList();
             return sqlParts;
         }

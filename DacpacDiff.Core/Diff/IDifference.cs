@@ -7,4 +7,8 @@ namespace DacpacDiff.Core.Diff
     {
         IModel? Model { get; }
     }
+
+    // When is a change not a change?
+    public interface INoopDifference : IDifference
+    { }
 }
