@@ -10,7 +10,6 @@ namespace DacpacDiff.Mssql.Diff
         where T : IDifference
     {
         protected readonly T _diff;
-        private readonly string _sql;
 
         private class NullSqlBuilder : BaseSqlFileBuilder
         {
@@ -24,10 +23,6 @@ namespace DacpacDiff.Mssql.Diff
         protected BaseMssqlDiffBlock(T diff)
         {
             _diff = diff ?? throw new ArgumentNullException(nameof(diff));
-
-            var sb = new NullSqlBuilder();
-            GetFormat(sb);
-            _sql = sb.ToString().Trim();
         }
 
         public void Format(ISqlFileBuilder sb)
@@ -49,7 +44,7 @@ IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON"))
                     .AppendLine("END").AppendLine();
             }
 
-            sb.Append(_sql);
+            sb.Append(ToString());
 
             sb.EnsureLine(2)
                 .AppendGo()
@@ -61,6 +56,16 @@ IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON"))
 
         protected abstract void GetFormat(ISqlFileBuilder sb);
 
-        public override string ToString() => _sql;
+        protected string? _sql = null;
+        public override string ToString()
+        {
+            if (_sql == null)
+            {
+                var sb = new NullSqlBuilder();
+                GetFormat(sb);
+                _sql = sb.ToString().Trim();
+            }
+            return _sql;
+        }
     }
 }

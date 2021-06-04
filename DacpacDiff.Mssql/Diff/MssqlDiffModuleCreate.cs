@@ -8,16 +8,25 @@ namespace DacpacDiff.Mssql.Diff
 {
     public class MssqlDiffModuleCreate : BaseMssqlDiffBlock<DiffModuleCreate>
     {
+        public bool UseStub { get; init; }
+        public bool DoAsAlter { get; init; }
+
         public MssqlDiffModuleCreate(DiffModuleCreate diff)
             : base(diff)
-        { }
+        {
+            UseStub = diff.Module.StubOnCreate;
+            DoAsAlter = diff.DoAsAlter;
+            _sql = null;
+        }
 
         protected override void GetFormat(ISqlFileBuilder sb)
         {
+            sb.Append(DoAsAlter ? "ALTER " : "CREATE ");
+
             switch (_diff.Module)
             {
                 case FunctionModuleModel funcMod: // Stub
-                    sb.AppendLine($"CREATE FUNCTION {funcMod.FullName} (");
+                    sb.AppendLine($"FUNCTION {funcMod.FullName} (");
                     if (funcMod.Parameters.Length > 0)
                     {
                         var argSql = funcMod.Parameters.Select(p => $"    {p.Name} {p.Type}"
@@ -34,29 +43,32 @@ namespace DacpacDiff.Mssql.Diff
                             + (!f.Nullable ? " NOT NULL" : ""));
                         sb.AppendLine($"{funcMod.ReturnType} TABLE (")
                             .AppendLine(string.Join(",\r\n", tblFields))
-                            .AppendLine(") AS BEGIN")
-                            .AppendLine("    RETURN")
-                            .AppendLine("END");
+                            .Append(") AS ");
                     }
                     else if (funcMod.ReturnType == "TABLE")
                     {
                         sb.AppendLine("TABLE")
-                            .AppendLine("AS")
-                            .AppendLine("    RETURN SELECT 1 A");
+                            .AppendLine("AS");
                     }
                     else
                     {
                         sb.AppendLine(funcMod.ReturnType)
                             .AppendIf(() => "WITH RETURNS NULL ON NULL INPUT", funcMod.ReturnNullForNullInput).EnsureLine()
-                            .AppendLine("AS BEGIN")
-                            .AppendLine("    RETURN NULL")
-                            .AppendLine("END");
+                            .Append("AS ");
+                    }
+
+                    if (UseStub)
+                    {
+                        appendStub(funcMod, sb);
+                    }
+                    else
+                    {
+                        sb.Append(funcMod.Body.Trim());
                     }
                     return;
 
                 case IndexModuleModel idxMod:
-                    sb.Append("CREATE ")
-                        .AppendIf(() => "UNIQUE ", idxMod.IsUnique)
+                    sb.AppendIf(() => "UNIQUE ", idxMod.IsUnique)
                         .AppendIf(() => "CLUSTERED ", idxMod.IsClustered)
                         .Append($"INDEX [{idxMod.Name}] ON {idxMod.IndexedObject} ([")
                         .Append(string.Join("], [", idxMod.IndexedColumns))
@@ -67,11 +79,20 @@ namespace DacpacDiff.Mssql.Diff
                     return;
 
                 case ProcedureModuleModel procMod: // Stub
-                    sb.AppendLine($"CREATE PROCEDURE {procMod.FullName} AS RETURN 0");
+                    sb.Append($"PROCEDURE {procMod.FullName} AS ");
+
+                    if (UseStub)
+                    {
+                        appendStub(procMod, sb);
+                    }
+                    else
+                    {
+                        sb.Append(procMod.Body.Trim());
+                    }
                     return;
 
                 case TriggerModuleModel trigMod:
-                    sb.Append($"CREATE TRIGGER {trigMod.FullName} ON {trigMod.Parent} ")
+                    sb.Append($"TRIGGER {trigMod.FullName} ON {trigMod.Parent} ")
                         .Append(trigMod.Before ? "AFTER " : "FOR ")
                         .AppendIf(() => "INSERT", trigMod.ForUpdate)
                         .AppendIf(() => ", ", trigMod.ForUpdate && (trigMod.ForInsert || trigMod.ForDelete))
@@ -85,11 +106,50 @@ namespace DacpacDiff.Mssql.Diff
 
                 case ViewModuleModel viewMod: // Stub
                     // TODO: SCHEMABINDING
-                    sb.AppendLine($"CREATE VIEW {viewMod.FullName} AS SELECT 1 A");
+                    sb.Append($"VIEW {viewMod.FullName} AS ");
+
+                    if (UseStub)
+                    {
+                        appendStub(viewMod, sb);
+                    }
+                    else
+                    {
+                        sb.Append(viewMod.Body.Trim());
+                    }
                     return;
             }
 
             throw new NotImplementedException(_diff.Module.GetType().ToString());
+        }
+
+        private static void appendStub(FunctionModuleModel funcMod, ISqlFileBuilder sb)
+        {
+            if (funcMod.ReturnTable != null)
+            {
+                sb.AppendLine("BEGIN")
+                    .AppendLine("    RETURN")
+                    .AppendLine("END");
+            }
+            else if (funcMod.ReturnType == "TABLE")
+            {
+                sb.AppendLine("    RETURN SELECT 1 A");
+            }
+            else
+            {
+                sb.AppendLine("BEGIN")
+                    .AppendLine("    RETURN NULL")
+                    .AppendLine("END");
+            }
+        }
+
+        private static void appendStub(ProcedureModuleModel procMod, ISqlFileBuilder sb)
+        {
+            sb.AppendLine("RETURN 0");
+        }
+
+        private static void appendStub(ViewModuleModel viewMod, ISqlFileBuilder sb)
+        {
+            sb.AppendLine("SELECT 1 A");
         }
     }
 }

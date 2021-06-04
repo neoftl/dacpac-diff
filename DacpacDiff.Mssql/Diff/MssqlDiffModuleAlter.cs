@@ -1,6 +1,5 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Output;
-using DacpacDiff.Core.Utility;
 
 namespace DacpacDiff.Mssql.Diff
 {
@@ -13,10 +12,11 @@ namespace DacpacDiff.Mssql.Diff
 
         protected override void GetFormat(ISqlFileBuilder sb)
         {
-            var sql = new MssqlDiffModuleCreate(new DiffModuleCreate(_diff.Module)).ToString();
-
-            sql.TryMatch(@"(?im)^CREATE\s", out var m);
-            sql = sql[0..m.Index] + "ALTER " + sql[(m.Index + m.Length)..];
+            var sql = new MssqlDiffModuleCreate(new DiffModuleCreate(_diff.Module))
+            {
+                DoAsAlter = true,
+                UseStub = false
+            }.ToString();
 
             sb.Append(sql).EnsureLine();
         }
