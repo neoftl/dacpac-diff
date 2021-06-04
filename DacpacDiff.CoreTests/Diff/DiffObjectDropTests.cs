@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 
@@ -41,6 +42,7 @@ namespace DacpacDiff.Core.Diff.Tests
             Assert.AreEqual(mod.Type.ToString(), obj.Type.ToString());
         }
 
+        [ExcludeFromCodeCoverage]
         class NoneModuleModel : ModuleModel
         {
             public NoneModuleModel() : base(SchemaModel.Empty, string.Empty, ModuleType.NONE) { }

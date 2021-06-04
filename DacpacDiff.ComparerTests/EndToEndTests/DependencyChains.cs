@@ -3,9 +3,6 @@ using DacpacDiff.Comparer.Tests.TestHelpers;
 using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace DacpacDiff.Comparer.Tests.EndToEndTests
@@ -121,17 +118,13 @@ namespace DacpacDiff.Comparer.Tests.EndToEndTests
             var newScheme = getScheme1();
             var newDB = newScheme.Databases.Values.Single();
 
-            if (!newDB.TryGet<FunctionModuleModel>("[dbo].[sfn_Func1]", out var fn1)
-                || !newDB.TryGet<FunctionModuleModel>("[dbo].[sfn_Func3]", out var fn3)
-                || !newDB.TryGet<ProcedureModuleModel>("[dbo].[usp_Procedure1]", out var sp1)
-                || !newDB.TryGet<TableModel>("[dbo].[Table1]", out var tbl1)
-                || !newDB.TryGet<TableModel>("[dbo].[Table2]", out var tbl2)
-                || !newDB.TryGet<TriggerModuleModel>("[dbo].[tr_Trigger1]", out var tr1)
-                || !newDB.TryGet<ViewModuleModel>("[dbo].[vw_View1]", out var vw1))
-            {
-                Assert.Fail();
-                return;
-            }
+            Assert.IsTrue(newDB.TryGet<FunctionModuleModel>("[dbo].[sfn_Func1]", out var fn1)
+                & newDB.TryGet<FunctionModuleModel>("[dbo].[sfn_Func3]", out var fn3)
+                & newDB.TryGet<ProcedureModuleModel>("[dbo].[usp_Procedure1]", out var sp1)
+                & newDB.TryGet<TableModel>("[dbo].[Table1]", out var tbl1)
+                & newDB.TryGet<TableModel>("[dbo].[Table2]", out var tbl2)
+                & newDB.TryGet<TriggerModuleModel>("[dbo].[tr_Trigger1]", out var tr1)
+                & newDB.TryGet<ViewModuleModel>("[dbo].[vw_View1]", out var vw1));
 
             fn1.Body = "RETURN 2";
 
@@ -174,13 +167,9 @@ namespace DacpacDiff.Comparer.Tests.EndToEndTests
             var newScheme = getScheme1();
             var newDB = newScheme.Databases.Values.Single();
 
-            if (!newDB.TryGet<FunctionModuleModel>("[dbo].[sfn_Func1]", out var fn1)
-                || !newDB.TryGet<FunctionModuleModel>("[dbo].[sfn_Func3]", out var fn3)
-                || !newDB.TryGet<TableModel>("[dbo].[Table1]", out var tbl1))
-            {
-                Assert.Fail();
-                return;
-            }
+            Assert.IsTrue(newDB.TryGet<FunctionModuleModel>("[dbo].[sfn_Func1]", out var fn1)
+                & newDB.TryGet<FunctionModuleModel>("[dbo].[sfn_Func3]", out var fn3)
+                & newDB.TryGet<TableModel>("[dbo].[Table1]", out var tbl1));
 
             fn1.Body = "RETURN 2";
 

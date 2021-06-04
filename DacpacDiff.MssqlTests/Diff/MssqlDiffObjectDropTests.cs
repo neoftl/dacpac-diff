@@ -17,6 +17,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
                 .Select(e => new object[] { e });
         }
 
+        [ExcludeFromCodeCovarage]
         class FakeModuleModel : ModuleModel
         {
             public FakeModuleModel(SchemaModel schema, string name, ModuleType type)
