@@ -208,6 +208,13 @@ namespace DacpacDiff.Core.Parser.Tests
         {
             // Arrange
             var xml = @"<root><Model>
+    <Element Type=""SqlTable"" Name=""[dbo].[Test]"">
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColA]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Element>
+    </Element>
     <Element Type=""SqlIndex"" Name=""[dbo].[Test].[ix_Test]"">
         <Relationship Name=""IndexedObject"">
             <Entry><References Name=""[dbo].[Test]"" /></Entry>
@@ -230,9 +237,77 @@ namespace DacpacDiff.Core.Parser.Tests
             var idx = (IndexModuleModel)sch.Modules["ix_Test"];
             Assert.AreEqual("ix_Test", idx.Name);
             Assert.AreEqual(ModuleModel.ModuleType.INDEX, idx.Type);
-            Assert.AreEqual("[dbo].[Test]", idx.IndexedObject);
+            Assert.AreEqual("[dbo].[Test]", idx.IndexedObjectFullName);
             Assert.IsNull(idx.Condition);
             Assert.AreEqual(0, idx.IncludedColumns.Length);
+        }
+        
+        [TestMethod]
+        public void ParseContent__Parses_indexes_No_matching_table__No_index()
+        {
+            // Arrange
+            var xml = @"<root><Model>
+    <Element Type=""SqlTable"" Name=""[dbo].[Test]"">
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColA]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Element>
+    </Element>
+    <Element Type=""SqlIndex"" Name=""[dbo].[Test].[ix_Test]"">
+        <Relationship Name=""IndexedObject"">
+            <Entry><References Name=""[dbo].[Test]"" /></Entry>
+        </Relationship>
+        <Relationship Name=""ColumnSpecifications"">
+            <Entry>
+                <Element Type=""SqlIndexedColumnSpecification"">
+                    <Relationship Name=""Column""><Entry><References Name=""[dbo].[TestX].[ColA]"" /></Entry></Relationship>
+                </Element>
+            </Entry>
+        </Relationship>
+    </Element>
+</Model></root>";
+
+            // Act
+            var res = DacpacSchemeParser.ParseContent("test", xml);
+            var sch = res.Databases["database"].Schemas["dbo"];
+
+            // Assert
+            Assert.AreEqual(0, sch.Modules.Count);
+        }
+
+        [TestMethod]
+        public void ParseContent__Parses_indexes_No_matching_table_column__No_index()
+        {
+            // Arrange
+            var xml = @"<root><Model>
+    <Element Type=""SqlTable"" Name=""[dbo].[Test]"">
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColA]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Element>
+    </Element>
+    <Element Type=""SqlIndex"" Name=""[dbo].[Test].[ix_Test]"">
+        <Relationship Name=""IndexedObject"">
+            <Entry><References Name=""[dbo].[Test]"" /></Entry>
+        </Relationship>
+        <Relationship Name=""ColumnSpecifications"">
+            <Entry>
+                <Element Type=""SqlIndexedColumnSpecification"">
+                    <Relationship Name=""Column""><Entry><References Name=""[dbo].[Test].[ColX]"" /></Entry></Relationship>
+                </Element>
+            </Entry>
+        </Relationship>
+    </Element>
+</Model></root>";
+
+            // Act
+            var res = DacpacSchemeParser.ParseContent("test", xml);
+            var sch = res.Databases["database"].Schemas["dbo"];
+
+            // Assert
+            Assert.AreEqual(0, sch.Modules.Count);
         }
 
         [TestMethod]
@@ -240,6 +315,23 @@ namespace DacpacDiff.Core.Parser.Tests
         {
             // Arrange
             var xml = @"<root><Model>
+    <Element Type=""SqlTable"" Name=""[dbo].[Test]"">
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColA]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Element>
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColB]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Element>
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColC]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Element>
+    </Element>
     <Element Type=""SqlIndex"" Name=""[dbo].[Test].[ix_Test]"">
         <Relationship Name=""IndexedObject"">
             <Entry><References Name=""[dbo].[Test]"" /></Entry>
@@ -280,6 +372,13 @@ namespace DacpacDiff.Core.Parser.Tests
         {
             // Arrange
             var xml = $@"<root><Model>
+    <Element Type=""SqlTable"" Name=""[dbo].[Test]"">
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColA]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Element>
+    </Element>
     <Element Type=""SqlIndex"" Name=""[dbo].[Test].[ix_Test]"">
         <Relationship Name=""IndexedObject"">
             <Entry><References Name=""[dbo].[Test]"" /></Entry>
@@ -311,6 +410,23 @@ namespace DacpacDiff.Core.Parser.Tests
         {
             // Arrange
             var xml = @"<root><Model>
+    <Element Type=""SqlTable"" Name=""[dbo].[Test]"">
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColA]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Element>
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColB]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Element>
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColC]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Element>
+    </Element>
     <Element Type=""SqlIndex"" Name=""[dbo].[Test].[ix_Test]"">
         <Relationship Name=""IndexedObject"">
             <Entry><References Name=""[dbo].[Test]"" /></Entry>
@@ -345,6 +461,13 @@ namespace DacpacDiff.Core.Parser.Tests
         {
             // Arrange
             var xml = @"<root><Model>
+    <Element Type=""SqlTable"" Name=""[dbo].[Test]"">
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColA]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Element>
+    </Element>
     <Element Type=""SqlIndex"" Name=""[dbo].[Test].[ix_Test]"">
         <Relationship Name=""IndexedObject"">
             <Entry><References Name=""[dbo].[Test]"" /></Entry>

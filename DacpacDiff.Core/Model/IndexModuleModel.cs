@@ -1,5 +1,6 @@
 ﻿using DacpacDiff.Core.Utility;
 using System;
+using System.Linq;
 
 namespace DacpacDiff.Core.Model
 {
@@ -8,7 +9,8 @@ namespace DacpacDiff.Core.Model
         public bool IsClustered { get; set; }
         public bool IsUnique { get; set; }
 
-        public string IndexedObject { get; init; } = string.Empty;
+        public string IndexedObjectFullName { get; init; } = string.Empty;
+        public IModel? IndexedObject { get; private set; }
 
         public string[] IndexedColumns { get; set; } = Array.Empty<string>();
         public string[] IncludedColumns { get; set; } = Array.Empty<string>();
@@ -29,10 +31,27 @@ namespace DacpacDiff.Core.Model
             return this.IsEqual(idx,
                 m => m.IsClustered,
                 m => m.IsUnique,
-                m => m.IndexedObject,
+                m => m.IndexedObjectFullName,
                 m => m.IndexedColumns,
                 m => m.IncludedColumns,
                 m => m.Condition?.ScrubSQL());
+        }
+
+        public bool MapTarget(DatabaseModel db)
+        {
+            IndexedObject = db.Get(IndexedObjectFullName);
+            if (IndexedObject == null)
+            {
+                return false;
+            }
+
+            if (IndexedObject is TableModel tbl)
+            {
+                return IndexedColumns.All(c => tbl.Fields.Any(f => f.Name == c))
+                    && IncludedColumns.All(c => tbl.Fields.Any(f => f.Name == c));
+            }
+
+            throw new NotImplementedException("Index check against " + IndexedObject.GetType().FullName);
         }
     }
 }

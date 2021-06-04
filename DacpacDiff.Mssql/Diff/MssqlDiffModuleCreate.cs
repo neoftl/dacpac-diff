@@ -71,7 +71,7 @@ namespace DacpacDiff.Mssql.Diff
                 case IndexModuleModel idxMod:
                     sb.AppendIf(() => "UNIQUE ", idxMod.IsUnique)
                         .AppendIf(() => "CLUSTERED ", idxMod.IsClustered)
-                        .Append($"INDEX [{idxMod.Name}] ON {idxMod.IndexedObject} ([")
+                        .Append($"INDEX [{idxMod.Name}] ON {idxMod.IndexedObjectFullName} ([")
                         .Append(string.Join("], [", idxMod.IndexedColumns))
                         .Append("])")
                         .AppendIf(() => " INCLUDE ([" + string.Join("], [", idxMod.IncludedColumns) + "])", idxMod.IncludedColumns.Length > 0)

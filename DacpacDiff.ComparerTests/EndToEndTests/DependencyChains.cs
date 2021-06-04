@@ -75,7 +75,7 @@ namespace DacpacDiff.Comparer.Tests.EndToEndTests
             // An index that uses function 1 on table 1
             var idx1 = new IndexModuleModel(sch, "idx_Index1")
             {
-                IndexedObject = tbl1.FullName,
+                IndexedObjectFullName = tbl1.FullName,
                 IndexedColumns = new[] { fld1A.Name },
                 Dependencies = new[] { tbl1.FullName, fn1.FullName }
             };
