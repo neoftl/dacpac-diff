@@ -106,6 +106,16 @@ namespace DacpacDiff.Core.Parser
                 // TODO: unhandled types
             }
 
+            // Check model validity
+            foreach (var idx in db.Schemas.Values.SelectMany(s => s.Modules.Values.OfType<IndexModuleModel>()))
+            {
+                if (!idx.MapTarget(db))
+                {
+                    // TODO: log bad index
+                    idx.Schema.Modules.Remove(idx.Name);
+                }
+            }
+
             return scheme;
         }
 
@@ -272,7 +282,7 @@ namespace DacpacDiff.Core.Parser
             )
             {
                 // TODO: system named
-                IndexedObject = target,
+                IndexedObjectFullName = target,
                 Dependencies = resolveDependencies(el, "BodyDependencies"),
 
                 IsUnique = el.Find("Property", ("Name", "IsUnique"), ("Value", "True")).Any(),

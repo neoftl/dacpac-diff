@@ -14,7 +14,7 @@ namespace DacpacDiff.Mssql.Diff
         {
             if (_diff.Model is IndexModuleModel idx)
             {
-                sb.Append($"DROP INDEX [{idx.Name}] ON {idx.IndexedObject}");
+                sb.Append($"DROP INDEX [{idx.Name}] ON {idx.IndexedObjectFullName}");
             }
             else
             {

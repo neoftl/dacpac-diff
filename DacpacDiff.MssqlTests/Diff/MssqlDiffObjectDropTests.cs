@@ -51,7 +51,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
             // Arrange
             var mod = new IndexModuleModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RMod")
             {
-                IndexedObject = "[ISchema].[ITable]"
+                IndexedObjectFullName = "[ISchema].[ITable]"
             };
 
             var diff = new DiffObjectDrop(mod);

@@ -230,7 +230,7 @@ namespace DacpacDiff.Core.Parser.Tests
             var idx = (IndexModuleModel)sch.Modules["ix_Test"];
             Assert.AreEqual("ix_Test", idx.Name);
             Assert.AreEqual(ModuleModel.ModuleType.INDEX, idx.Type);
-            Assert.AreEqual("[dbo].[Test]", idx.IndexedObject);
+            Assert.AreEqual("[dbo].[Test]", idx.IndexedObjectFullName);
             Assert.IsNull(idx.Condition);
             Assert.AreEqual(0, idx.IncludedColumns.Length);
         }
