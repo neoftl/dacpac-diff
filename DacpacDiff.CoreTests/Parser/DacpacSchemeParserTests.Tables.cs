@@ -742,7 +742,8 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.AreEqual("EXPRESSION", tbl.Checks[0].Definition);
             Assert.AreEqual(0, tbl.Checks[0].Dependencies.Length);
             Assert.IsTrue(tbl.Checks[0].IsSystemNamed);
-            Assert.AreEqual(0, tbl.Checks[0].Name.Length);
+            Assert.AreEqual("Unnamed table check", tbl.Checks[0].Name);
+            Assert.AreEqual("[dbo].[Test]:*", tbl.Checks[0].FullName);
         }
 
         [TestMethod]
@@ -782,6 +783,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.AreEqual(0, tbl.Checks[0].Dependencies.Length);
             Assert.IsFalse(tbl.Checks[0].IsSystemNamed);
             Assert.AreEqual("chk_Test", tbl.Checks[0].Name);
+            Assert.AreEqual("[dbo].[Test]:[chk_Test]", tbl.Checks[0].FullName);
         }
 
         [TestMethod]

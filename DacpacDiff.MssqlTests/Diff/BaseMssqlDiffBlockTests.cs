@@ -295,14 +295,13 @@ namespace DacpacDiff.Mssql.Diff.Tests
         }
 
         [TestMethod]
-        public void ToString__Pregenerated_SQL()
+        public void ToString__Generated_SQL_only_once()
         {
             // Arrange
             var diff = new TestDiff();
 
-#pragma warning disable IDE0017 // Simplify object initialization
             var blk = new TestMssqlDiffBlock(diff);
-#pragma warning restore IDE0017 // Simplify object initialization
+            _ = blk.ToString();
             blk.Formatted = false;
 
             // Act

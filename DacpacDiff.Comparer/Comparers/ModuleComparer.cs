@@ -20,28 +20,26 @@ namespace DacpacDiff.Comparer.Comparers
                 // Dropped
                 return new IDifference[] { new DiffObjectDrop(rgt) };
             }
-
-            var diffs = new List<IDifference>();
-
-            // Type changing, drop existing
-            if (rgt != null && lft.Type != rgt.Type)
-            {
-                diffs.Add(new DiffObjectDrop(rgt));
-                rgt = null;
-            }
-
             if (rgt is null)
             {
                 // Create
-                // TODO: Clustered index must be only one per object
-                diffs.Add(new DiffModuleCreate(lft));
-            }
-            else if (!lft.IsSimilarDefinition(rgt))
-            {
-                diffs.Add(new AlterObject<ModuleModel>(lft, rgt));
+                // TODO: Can only have one clustered index per object
+                return new IDifference[] { new DiffModuleCreate(lft) };
             }
 
-            return diffs;
+            // Type changing, full recreate
+            if (lft.Type != rgt.Type)
+            {
+                return new IDifference[] { new RecreateObject<ModuleModel>(lft, rgt) };
+            }
+
+            // Definition change, alter
+            if (!lft.IsSimilarDefinition(rgt))
+            {
+                return new IDifference[] { new AlterObject<ModuleModel>(lft, rgt) };
+            }
+
+            return Array.Empty<IDifference>();
         }
     }
 }

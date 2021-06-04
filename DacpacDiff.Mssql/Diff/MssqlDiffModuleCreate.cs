@@ -144,7 +144,7 @@ namespace DacpacDiff.Mssql.Diff
             }
             else if (funcMod.ReturnType == "TABLE")
             {
-                sb.AppendLine("    RETURN SELECT 1 A");
+                sb.AppendLine("SELECT 1 A");
             }
             else
             {

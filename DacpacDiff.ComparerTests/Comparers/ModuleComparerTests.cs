@@ -1,4 +1,6 @@
-﻿using DacpacDiff.Core.Diff;
+﻿using DacpacDiff.Comparer.Tests.TestHelpers;
+using DacpacDiff.Core.Changes;
+using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
@@ -73,13 +75,9 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var res = comp.Compare(lft, null).ToArray();
 
             // Assert
-            var diff = (DiffModuleCreate)res.First();
-            Assert.AreSame(lft, diff.Module);
-            if (diff.Module.StubOnCreate)
-            {
-                var diff2 = (DiffModuleAlter)res.Skip(1).Single();
-                Assert.AreSame(lft, diff2.Module);
-            }
+            CollectionAssert.That.AreEqual(res,
+                e => e is DiffModuleCreate d && d.Model == lft);
+            Assert.IsFalse(((DiffModuleCreate)res[0]).DoAsAlter);
         }
 
         [TestMethod]
@@ -121,10 +119,9 @@ namespace DacpacDiff.Comparer.Comparers.Tests
 
         [TestMethod]
         [DynamicData(nameof(getAnyTwoModules), DynamicDataSourceType.Method)]
-        public void Compare__Type_change__Drop_right_Create_left_No_stub(ModuleModel lft, ModuleModel rgt)
+        public void Compare__Type_change__Drop_right_Create_left(ModuleModel lft, ModuleModel rgt)
         {
-            if (lft.Type == rgt.Type
-                || !new[] { ModuleModel.ModuleType.INDEX, ModuleModel.ModuleType.SEQUENCE, ModuleModel.ModuleType.TRIGGER }.Contains(lft.Type))
+            if (lft.Type == rgt.Type)
             {
                 return;
             }
@@ -136,50 +133,23 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var res = comp.Compare(lft, rgt).ToArray();
 
             // Assert
-            Assert.AreEqual(2, res.Length);
-            Assert.AreSame(rgt, ((DiffObjectDrop)res[0]).Model);
-            Assert.AreSame(lft, ((DiffModuleCreate)res[1]).Model);
-            Assert.IsFalse(((DiffModuleCreate)res[1]).Module.StubOnCreate); // Based on type
-        }
-
-        [TestMethod]
-        [DynamicData(nameof(getAnyTwoModules), DynamicDataSourceType.Method)]
-        public void Compare__Type_change__Drop_right_Create_left_With_stub(ModuleModel lft, ModuleModel rgt)
-        {
-            if (lft.Type == rgt.Type
-                || !new[] { ModuleModel.ModuleType.FUNCTION, ModuleModel.ModuleType.PROCEDURE, ModuleModel.ModuleType.VIEW }.Contains(lft.Type))
-            {
-                return;
-            }
-
-            // Arrange
-            var comp = new ModuleComparer();
-
-            // Act
-            var res = comp.Compare(lft, rgt).ToArray();
-
-            // Assert
-            Assert.AreEqual(3, res.Length);
-            Assert.AreSame(rgt, ((DiffObjectDrop)res[0]).Model);
-            Assert.AreSame(lft, ((DiffModuleCreate)res[1]).Module);
-            Assert.IsTrue(((DiffModuleCreate)res[1]).Module.StubOnCreate); // Based on type
-            Assert.AreSame(lft, ((DiffModuleAlter)res[2]).Module);
+            CollectionAssert.That.AreEqual(res,
+                e => e is RecreateObject<ModuleModel> d && d.Model == lft && d.OldModel == rgt);
         }
 
         [TestMethod]
         [DynamicData(nameof(getTwoModules), DynamicDataSourceType.Method)]
-        public void Compare__Non_index_definition_change__Alter(ModuleModel lft, ModuleModel rgt)
+        public void Compare__Definition_change__Alter(ModuleModel lft, ModuleModel rgt)
         {
-            if (lft.Type == ModuleModel.ModuleType.INDEX)
-            {
-                return;
-            }
-         
             // Arrange
             if (rgt is IModuleWithBody m)
             {
                 m.Body = "XBody";
             }
+            else if (rgt is IndexModuleModel idx)
+            {
+                idx.Condition = "X";
+            }
 
             var comp = new ModuleComparer();
 
@@ -187,31 +157,8 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var res = comp.Compare(lft, rgt).ToArray();
 
             // Assert
-            Assert.AreSame(lft, ((DiffModuleAlter)res.Single()).Module);
-        }
-
-        [TestMethod]
-        public void Compare__Index_definition_change__Drop_right_Create_left()
-        {
-            // Arrange
-            var lft = new IndexModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
-            {
-                IndexedColumns = new [] { "Col1" }
-            };
-            var rgt = new IndexModuleModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RMod")
-            {
-                IndexedColumns = new [] { "Col2" }
-            };
-
-            var comp = new ModuleComparer();
-
-            // Act
-            var res = comp.Compare(lft, rgt).ToArray();
-
-            // Assert
-            Assert.AreEqual(2, res.Length);
-            Assert.AreSame(rgt, ((DiffObjectDrop)res[0]).Model);
-            Assert.AreSame(lft, ((DiffModuleCreate)res[1]).Module);
+            CollectionAssert.That.AreEqual(res,
+                e => e is AlterObject<ModuleModel> d && d.Model == lft && d.OldModel == rgt);
         }
     }
 }

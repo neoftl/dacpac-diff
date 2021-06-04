@@ -17,7 +17,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
                 ReturnType = "LType",
                 Body = "ModuleDefinition"
             };
-            lft.Parameters = new []
+            lft.Parameters = new[]
             {
                 new ParameterModel(lft, "@ArgA") { Type = "INT" },
                 new ParameterModel(lft, "@ArgB") { Type = "BIT", DefaultValue = "NULL" },
@@ -44,7 +44,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
                 "END"
             }, res, string.Join("\n", res));
         }
-        
+
         [TestMethod]
         public void MssqlDiffModuleCreate__Scalar_function__Creates_stub()
         {
@@ -80,6 +80,13 @@ namespace DacpacDiff.Mssql.Diff.Tests
                 ReturnType = "TABLE",
                 Body = "ModuleDefinition"
             };
+            lft.Parameters = new[]
+            {
+                new ParameterModel(lft, "@Param1")
+                {
+                    Type = "PType"
+                }
+            };
 
             var diff = new DiffModuleCreate(lft);
 
@@ -90,6 +97,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
             CollectionAssert.AreEqual(new[]
             {
                 "CREATE FUNCTION [LSchema].[LMod] (",
+                "    @Param1 PType",
                 ") RETURNS TABLE",
                 "AS",
                 "    RETURN SELECT 1 A"
@@ -105,6 +113,13 @@ namespace DacpacDiff.Mssql.Diff.Tests
                 ReturnType = "@TableVar",
                 ReturnTable = new TableModel(SchemaModel.Empty, "LMod"),
                 Body = "ModuleDefinition"
+            };
+            lft.Parameters = new[]
+            {
+                new ParameterModel(lft, "@Param1")
+                {
+                    Type = "PType"
+                }
             };
 
             lft.ReturnTable.Fields = new[]
@@ -122,6 +137,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
             CollectionAssert.AreEqual(new[]
             {
                 "CREATE FUNCTION [LSchema].[LMod] (",
+                "    @Param1 PType",
                 ") RETURNS @TableVar TABLE (",
                 "    [FldA] INT NOT NULL,",
                 "    [FldB] VARCHAR(MAX)",
@@ -130,7 +146,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
                 "END"
             }, res, string.Join("\n", res));
         }
-        
+
         [TestMethod]
         public void MssqlDiffModuleCreate__Scalar_function__ReturnNullForNullInput()
         {
@@ -158,7 +174,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
                 "END"
             }, res, string.Join("\n", res));
         }
-        
+
         [TestMethod]
         [DataRow("TABLE", false)]
         [DataRow("@Table", true)]
@@ -190,14 +206,26 @@ namespace DacpacDiff.Mssql.Diff.Tests
             {
                 Body = "ModuleDefinition"
             };
+            lft.Parameters = new[]
+            {
+                new ParameterModel(lft, "@Param1")
+                {
+                    Type = "PType"
+                }
+            };
 
             var diff = new DiffModuleCreate(lft);
 
             // Act
-            var res = new MssqlDiffModuleCreate(diff).ToString().Trim();
+            var res = new MssqlDiffModuleCreate(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
             // Assert
-            Assert.AreEqual("CREATE PROCEDURE [LSchema].[LMod] AS RETURN 0", res);
+            CollectionAssert.AreEqual(new[]
+            {
+                "CREATE PROCEDURE [LSchema].[LMod]",
+                "    @Param1 PType",
+                "AS RETURN 0"
+            }, res, string.Join("\n", res));
         }
 
         [TestMethod]

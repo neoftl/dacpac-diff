@@ -1,7 +1,7 @@
 ﻿using DacpacDiff.Comparer.Comparers;
+using DacpacDiff.Comparer.Tests.TestHelpers;
 using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
-using DacpacDiff.Core.Output;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -140,11 +140,11 @@ namespace DacpacDiff.Comparer.Tests.EndToEndTests
             /// Assert
             var chg = res.Single(e => e is DiffModuleAlter d && d.Model == fn1);
             //Assert.AreEqual(0, res.Length);
-            Assert_DoesNotContain(res, e => e is DiffObjectDrop d && d.Model == fn1);
-            Assert_DoesNotContain(res, e => e is DiffModuleCreate d && d.Model == fn1);
-            Assert_ItemAppearsBefore(res, e => e is DiffFieldAlter d && d.RightField == tbl1.Fields[0], chg);
-            Assert_ItemAppearsBefore(res, chg, e => e is DiffFieldAlter d && d.LeftField == tbl1.Fields[0]);
-            Assert_ItemAppearsBefore(res, e => e is DiffModuleCreate d && d.Model == fn3, chg);
+            Assert.That.DoesNotContain(res, e => e is DiffObjectDrop d && d.Model == fn1);
+            Assert.That.DoesNotContain(res, e => e is DiffModuleCreate d && d.Model == fn1);
+            Assert.That.ItemAppearsBefore(res, e => e is DiffFieldAlter d && d.RightField == tbl1.Fields[0], chg);
+            Assert.That.ItemAppearsBefore(res, chg, e => e is DiffFieldAlter d && d.LeftField == tbl1.Fields[0]);
+            Assert.That.ItemAppearsBefore(res, e => e is DiffModuleCreate d && d.Model == fn3, chg);
             // TODO: rest
         }
 
@@ -185,68 +185,8 @@ namespace DacpacDiff.Comparer.Tests.EndToEndTests
             /// Assert
             var chg = res.Single(e => e is DiffModuleAlter d && d.Model == fn1);
             //Assert.AreEqual(0, res.Length);
-            Assert_DoesNotContain(res, e => e is DiffObjectDrop);
-            Assert_ItemAppearsBefore(res, chg, e => e != chg && e is DiffModuleAlter);
-        }
-
-        // TODO: move
-        [ExcludeFromCodeCoverage]
-        public static void Assert_DoesNotContain<T>(IEnumerable<T> collection, Func<T, bool> predicate)
-        {
-            var arr = collection.ToArray();
-
-            if (arr.Any(predicate))
-            {
-                var itemIndex = arr.TakeWhile(e => !predicate(e)).Count();
-                Assert.Fail("Found matching item in collection at index " + itemIndex);
-            }
-        }
-        [ExcludeFromCodeCoverage]
-        public static void Assert_ItemAppearsBefore<T>(IEnumerable<T> collection, Func<T, bool> predicateForFirstItem, Func<T, bool> predicateForOtherItems)
-        {
-            var arr = collection.ToArray();
-            var firstItem = arr.SingleOrDefault(predicateForFirstItem);
-            if (firstItem == null)
-            {
-                Assert.Fail("Did not find item 1 in collection");
-                return;
-            }
-
-            Assert_ItemAppearsBefore<T>(arr, firstItem, predicateForOtherItems);
-        }
-        [ExcludeFromCodeCoverage]
-        public static void Assert_ItemAppearsBefore<T>(IEnumerable<T> collection, T firstItem, Func<T, bool> predicateForOtherItems)
-        {
-            var arr = collection.ToArray();
-            var otherItems = collection.Where(predicateForOtherItems).ToArray();
-            if (otherItems == null)
-            {
-                Assert.Fail("Did not match other items in collection");
-                return;
-            }
-
-            Assert_ItemAppearsBefore<T>(arr, firstItem, otherItems);
-        }
-        [ExcludeFromCodeCoverage]
-        public static void Assert_ItemAppearsBefore<T>(IEnumerable<T> collection, Func<T, bool> predicateForFirstItem, params T[] otherItems)
-        {
-            var arr = collection.ToArray();
-            var firstItem = arr.SingleOrDefault(predicateForFirstItem);
-            if (firstItem == null)
-            {
-                Assert.Fail("Did not find item 1 in collection");
-                return;
-            }
-
-            Assert_ItemAppearsBefore<T>(arr, firstItem, otherItems);
-        }
-        [ExcludeFromCodeCoverage]
-        public static void Assert_ItemAppearsBefore<T>(IEnumerable<T> collection, T firstItem, params T[] otherItems)
-        {
-            var arr = collection.ToArray();
-            var firstItemIndex = Array.IndexOf(arr, firstItem);
-            var otherItemFirstIndex = otherItems.Select(e => Array.IndexOf(arr, e)).Min();
-            Assert.IsTrue(firstItemIndex < otherItemFirstIndex, "Item 1 ({0}) appeared at index {1}; first of other items ({2}) appeared at index {3}", firstItem, firstItemIndex, otherItems.First(), otherItemFirstIndex);
+            Assert.That.DoesNotContain(res, e => e is DiffObjectDrop);
+            Assert.That.ItemAppearsBefore(res, chg, e => e != chg && e is DiffModuleAlter);
         }
     }
 }
