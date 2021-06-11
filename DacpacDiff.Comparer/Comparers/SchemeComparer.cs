@@ -64,9 +64,15 @@ namespace DacpacDiff.Comparer.Comparers
             while (diffQueue.TryDequeue(out var d))
             {
                 var cdiffs = d.GetAdditionalChanges();
-                // TODO: ignore duplicate items already in diffs
+
+                // Ignore duplicate items already in diffs
+                cdiffs = cdiffs.Where(d => !diffs.Any(q => q.GetType() == d.GetType() && q.Model == d.Model))
+                    .ToArray();
+
                 diffs.AddRange(cdiffs);
-                cdiffs.OfType<IChangeProvider>().ToList().ForEach(diffQueue.Enqueue);
+                cdiffs.OfType<IChangeProvider>()
+                    .Where(d => !diffQueue.Any(q => q.GetType() == d.GetType() && ((IDifference)q) == ((IDifference)d)))
+                    .ToList().ForEach(diffQueue.Enqueue);
             }
 
             // Remove non-changes
