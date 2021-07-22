@@ -90,6 +90,10 @@ namespace DacpacDiff.Mssql.Diff
                             + (p.IsOutput ? " OUTPUT" : "")).ToArray();
                         sb.AppendLine(string.Join(",\r\n", argSql));
                     }
+                    if (procMod.ExecuteAs?.Length > 0)
+                    {
+                        sb.AppendLine("WITH EXECUTE AS " + procMod.ExecuteAs);
+                    }
 
                     sb.Append("AS ");
 
