@@ -463,7 +463,7 @@ namespace DacpacDiff.Core.Parser
                 .Select(a => db.Get(a.Value) as TableModel)
                 .SingleOrDefault();
             var flds = el.Find("Relationship", ("Name", "ColumnSpecifications")).Single()
-                .Element("Entry")?
+                .Elements("Entry")?
                 .Find("Element", ("Type", "SqlIndexedColumnSpecification"))
                 .Find("Relationship", ("Name", "Column"))
                 .Elements("Entry")?
@@ -476,7 +476,24 @@ namespace DacpacDiff.Core.Parser
                 return;
             }
 
-            flds.Single().IsUnique = true;
+            if (flds.Length == 1)
+            {
+                flds.Single().IsUnique = true;
+            }
+            else
+            {
+                var schema = tbl.Schema;
+
+                // TODO: naming
+                //var tblName = el.Find("Relationship", ("Name", "DefiningTable")).Single()
+                //    .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
+                var uq = new UniqueConstraintModel(schema, null)
+                {
+                    DefiningObjectFullName = tbl.FullName,
+                    Columns = flds.Select(f => f.Name).ToArray(),
+                };
+                schema.Modules["UQ_" + tbl.Name] = uq;
+            }
         }
 
         private static void parseCheckElement(DatabaseModel db, XElement el)

@@ -8,6 +8,7 @@ namespace DacpacDiff.Core.Model
         public enum ModuleType
         {
             NONE,
+            CONSTRAINT,
             FUNCTION,
             INDEX,
             PROCEDURE,
