@@ -662,7 +662,7 @@ namespace DacpacDiff.Core.Parser.Tests
             // Assert
             var fldA = tbl.Fields.Single(f => f.Name == "ColA");
             var fldB = tbl.Fields.Single(f => f.Name == "ColB");
-            var uq = (UniqueConstraintModel)sch.Modules["UQ_Test"];
+            var uq = (UniqueConstraintModel)sch.Modules["UQ::[dbo].[Test](ColA,ColB)"];
             Assert.IsFalse(fldA.IsUnique);
             Assert.IsFalse(fldB.IsUnique);
             Assert.AreEqual(tbl.FullName, uq.DefiningObjectFullName);
@@ -715,45 +715,6 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.IsFalse(fldB.IsUnique);
         }
 
-        [TestMethod]
-        public void ParseContent__Unique_constraint_fails_for_multiple_fields()
-        {
-            // Arrange
-            var xml = @"<root><Model>
-    <Element Type=""SqlTable"" Name=""[dbo].[Test]"">
-        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColA]"">
-            <Element Type=""SqlTypeSpecifier"">
-                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
-            </Element>
-        </Element>
-        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColB]"">
-            <Element Type=""SqlTypeSpecifier"">
-                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
-            </Element>
-        </Element>
-    </Element>
-    <Element Type=""SqlUniqueConstraint"">
-        <Relationship Name=""DefiningTable"">
-            <Entry><References Name=""[dbo].[Test]"" /></Entry>
-        </Relationship>
-        <Relationship Name=""ColumnSpecifications"">
-            <Entry>
-                <Element Type=""SqlIndexedColumnSpecification"">
-                    <Relationship Name=""Column""><Entry><References Name=""[dbo].[Test].[ColA]"" /></Entry></Relationship>
-                    <Relationship Name=""Column""><Entry><References Name=""[dbo].[Test].[ColB]"" /></Entry></Relationship>
-                </Element>
-            </Entry>
-        </Relationship>
-    </Element>
-</Model></root>";
-
-            // Act
-            Assert.ThrowsException<InvalidOperationException>(() =>
-            {
-                DacpacSchemeParser.ParseContent("test", xml);
-            }, "Sequence contains more than one element");
-        }
-
         #endregion Unique constraints
 
         #region Check constraints
@@ -795,7 +756,7 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.AreEqual(0, tbl.Checks[0].Dependencies.Length);
             Assert.IsTrue(tbl.Checks[0].IsSystemNamed);
             Assert.AreEqual("Unnamed table check", tbl.Checks[0].Name);
-            Assert.AreEqual("[dbo].[Test]:*", tbl.Checks[0].FullName);
+            Assert.AreEqual("[dbo].[Test]:*(unnamed)*", tbl.Checks[0].FullName);
         }
 
         [TestMethod]
