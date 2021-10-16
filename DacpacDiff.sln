@@ -11,11 +11,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DacpacDiff.Mssql", "DacpacD
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{55CB30C6-E730-4632-9526-69ED16176D2B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DacpacDiff.Core.Tests", "DacpacDiff.CoreTests\DacpacDiff.Core.Tests.csproj", "{D7B9FAA5-ADA3-44D1-BA2A-8A6124CBB50C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DacpacDiff.Core.Tests", "DacpacDiff.Core.Tests\DacpacDiff.Core.Tests.csproj", "{D7B9FAA5-ADA3-44D1-BA2A-8A6124CBB50C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DacpacDiff.Comparer.Tests", "DacpacDiff.ComparerTests\DacpacDiff.Comparer.Tests.csproj", "{3D49303F-C250-446F-98D4-AAE352083419}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DacpacDiff.Comparer.Tests", "DacpacDiff.Comparer.Tests\DacpacDiff.Comparer.Tests.csproj", "{3D49303F-C250-446F-98D4-AAE352083419}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DacpacDiff.Mssql.Tests", "DacpacDiff.MssqlTests\DacpacDiff.Mssql.Tests.csproj", "{97689C4A-18E9-4D2E-B621-1ACD619DC461}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DacpacDiff.Mssql.Tests", "DacpacDiff.Mssql.Tests\DacpacDiff.Mssql.Tests.csproj", "{97689C4A-18E9-4D2E-B621-1ACD619DC461}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
