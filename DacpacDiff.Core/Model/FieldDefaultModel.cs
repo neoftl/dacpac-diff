@@ -6,7 +6,7 @@ namespace DacpacDiff.Core.Model
     public class FieldDefaultModel : IModel<FieldDefaultModel, FieldModel>, IDependentModel
     {
         public FieldModel Field { get; }
-        public string FullName => $"{Field.FullName}:{(IsSystemNamed ? "*" : $"[{Name}]")}";
+        public string FullName => $"{Field.FullName}:{(IsSystemNamed ? "*(unnamed)*" : $"[{Name}]")}";
         public string Name { get; }
         public bool IsSystemNamed { get; }
         public string Value { get; }

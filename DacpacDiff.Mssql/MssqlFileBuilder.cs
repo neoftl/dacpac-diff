@@ -122,6 +122,18 @@ CREATE OR ALTER PROCEDURE #usp_DropUnnamedDefault(@parentTable NVARCHAR(max), @c
     END
 END
 GO
+CREATE OR ALTER PROCEDURE #usp_DropUnnamedUniqueConstraint(@parentTable NVARCHAR(max), @columns NVARCHAR(MAX))
+AS BEGIN
+	DECLARE @uqName VARCHAR(MAX) = (SELECT TOP 1 KC.[name] FROM sys.key_constraints KC JOIN sys.index_columns IC ON IC.[object_id] = KC.[parent_object_id] AND IC.[index_id] = KC.[unique_index_id] JOIN sys.columns TC ON TC.[object_id] = IC.[object_id] AND TC.[column_id] = IC.[column_id] WHERE KC.[parent_object_id] = OBJECT_ID(@parentTable) AND KC.[type] = 'UQ' GROUP BY KC.[name] HAVING COUNT(1) - SUM(IIF(CHARINDEX(',' + TC.[name] + ',', @columns) > 0, 1, 0)) = 0)
+	IF (@uqName IS NULL) BEGIN
+		EXEC #print 1, '[WARN] Could not locate system-named check constraint on ', @parentTable, ' matching column list. Manual clean-up may be required.'
+	END ELSE BEGIN
+		DECLARE @sql VARCHAR(MAX) = CONCAT('ALTER TABLE ', @parentTable, ' DROP CONSTRAINT [', @uqName, ']')
+		EXEC (@sql)
+		EXEC #print 0, '[NOTE] Dropped system-named check constraint [', @uqName, '] on ', @parentTable
+	END
+END
+GO
 CREATE OR ALTER PROCEDURE #usp_CheckState @C INT AS BEGIN
     DECLARE @err INT = @@ERROR
     IF (@err = 0) BEGIN

@@ -7,18 +7,26 @@ namespace DacpacDiff.Core.Model
     public class UniqueConstraintModel : ModuleModel
     {
         public bool IsSystemNamed { get; }
+        public override string FullName => !IsSystemNamed ? Name : $"(unnamed) {DefiningObjectFullName} ([{string.Join("], [", Columns)}])";
 
         public bool IsClustered { get; set; }
 
-        public string DefiningObjectFullName { get; init; } = string.Empty;
+        public string DefiningObjectFullName { get; }
         public IModel? DefiningObject { get; private set; }
 
-        public string[] Columns { get; set; } = Array.Empty<string>();
+        public string[] Columns { get; }
 
-        public UniqueConstraintModel(SchemaModel schema, string? name)
-            : base(schema, name ?? "Unnamed", ModuleType.CONSTRAINT)
+        private static string getComparableName(string definingObjectFullName, string[] columns)
+        {
+            return $"UQ::{definingObjectFullName}({string.Join(",", columns)})";
+        }
+
+        public UniqueConstraintModel(SchemaModel schema, string? name, string definingObjectFullName, string[] columns)
+            : base(schema, name ?? getComparableName(definingObjectFullName, columns), ModuleType.CONSTRAINT)
         {
             IsSystemNamed = !(name?.Length > 0);
+            DefiningObjectFullName = definingObjectFullName;
+            Columns = columns;
         }
 
         public override bool IsSimilarDefinition(ModuleModel other)

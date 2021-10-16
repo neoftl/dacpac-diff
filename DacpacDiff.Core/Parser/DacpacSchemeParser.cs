@@ -487,12 +487,8 @@ namespace DacpacDiff.Core.Parser
                 // TODO: naming
                 //var tblName = el.Find("Relationship", ("Name", "DefiningTable")).Single()
                 //    .Element("Entry")?.Element("References")?.Attribute("Name")?.Value;
-                var uq = new UniqueConstraintModel(schema, null)
-                {
-                    DefiningObjectFullName = tbl.FullName,
-                    Columns = flds.Select(f => f.Name).ToArray(),
-                };
-                schema.Modules["UQ_" + tbl.Name] = uq;
+                var uq = new UniqueConstraintModel(schema, null, tbl.FullName, flds.Select(f => f.Name).ToArray());
+                schema.Modules[uq.Name] = uq;
             }
         }
 

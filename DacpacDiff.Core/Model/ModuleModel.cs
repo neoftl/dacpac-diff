@@ -19,7 +19,7 @@ namespace DacpacDiff.Core.Model
 
         public SchemaModel Schema { get; }
         public string Name { get; }
-        public string FullName => $"[{Schema.Name}].[{Name}]";
+        public virtual string FullName => $"[{Schema.Name}].[{Name}]";
         public ModuleType Type { get; }
         public string[] Dependencies { get; init; } = Array.Empty<string>();
 

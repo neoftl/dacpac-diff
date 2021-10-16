@@ -8,6 +8,7 @@ namespace DacpacDiff.Core.Diff
         public enum ObjectType
         {
             NONE,
+            CONSTRAINT,
             FUNCTION,
             INDEX,
             PROCEDURE,
@@ -31,6 +32,7 @@ namespace DacpacDiff.Core.Diff
 
             Type = module.Type switch
             {
+                ModuleModel.ModuleType.CONSTRAINT => ObjectType.CONSTRAINT,
                 ModuleModel.ModuleType.FUNCTION => ObjectType.FUNCTION,
                 ModuleModel.ModuleType.INDEX => ObjectType.INDEX,
                 ModuleModel.ModuleType.PROCEDURE => ObjectType.PROCEDURE,

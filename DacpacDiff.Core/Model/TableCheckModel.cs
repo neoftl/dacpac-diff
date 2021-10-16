@@ -7,7 +7,7 @@ namespace DacpacDiff.Core.Model
     {
         public TableModel Table { get; }
         public string Name { get; }
-        public string FullName => $"{Table.FullName}:{(IsSystemNamed ? "*" : $"[{Name}]")}";
+        public string FullName => $"{Table.FullName}:{(IsSystemNamed ? "*(unnamed)*" : $"[{Name}]")}";
         public bool IsSystemNamed { get; }
         public string Definition { get; }
         public string[] Dependencies { get; set; } = Array.Empty<string>();

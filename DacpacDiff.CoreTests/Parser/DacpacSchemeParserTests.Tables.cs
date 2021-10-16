@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using DacpacDiff.Core.Model;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
 
@@ -615,6 +616,57 @@ namespace DacpacDiff.Core.Parser.Tests
             var fldB = tbl.Fields.Single(f => f.Name == "ColB");
             Assert.IsTrue(fldA.IsUnique);
             Assert.IsFalse(fldB.IsUnique);
+        }
+
+        [TestMethod]
+        public void ParseContent__Parses_tables_with_unique_constraint_on_multiple_fields()
+        {
+            // Arrange
+            var xml = @"<root><Model>
+    <Element Type=""SqlTable"" Name=""[dbo].[Test]"">
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColA]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Element>
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[ColB]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+            </Element>
+        </Element>
+    </Element>
+    <Element Type=""SqlUniqueConstraint"">
+        <Relationship Name=""DefiningTable"">
+            <Entry><References Name=""[dbo].[Test]"" /></Entry>
+        </Relationship>
+        <Relationship Name=""ColumnSpecifications"">
+            <Entry>
+                <Element Type=""SqlIndexedColumnSpecification"">
+                    <Relationship Name=""Column""><Entry><References Name=""[dbo].[Test].[ColA]"" /></Entry></Relationship>
+                </Element>
+            </Entry>
+            <Entry>
+                <Element Type=""SqlIndexedColumnSpecification"">
+                    <Relationship Name=""Column""><Entry><References Name=""[dbo].[Test].[ColB]"" /></Entry></Relationship>
+                </Element>
+            </Entry>
+        </Relationship>
+    </Element>
+</Model></root>";
+
+            // Act
+            var res = DacpacSchemeParser.ParseContent("test", xml);
+            var sch = res.Databases["database"].Schemas["dbo"];
+            var tbl = sch.Tables["Test"];
+
+            // Assert
+            var fldA = tbl.Fields.Single(f => f.Name == "ColA");
+            var fldB = tbl.Fields.Single(f => f.Name == "ColB");
+            var uq = (UniqueConstraintModel)sch.Modules["UQ_Test"];
+            Assert.IsFalse(fldA.IsUnique);
+            Assert.IsFalse(fldB.IsUnique);
+            Assert.AreEqual(tbl.FullName, uq.DefiningObjectFullName);
+            CollectionAssert.AreEquivalent(new[] { "ColA", "ColB" }, uq.Columns);
         }
 
         [TestMethod]

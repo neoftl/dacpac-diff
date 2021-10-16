@@ -21,6 +21,27 @@ namespace DacpacDiff.Mssql.Diff
 
         protected override void GetFormat(ISqlFileBuilder sb)
         {
+            if (_diff.Module is UniqueConstraintModel uqMod)
+            {
+                // NOTE: Will never be DoAsAlter; will be a full recreate
+                sb.Append("ALTER TABLE ").Append(uqMod.DefiningObjectFullName)
+                    .Append(" ADD")
+                    .AppendIf(() => $" CONSTRAINT [{uqMod.Name}]", !uqMod.IsSystemNamed)
+                    .Append(" UNIQUE ").Append(uqMod.IsClustered ? "CLUSTERED" : "NONCLUSTERED").EnsureLine()
+                    .AppendLine("(");
+                var first = true;
+                foreach (var fld in uqMod.Columns)
+                {
+                    sb.AppendIf(() => ",\r\n", !first)
+                        .Append($"    [{fld}] ASC"); // TODO
+                    first = false;
+                }
+                sb.EnsureLine()
+                    .Append(") WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]") // TODO
+                    .EnsureLine();
+                return;
+            }
+
             sb.Append(DoAsAlter ? "ALTER " : "CREATE ");
 
             switch (_diff.Module)
