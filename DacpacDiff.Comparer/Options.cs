@@ -29,5 +29,6 @@ namespace DacpacDiff.Comparer
 
         public bool PrettyPrint { get; init; }
         public bool DisableDatalossCheck { get; init; }
+        public bool ChangeDisableOption { get; init; }
     }
 }

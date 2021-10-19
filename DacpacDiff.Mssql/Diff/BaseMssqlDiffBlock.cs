@@ -27,9 +27,9 @@ namespace DacpacDiff.Mssql.Diff
 
         public void Format(ISqlFileBuilder sb)
         {
-            sb.AppendLine("BEGIN TRAN")
-                .AppendLine(sb.Flatten(@"EXEC #usp_CheckState 2
-IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON"))
+            sb.AppendLine(sb.Flatten(@"EXEC #usp_CheckState 1
+BEGIN TRAN
+IF (dbo.tmpIsActive() = 0) SET NOEXEC ON"))
                 .AppendGo().AppendLine();
 
             string? datalossTable = null;
@@ -48,9 +48,10 @@ IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON"))
 
             sb.EnsureLine(2)
                 .AppendGo()
-                .AppendLine(sb.Flatten(@"EXEC #usp_CheckState 2
-IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON"))
-                .AppendLine("COMMIT")
+                .AppendLine(sb.Flatten(@"SET NOEXEC OFF
+EXEC #usp_CheckState 2
+COMMIT
+IF (dbo.tmpIsActive() = 0) SET NOEXEC ON"))
                 .AppendGo();
         }
 
