@@ -26,14 +26,13 @@ namespace DacpacDiff.Mssql
             var objCount = objs.Count(d => (d.Title?.Length ?? 0) > 0);
             var countMag = 1 + (int)Math.Log10(objCount);
 
+            _sql.Clear();
             var sqlHead = new StringBuilder();
 
             sqlHead.AppendLine($@"-- Delta upgrade from {rightFileName} to {leftFileName}
 -- Generated {DateTime.UtcNow}
 --
 -- Changes ({objCount}):");
-
-            addScriptStart(targetVersion);
 
             var count = 0;
             foreach (var diff in objs)
@@ -63,30 +62,33 @@ namespace DacpacDiff.Mssql
                 EnsureLine();
             }
 
-            _sql.Insert(0, sqlHead.AppendLine("--").AppendLine().ToString());
+            var sqlBody = _sql.ToString();
+            sqlHead.AppendLine("--").AppendLine();
+            addScriptStart(sqlHead, targetVersion, sqlBody);
+            _sql.Insert(0, sqlHead.ToString());
 
             // TODO: when to refresh modules?
 
-            addScriptFoot();
+            addScriptFoot(_sql);
             return _sql.ToString();
         }
 
-        private void addScriptStart(string targetVersion)
+        private void addScriptStart(StringBuilder sb, string targetVersion, string sqlBody)
         {
-            AppendLine(@"SET NOCOUNT ON
+            sb.AppendLine(@"SET NOCOUNT ON
 SET XACT_ABORT ON
 SET NOEXEC OFF
 SET QUOTED_IDENTIFIER ON
 GO");
 
-            AppendLine(Flatten(@"CREATE OR ALTER PROCEDURE #print @t BIT, @s1 NVARCHAR(max), @s2 NVARCHAR(max) = NULL, @s3 NVARCHAR(max) = NULL, @s4 NVARCHAR(max) = NULL, @s5 NVARCHAR(max) = NULL, @s6 NVARCHAR(max) = NULL, @s7 NVARCHAR(max) = NULL, @s8 NVARCHAR(max) = NULL, @s9 NVARCHAR(max) = NULL AS BEGIN
+            sb.AppendLine(Flatten(@"CREATE OR ALTER PROCEDURE #print @t BIT, @s1 NVARCHAR(max), @s2 NVARCHAR(max) = NULL, @s3 NVARCHAR(max) = NULL, @s4 NVARCHAR(max) = NULL, @s5 NVARCHAR(max) = NULL, @s6 NVARCHAR(max) = NULL, @s7 NVARCHAR(max) = NULL, @s8 NVARCHAR(max) = NULL, @s9 NVARCHAR(max) = NULL AS BEGIN
     DECLARE @M NVARCHAR(MAX) = CONCAT(@s1, @s2, @s3, @s4, @s5, @s6, @s7, @s8, @s9)
     DECLARE @L INT = IIF(@t = 0, 0, 15)
     RAISERROR(@M, @L, 1) WITH NOWAIT
 END
 GO"));
 
-        AppendLine($@"-- Pre-flight checks
+            sb.AppendLine($@"-- Pre-flight checks
 DECLARE @CurVersion VARCHAR(MAX) = '(unknown)'
 IF (object_id('[dbo].[tfn_DatabaseVersion]') IS NOT NULL) BEGIN
 	SELECT @CurVersion = [BuildNumber] FROM [dbo].tfn_DatabaseVersion()
@@ -97,43 +99,9 @@ IF (@CurVersion <> '{targetVersion}') BEGIN
 END
 GO");
 
-            // TODO: only if each is needed
-            AppendLine(Flatten(@"
+            sb.AppendLine(Flatten(@"
 -- Temporary release helpers
 CREATE OR ALTER PROCEDURE #flag_IsRunning AS RETURN 1
-GO
-CREATE OR ALTER PROCEDURE #usp_DropUnnamedCheckConstraint(@parentTable NVARCHAR(max), @defSql CHAR(16)) AS BEGIN
-    DECLARE @chkName VARCHAR(MAX) = (SELECT TOP 1 [name] FROM sys.check_constraints WHERE [parent_object_id] = OBJECT_ID(@parentTable) AND [type] = 'C' AND HASHBYTES('MD5', REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(CONVERT(VARCHAR(MAX), [definition])), '(', ''), ')', ''), '[', ''), ']', ''), ' ', '')) = @defSql AND [is_system_named] = 1)
-    IF (@chkName IS NULL) BEGIN
-        EXEC #print 1, '[WARN] Could not locate system-named check constraint on ', @parentTable, '. Manual clean-up may be required.'
-    END ELSE BEGIN
-        DECLARE @sql VARCHAR(MAX) = CONCAT('ALTER TABLE ', @parentTable, ' DROP CONSTRAINT [', @chkName, ']')
-        EXEC (@sql)
-        EXEC #print 0, '[NOTE] Dropped system-named check constraint [', @chkName, '] on ', @parentTable
-    END
-END
-GO
-CREATE OR ALTER PROCEDURE #usp_DropUnnamedDefault(@parentTable NVARCHAR(max), @colName VARCHAR(255)) AS BEGIN
-    DECLARE @chkName VARCHAR(MAX) = (SELECT TOP 1 DF.[name] FROM sys.default_constraints DF JOIN sys.all_columns C ON C.[object_id] = DF.[parent_object_id] AND C.[column_id] = DF.[parent_column_id] WHERE DF.[parent_object_id] = OBJECT_ID(@parentTable) AND DF.[type] = 'D' AND DF.[is_system_named] = 1 AND C.[name] = @colName)
-    IF (@chkName IS NULL) BEGIN
-        EXEC #print 1, '[WARN] Could not locate system-named check constraint on ', @parentTable, '. Manual clean-up may be required.'
-    END ELSE BEGIN
-        DECLARE @sql VARCHAR(MAX) = CONCAT('ALTER TABLE ', @parentTable, ' DROP CONSTRAINT [', @chkName, ']')
-        EXEC (@sql)
-        EXEC #print 0, '[NOTE] Dropped system-named check constraint [', @chkName, '] on ', @parentTable
-    END
-END
-GO
-CREATE OR ALTER PROCEDURE #usp_DropUnnamedUniqueConstraint(@parentTable NVARCHAR(max), @columns NVARCHAR(MAX)) AS BEGIN
-	DECLARE @uqName VARCHAR(MAX) = (SELECT TOP 1 KC.[name] FROM sys.key_constraints KC JOIN sys.index_columns IC ON IC.[object_id] = KC.[parent_object_id] AND IC.[index_id] = KC.[unique_index_id] JOIN sys.columns TC ON TC.[object_id] = IC.[object_id] AND TC.[column_id] = IC.[column_id] WHERE KC.[parent_object_id] = OBJECT_ID(@parentTable) AND KC.[type] = 'UQ' GROUP BY KC.[name] HAVING COUNT(1) - SUM(IIF(CHARINDEX(',' + TC.[name] + ',', @columns) > 0, 1, 0)) = 0)
-	IF (@uqName IS NULL) BEGIN
-		EXEC #print 1, '[WARN] Could not locate system-named check constraint on ', @parentTable, ' matching column list. Manual clean-up may be required.'
-	END ELSE BEGIN
-		DECLARE @sql VARCHAR(MAX) = CONCAT('ALTER TABLE ', @parentTable, ' DROP CONSTRAINT [', @uqName, ']')
-		EXEC (@sql)
-		EXEC #print 0, '[NOTE] Dropped system-named check constraint [', @uqName, '] on ', @parentTable
-	END
-END
 GO
 CREATE OR ALTER PROCEDURE #usp_CheckState @C INT AS BEGIN
     DECLARE @err INT = @@ERROR
@@ -154,14 +122,59 @@ END
 GO
 EXEC #usp_CheckState 0
 IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON
-GO
-BEGIN TRAN
 GO"));
+
+            if (sqlBody.Contains("#usp_DropUnnamedCheckConstraint"))
+            {
+                sb.AppendLine(Flatten(@"CREATE OR ALTER PROCEDURE #usp_DropUnnamedCheckConstraint(@parentTable NVARCHAR(max), @defSql CHAR(16)) AS BEGIN
+    DECLARE @chkName VARCHAR(MAX) = (SELECT TOP 1 [name] FROM sys.check_constraints WHERE [parent_object_id] = OBJECT_ID(@parentTable) AND [type] = 'C' AND HASHBYTES('MD5', REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(CONVERT(VARCHAR(MAX), [definition])), '(', ''), ')', ''), '[', ''), ']', ''), ' ', '')) = @defSql AND [is_system_named] = 1)
+    IF (@chkName IS NULL) BEGIN
+        EXEC #print 1, '[WARN] Could not locate system-named check constraint on ', @parentTable, '. Manual clean-up may be required.'
+    END ELSE BEGIN
+        DECLARE @sql VARCHAR(MAX) = CONCAT('ALTER TABLE ', @parentTable, ' DROP CONSTRAINT [', @chkName, ']')
+        EXEC (@sql)
+        EXEC #print 0, '[NOTE] Dropped system-named check constraint [', @chkName, '] on ', @parentTable
+    END
+END
+GO"));
+            }
+
+            if (sqlBody.Contains("#usp_DropUnnamedDefault"))
+            {
+                sb.AppendLine(Flatten(@"CREATE OR ALTER PROCEDURE #usp_DropUnnamedDefault(@parentTable NVARCHAR(max), @colName VARCHAR(255)) AS BEGIN
+    DECLARE @chkName VARCHAR(MAX) = (SELECT TOP 1 DF.[name] FROM sys.default_constraints DF JOIN sys.all_columns C ON C.[object_id] = DF.[parent_object_id] AND C.[column_id] = DF.[parent_column_id] WHERE DF.[parent_object_id] = OBJECT_ID(@parentTable) AND DF.[type] = 'D' AND DF.[is_system_named] = 1 AND C.[name] = @colName)
+    IF (@chkName IS NULL) BEGIN
+        EXEC #print 1, '[WARN] Could not locate system-named check constraint on ', @parentTable, '. Manual clean-up may be required.'
+    END ELSE BEGIN
+        DECLARE @sql VARCHAR(MAX) = CONCAT('ALTER TABLE ', @parentTable, ' DROP CONSTRAINT [', @chkName, ']')
+        EXEC (@sql)
+        EXEC #print 0, '[NOTE] Dropped system-named check constraint [', @chkName, '] on ', @parentTable
+    END
+END
+GO"));
+            }
+
+            if (sqlBody.Contains("#usp_DropUnnamedUniqueConstraint"))
+            {
+                sb.AppendLine(Flatten(@"CREATE OR ALTER PROCEDURE #usp_DropUnnamedUniqueConstraint(@parentTable NVARCHAR(max), @columns NVARCHAR(MAX)) AS BEGIN
+	DECLARE @uqName VARCHAR(MAX) = (SELECT TOP 1 KC.[name] FROM sys.key_constraints KC JOIN sys.index_columns IC ON IC.[object_id] = KC.[parent_object_id] AND IC.[index_id] = KC.[unique_index_id] JOIN sys.columns TC ON TC.[object_id] = IC.[object_id] AND TC.[column_id] = IC.[column_id] WHERE KC.[parent_object_id] = OBJECT_ID(@parentTable) AND KC.[type] = 'UQ' GROUP BY KC.[name] HAVING COUNT(1) - SUM(IIF(CHARINDEX(',' + TC.[name] + ',', @columns) > 0, 1, 0)) = 0)
+	IF (@uqName IS NULL) BEGIN
+		EXEC #print 1, '[WARN] Could not locate system-named check constraint on ', @parentTable, ' matching column list. Manual clean-up may be required.'
+	END ELSE BEGIN
+		DECLARE @sql VARCHAR(MAX) = CONCAT('ALTER TABLE ', @parentTable, ' DROP CONSTRAINT [', @uqName, ']')
+		EXEC (@sql)
+		EXEC #print 0, '[NOTE] Dropped system-named check constraint [', @uqName, '] on ', @parentTable
+	END
+END
+GO"));
+            }
+
+            sb.AppendLine(Flatten("BEGIN TRAN\r\nGO"));
         }
 
-        private void addScriptFoot()
+        private static void addScriptFoot(StringBuilder sb)
         {
-            AppendLine($@"
+            sb.AppendLine($@"
 -- Complete
 GO
 EXEC #usp_CheckState 1
