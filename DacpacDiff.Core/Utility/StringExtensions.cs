@@ -60,7 +60,7 @@ namespace DacpacDiff.Core.Utility
         public static string ScrubSQL(this string sql)
         {
             return sql.Replace("\r", "").Replace("\n", "").Replace("\t", "").Replace(" ", "")
-                .Replace("(", "").Replace(")", "")
+                .Replace("(", "").Replace(")", "") // TODO: this could miss changes (e.g., a*b/c === (a*b)/c ) - better to have something like /\((\w+)\)/ -> $1 but will also need to explode IN and NOT IN
                 .Replace("[", "").Replace("]", "")
                 .ToLower();
         }
