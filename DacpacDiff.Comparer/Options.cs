@@ -1,7 +1,6 @@
 ﻿using CommandLine;
 using DacpacDiff.Core.Output;
 using DacpacDiff.Core.Parser;
-using System.Collections.Generic;
 
 namespace DacpacDiff.Comparer
 {
@@ -22,8 +21,11 @@ namespace DacpacDiff.Comparer
         [Option(shortName: 'l', longName: "standard-eols", HelpText = "Standardise line endings to CRLF.")]
         public bool StandardiseLineEndings { get; init; }
 
-        [Option(shortName: 'x', longName: "exclude-schemas", HelpText = "List of schemas to not compare.")]
+        [Option(shortName: 'S', longName: "exclude-schemas", HelpText = "List of schemas to not compare.")]
         public IEnumerable<string>? ExcludeSchemas { get; init; }
+
+        [Option(shortName: 'x', longName: "exclude-objects", HelpText = "List of objects to exclude by full name. Basic wildcard support: `*].[object*` matches `[schema].[object]`")]
+        public IEnumerable<string>? ExcludeObjects { get; init; }
 
         // TODO: option to only compare certain types
 

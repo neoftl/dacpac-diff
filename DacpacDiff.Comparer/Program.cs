@@ -2,11 +2,10 @@
 using DacpacDiff.Comparer;
 using DacpacDiff.Comparer.Comparers;
 using DacpacDiff.Core;
+using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Parser;
 using DacpacDiff.Core.Utility;
-using System;
-using System.IO;
-using System.Linq;
+using System.Text.RegularExpressions;
 
 Parser.Default.ParseArguments<Options>(args)
     .WithNotParsed(e =>
@@ -65,7 +64,8 @@ Parser.Default.ParseArguments<Options>(args)
             return;
         }
 
-        if (o.ExcludeSchemas != null)
+        // Exclude unwanted schemas
+        if (o.ExcludeSchemas?.Any() == true)
         {
             foreach (var schemaName in o.ExcludeSchemas)
             {
@@ -76,6 +76,57 @@ Parser.Default.ParseArguments<Options>(args)
                 foreach (var db in rightScheme.Databases.Values)
                 {
                     db.Schemas.Remove(schemaName);
+                }
+            }
+        }
+
+        // Exclude unwanted objects
+        if (o.ExcludeObjects?.Any() == true)
+        {
+            void stripExcludedObjects(Regex re, DatabaseModel db)
+            {
+                foreach (var sch in db.Schemas.Values)
+                {
+                    foreach (var mod in sch.Modules)
+                    {
+                        if (re.IsMatch(mod.Value.FullName))
+                        {
+                            sch.Modules.Remove(mod);
+                        }
+                    }
+                    foreach (var syn in sch.Synonyms)
+                    {
+                        if (re.IsMatch(syn.Value.FullName))
+                        {
+                            sch.Synonyms.Remove(syn);
+                        }
+                    }
+                    foreach (var tbl in sch.Tables)
+                    {
+                        if (re.IsMatch(tbl.Value.FullName))
+                        {
+                            sch.Tables.Remove(tbl);
+                        }
+                    }
+                    foreach (var ut in sch.UserTypes)
+                    {
+                        if (re.IsMatch(ut.Value.FullName))
+                        {
+                            sch.UserTypes.Remove(ut);
+                        }
+                    }
+                }
+            }
+            foreach (var objectPattern in o.ExcludeObjects)
+            {
+                var re = new Regex("^" + Regex.Escape(objectPattern).Replace("\\*", ".*?") + "$");
+                foreach (var db in leftScheme.Databases.Values)
+                {
+                    stripExcludedObjects(re, db);
+                }
+                foreach (var db in rightScheme.Databases.Values)
+                {
+                    stripExcludedObjects(re, db);
                 }
             }
         }
