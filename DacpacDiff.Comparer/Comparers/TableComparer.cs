@@ -59,7 +59,7 @@ namespace DacpacDiff.Comparer.Comparers
             var rgtChecks = rgt.Checks.ToList();
             foreach (var chkL in lft.Checks)
             {
-                var chkR = rgtChecks.FirstOrDefault(c => chkL.IsSystemNamed && c.IsSystemNamed ? c.Definition == chkL.Definition : c.Name == chkL.Name);
+                var chkR = rgtChecks.FirstOrDefault(c => chkL.IsSystemNamed && c.IsSystemNamed ? c.Definition.ScrubSQL() == chkL.Definition.ScrubSQL() : c.Name == chkL.Name);
                 if (chkR != null)
                 {
                     rgtChecks.Remove(chkR);
