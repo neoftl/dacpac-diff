@@ -10,18 +10,18 @@ namespace DacpacDiff.Mssql.Diff
             : base(diff)
         { }
 
-        private static void appendFieldSql(FieldModel fld, ISqlFileBuilder sb, bool existingIsNull)
+        private static void appendFieldSql(FieldModel fld, ISqlFileBuilder sb, bool existingIsNull, bool asAlter)
         {
             sb.Append($"[{fld.Name}]");
 
-            if ((fld.Computation?.Length ?? 0) > 0)
+            if (fld.Computation?.Length > 0)
             {
                 sb.Append($" AS {fld.Computation}");
                 return;
             }
 
             sb.Append($" {fld.Type}")
-                .AppendIf(() => $" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed)
+                .AppendIf(() => $" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed && !asAlter)
                 .Append(!fld.Nullable && (!existingIsNull || fld.HasDefault) ? " NOT NULL" : " NULL");
         }
 
@@ -36,7 +36,7 @@ namespace DacpacDiff.Mssql.Diff
                 sb.AppendLine(CommonMssql.ALTER_TABLE_DROP_COLUMN(rgt.Table.FullName, rgt.Name))
                     .AppendLine()
                     .Append($"ALTER TABLE {lft.Table.FullName} ADD ");
-                appendFieldSql(lft, sb, false);
+                appendFieldSql(lft, sb, false, false);
                 sb.EnsureLine();
                 return;
             }
@@ -70,7 +70,7 @@ namespace DacpacDiff.Mssql.Diff
             if (!lft.IsSignatureMatch(rgt, false))
             {
                 sb.Append($"ALTER TABLE {lft.Table.FullName} ALTER COLUMN ");
-                appendFieldSql(lft, sb, rgt.Nullable); // TODO: changing between nullability needs thinking about
+                appendFieldSql(lft, sb, rgt.Nullable, true); // TODO: changing between nullability needs thinking about
                 sb.AppendLine(!lft.Nullable && !lft.HasDefault && rgt.Nullable ? " -- NOTE: Cannot change to NOT NULL without default" : string.Empty)
                     .AppendLine();
                 didDefault = lft.IsDefaultSystemNamed;
