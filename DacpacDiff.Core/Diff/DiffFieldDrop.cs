@@ -1,27 +1,50 @@
 ﻿using DacpacDiff.Core.Model;
-using System;
+using System.Diagnostics;
 
-namespace DacpacDiff.Core.Diff
+namespace DacpacDiff.Core.Diff;
+
+public class DiffFieldDrop : IDifference, IDataLossChange, IChangeProvider
 {
-    public class DiffFieldDrop : IDifference, IDataLossChange
+    public const string TITLE = "Drop table field";
+
+    public FieldModel Field { get; }
+
+    public IModel Model => Field;
+    public string Name => $"{Field.Table.FullName}.[{Field.Name}]";
+    public string Title => TITLE;
+
+    public DiffFieldDrop(FieldModel field)
     {
-        public const string TITLE = "Drop table field";
+        Field = field ?? throw new ArgumentNullException(nameof(field));
+    }
 
-        public FieldModel Field { get; }
+    public bool GetDataLossTable(out string tableName)
+    {
+        tableName = Field.Table.FullName;
+        return true;
+    }
 
-        public IModel Model => Field;
-        public string Name => $"{Field.Table.FullName}.[{Field.Name}]";
-        public string Title => TITLE;
+    public IEnumerable<IDifference> GetAdditionalChanges()
+    {
+        var diffs = new List<IDifference>();
 
-        public DiffFieldDrop(FieldModel field)
+        // Will need to drop certain dependencies
+        foreach (var dep in Field.Dependents)
         {
-            Field = field ?? throw new ArgumentNullException(nameof(field));
+            switch (dep)
+            {
+                case IndexModuleModel:
+                    diffs.Add(new DiffObjectDrop((ModuleModel)dep));
+                    break;
+                case FunctionModuleModel:
+                    // NOOP
+                    break;
+                default:
+                    Debugger.Break(); // Review
+                    break;
+            }
         }
 
-        public bool GetDataLossTable(out string tableName)
-        {
-            tableName = Field.Table.FullName;
-            return true;
-        }
+        return diffs;
     }
 }

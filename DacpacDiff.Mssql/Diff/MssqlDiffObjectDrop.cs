@@ -22,7 +22,7 @@ public class MssqlDiffObjectDrop : BaseMssqlDiffBlock<DiffObjectDrop>
             {
                 sb.Append("EXEC #usp_DropUnnamedUniqueConstraint ")
                     .Append($"'{uqMod.DefiningObjectFullName}', ")
-                    .Append($"',{string.Join(",", uqMod.Columns)},'")
+                    .Append($"'{string.Join(",", uqMod.Columns)}'")
                     .AppendGo();
             }
             else

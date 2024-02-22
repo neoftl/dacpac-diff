@@ -83,7 +83,7 @@ Parser.Default.ParseArguments<Options>(args)
         // Exclude unwanted objects
         if (o.ExcludeObjects?.Any() == true)
         {
-            void stripExcludedObjects(Regex re, DatabaseModel db)
+            static void stripExcludedObjects(Regex re, DatabaseModel db)
             {
                 foreach (var sch in db.Schemas.Values)
                 {

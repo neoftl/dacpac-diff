@@ -187,7 +187,7 @@ GO"));
     END ELSE BEGIN
         DECLARE @sql VARCHAR(MAX) = CONCAT('ALTER TABLE ', @parentTable, ' DROP CONSTRAINT [', @chkName, ']')
         EXEC (@sql)
-        EXEC #print 0, '[NOTE] Dropped system-named check constraint [', @chkName, '] on ', @parentTable
+        EXEC #print 0, '[NOTE] Dropped system-named default [', @chkName, '] on ', @parentTable
     END
 END
 GO"));
@@ -196,13 +196,13 @@ GO"));
         if (sqlBody.Contains("#usp_DropUnnamedUniqueConstraint"))
         {
             sb.AppendLine(Flatten(@"CREATE OR ALTER PROC #usp_DropUnnamedUniqueConstraint(@parentTable NVARCHAR(max), @columns NVARCHAR(MAX)) AS BEGIN
-	DECLARE @uqName VARCHAR(MAX) = (SELECT TOP 1 KC.[name] FROM sys.key_constraints KC JOIN sys.index_columns IC ON IC.[object_id] = KC.[parent_object_id] AND IC.[index_id] = KC.[unique_index_id] JOIN sys.columns TC ON TC.[object_id] = IC.[object_id] AND TC.[column_id] = IC.[column_id] WHERE KC.[parent_object_id] = OBJECT_ID(@parentTable) AND KC.[type] = 'UQ' GROUP BY KC.[name] HAVING COUNT(1) - SUM(IIF(CHARINDEX(',' + TC.[name] + ',', @columns) > 0, 1, 0)) = 0)
+	DECLARE @uqName VARCHAR(MAX) = (SELECT TOP 1 KC.[name] FROM sys.key_constraints KC JOIN sys.index_columns IC ON IC.[object_id] = KC.[parent_object_id] AND IC.[index_id] = KC.[unique_index_id] JOIN sys.columns TC ON TC.[object_id] = IC.[object_id] AND TC.[column_id] = IC.[column_id] WHERE KC.[parent_object_id] = OBJECT_ID(@parentTable) AND KC.[type] = 'UQ' GROUP BY KC.[name] HAVING COUNT(1) - SUM(IIF(CHARINDEX(',' + TC.[name] + ',', ',' + @columns + ',') > 0, 1, 0)) = 0)
 	IF (@uqName IS NULL) BEGIN
 		EXEC #print 1, '[WARN] Could not locate system-named check constraint on ', @parentTable, ' matching column list. Manual clean-up may be required.'
 	END ELSE BEGIN
 		DECLARE @sql VARCHAR(MAX) = CONCAT('ALTER TABLE ', @parentTable, ' DROP CONSTRAINT [', @uqName, ']')
 		EXEC (@sql)
-		EXEC #print 0, '[NOTE] Dropped system-named check constraint [', @uqName, '] on ', @parentTable
+		EXEC #print 0, '[NOTE] Dropped system-named unique constraint [', @uqName, '] on ', @parentTable
 	END
 END
 GO"));
