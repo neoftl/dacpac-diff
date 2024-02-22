@@ -2,15 +2,15 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
+	<ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>dacpac-diff</AssemblyName>
     <Company>Neo Fintech Lab</Company>
     <Authors>IFYates</Authors>
-    <Version>0.1.0-beta1</Version>
-    <PackageReleaseNotes>First packaged release.
-Still some bits missing, but this has been used for 20+ production releases so far, without major issue.
-We still advise reviewing the final delta script before applying.</PackageReleaseNotes>
+    <Version>0.2.0-beta</Version>
+    <PackageReleaseNotes>Still some bits missing, but this has been used for 100+ production releases so far, without few issues.
+We strongly advise reviewing the final delta script before applying.</PackageReleaseNotes>
     <Description>dacpac-diff generates SQL diff files between the definitions of two dacpac files, to facilitate updating a database using easily managed scripts.</Description>
     <Copyright>(c) Neo Fintech Lab 2021</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

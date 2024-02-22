@@ -21,7 +21,7 @@ namespace DacpacDiff.Core.Model
         public string Name { get; }
         public virtual string FullName => $"[{Schema.Name}].[{Name}]";
         public ModuleType Type { get; }
-        public string[] Dependencies { get; init; } = Array.Empty<string>();
+        public virtual string[] Dependencies { get; init; } = Array.Empty<string>();
 
         /// <summary>
         /// True if this module type should be stubbed on create and altered with actual implementation
