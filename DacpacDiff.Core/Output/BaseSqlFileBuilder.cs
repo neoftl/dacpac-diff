@@ -60,15 +60,22 @@ namespace DacpacDiff.Core.Output
                     .Select(l => l.Trim().Trim(';'))
                     .Select(l =>
                     {
-                        if (l == "GO")
+                        if (l is "GO")
                         {
                             return Environment.NewLine + l + Environment.NewLine;
                         }
-                        if (l.StartsWith("--"))
+                        if (l == "BEGIN" || l.EndsWith(" BEGIN"))
                         {
-                            return l + Environment.NewLine;
+                            return $"{l} ";
                         }
-                        return $"{l}; ";
+
+                        var wd = l.Split(' ', 2).First();
+                        return wd switch
+                        {
+                            "--" => l + Environment.NewLine,
+                            "AS" or "CREATE" or "END" or "RETURNS" => $"{l} ",
+                            _ => $"{l}; "
+                        };
                     }));
                 sql = string.Join(Environment.NewLine, sql.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(l => l.Trim().Trim(';')));

@@ -48,8 +48,8 @@ IF (dbo.tmpIsActive() = 0) SET NOEXEC ON"))
             .AppendGo()
             .AppendLine(sb.Flatten(@"SET NOEXEC OFF
 EXEC #usp_CheckState 2
-COMMIT
-IF (dbo.tmpIsActive() = 0) SET NOEXEC ON"))
+IF (dbo.tmpIsActive() = 0) SET NOEXEC ON
+COMMIT"))
             .AppendGo();
     }
 

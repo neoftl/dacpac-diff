@@ -89,43 +89,48 @@ public class MssqlFileBuilder : BaseSqlFileBuilder
 SET XACT_ABORT ON
 SET NOEXEC OFF
 SET QUOTED_IDENTIFIER ON
+SET CONTEXT_INFO 0
 GO");
 
-        sb.AppendLine(Flatten(@"CREATE OR ALTER PROC #print @t BIT, @s1 NVARCHAR(max), @s2 NVARCHAR(max) = NULL, @s3 NVARCHAR(max) = NULL, @s4 NVARCHAR(max) = NULL, @s5 NVARCHAR(max) = NULL, @s6 NVARCHAR(max) = NULL, @s7 NVARCHAR(max) = NULL, @s8 NVARCHAR(max) = NULL, @s9 NVARCHAR(max) = NULL AS BEGIN
+        sb.AppendLine().AppendLine(Flatten(@"
+-- Release framework
+CREATE OR ALTER PROC #print @t BIT, @s1 NVARCHAR(max), @s2 NVARCHAR(max) = NULL, @s3 NVARCHAR(max) = NULL, @s4 NVARCHAR(max) = NULL, @s5 NVARCHAR(max) = NULL, @s6 NVARCHAR(max) = NULL, @s7 NVARCHAR(max) = NULL, @s8 NVARCHAR(max) = NULL, @s9 NVARCHAR(max) = NULL AS BEGIN
     DECLARE @M NVARCHAR(MAX) = CONCAT(@s1, @s2, @s3, @s4, @s5, @s6, @s7, @s8, @s9)
     DECLARE @L INT = IIF(@t = 0, 0, 15)
     RAISERROR(@M, @L, 1) WITH NOWAIT
 END
-GO"));
-
-        sb.AppendLine($@"-- Pre-flight checks
-DECLARE @CurVersion VARCHAR(MAX) = '(unknown)'
-IF (object_id('[dbo].[tfn_DatabaseVersion]') IS NOT NULL) BEGIN
-	SELECT @CurVersion = [BuildNumber] FROM [dbo].tfn_DatabaseVersion()
-END
-IF (@CurVersion <> '{targetVersion}') BEGIN
-    EXEC #print 1, 'Failed: Current version ', @CurVersion, ' does not match expected: {targetVersion}'
-    SET NOEXEC ON
-END
-GO");
-
-        sb.AppendLine(@"
--- Global state
-CREATE OR ALTER PROC #SetCI (@IsActive BIT, @ChangeNum INT) AS DECLARE @CI VARBINARY(128) = CONVERT(BINARY(1), @IsActive) + CONVERT(BINARY(4), @ChangeNum); SET CONTEXT_INFO @CI
 GO
-CREATE OR ALTER FUNCTION dbo.tmpIsActive() RETURNS BIT AS BEGIN RETURN (SELECT CONVERT(BIT, SUBSTRING(CONTEXT_INFO(), 1, 1))) END
-GO");
+CREATE OR ALTER PROC #SetCI (@IsActive BIT, @ChangeNum INT)
+AS
+    DECLARE @CI VARBINARY(128) = CONVERT(BINARY(1), @IsActive) + CONVERT(BINARY(4), @ChangeNum)
+    SET CONTEXT_INFO @CI
+GO
+CREATE OR ALTER FUNCTION dbo.tmpIsActive()
+RETURNS BIT
+AS BEGIN
+    RETURN (SELECT CONVERT(BIT, SUBSTRING(CONTEXT_INFO(), 1, 1)))
+END
+GO
+DROP PROC IF EXISTS #flag_TransactionError
+GO"));
 
         if (canDisableChanges)
         {
-            sb.AppendLine(@"CREATE OR ALTER FUNCTION dbo.tmpGetContextChangeNum() RETURNS INT AS BEGIN RETURN (SELECT CONVERT(INT, SUBSTRING(CONTEXT_INFO(), 2, 4))) END
+            sb.AppendLine(Flatten(@"
+CREATE OR ALTER FUNCTION dbo.tmpGetContextChangeNum()
+RETURNS INT
+AS BEGIN
+    RETURN (SELECT CONVERT(INT, SUBSTRING(CONTEXT_INFO(), 2, 4)))
+END
 GO
-CREATE OR ALTER PROC #IsChangeActive (@ChangeNum BIGINT) AS RETURN ISNULL((SELECT TOP 1 [Include] FROM #Changes WHERE [ChangeNum] = @ChangeNum), 0)
+CREATE OR ALTER PROC #IsChangeActive (@ChangeNum BIGINT)
+AS
+    RETURN ISNULL((SELECT TOP 1 [Include] FROM #Changes WHERE [ChangeNum] = @ChangeNum), 0)
 GO
-EXEC #SetCI 1, 0; DELETE FROM #Changes WHERE [ChangeNum] = 0; INSERT INTO #Changes ([ChangeNum], [Include]) SELECT 0, 1
+DELETE FROM #Changes WHERE [ChangeNum] = 0
+INSERT INTO #Changes ([ChangeNum], [Include]) SELECT 0, 1
 GO
 
--- Temporary release helpers
 CREATE OR ALTER PROC #usp_CheckState (@T INT) AS BEGIN
     DECLARE @err INT = @@ERROR, @IsActive BIT = 0, @ChangeNum INT = dbo.tmpGetContextChangeNum()
     EXEC @IsActive = #IsChangeActive 0
@@ -136,36 +141,55 @@ CREATE OR ALTER PROC #usp_CheckState (@T INT) AS BEGIN
             EXEC #SetCI @IsActive, @ChangeNum
             RETURN 1
         END
-        DECLARE @msg VARCHAR(MAX) = IIF(@err <> 0, CONCAT('Failed due to error (', @err, ')'), CONCAT('Failed: Transaction mismatch (', @@TRANCOUNT, ' <> ', @T, ')'))
-        EXEC #print 1, @msg
+        IF (OBJECT_ID('tempdb..#flag_TransactionError') IS NULL) BEGIN
+            DECLARE @msg VARCHAR(MAX) = IIF(@err <> 0, CONCAT('Failed due to error (', @err, ')'), CONCAT('Failed: Transaction mismatch (', @@TRANCOUNT, ' <> ', @T, ')'))
+            EXEC #print 1, @msg
+            EXEC ('CREATE PROC #flag_TransactionError AS SELECT 1')
+        END
     END
     DELETE FROM #Changes WHERE [ChangeNum] = 0
     EXEC #SetCI 0, @ChangeNum
     RETURN -1
 END
-GO");
+GO"));
         }
         else
         {
-            sb.AppendLine(@"
--- Temporary release helpers
+            sb.AppendLine(Flatten(@"
 CREATE OR ALTER PROC #usp_CheckState (@T INT) AS BEGIN
-    DECLARE @err INT = @@ERROR, @IsActive BIT = 0
-    IF (@err = 0 AND @@TRANCOUNT = @T) BEGIN
-        EXEC #SetCI 1, 0
-        RETURN 1
+    DECLARE @err INT = @@ERROR
+    IF (@err <> 0 OR @@TRANCOUNT <> @T) BEGIN
+        IF (OBJECT_ID('tempdb..#flag_TransactionError') IS NULL) BEGIN
+            DECLARE @msg VARCHAR(MAX) = IIF(@err <> 0, CONCAT('Failed due to error (', @err, ')'), CONCAT('Failed: Transaction mismatch (', @@TRANCOUNT, ' <> ', @T, ')'))
+            EXEC #print 1, @msg
+            EXEC ('CREATE PROC #flag_TransactionError AS SELECT 1')
+        END
+        EXEC #SetCI 0, 0
+        RETURN -1
     END
-    DECLARE @msg VARCHAR(MAX) = IIF(@err <> 0, CONCAT('Failed due to error (', @err, ')'), CONCAT('Failed: Transaction mismatch (', @@TRANCOUNT, ' <> ', @T, ')'))
-    EXEC #print 1, @msg
-    EXEC #SetCI 0, 0
-    RETURN -1
+    RETURN 1
+END
+GO"));
+        }
+
+        sb.AppendLine($@"
+-- Pre-flight checks
+DECLARE @CurVersion VARCHAR(MAX) = '(unknown)'
+IF (object_id('[dbo].[tfn_DatabaseVersion]') IS NOT NULL) BEGIN
+	SELECT @CurVersion = [BuildNumber] FROM [dbo].tfn_DatabaseVersion()
+END
+IF (@CurVersion <> '{targetVersion}') BEGIN
+    EXEC #print 1, 'Failed: Current version ', @CurVersion, ' does not match expected: {targetVersion}'
+    SET NOEXEC ON
+END ELSE BEGIN
+    EXEC #SetCI 1, 0
 END
 GO");
-        }
 
         if (sqlBody.Contains("#usp_DropUnnamedCheckConstraint"))
         {
-            sb.AppendLine(Flatten(@"CREATE OR ALTER PROC #usp_DropUnnamedCheckConstraint(@parentTable NVARCHAR(max), @defSql CHAR(16)) AS BEGIN
+            sb.AppendLine(Flatten(@"
+CREATE OR ALTER PROC #usp_DropUnnamedCheckConstraint(@parentTable NVARCHAR(max), @defSql CHAR(16)) AS BEGIN
     DECLARE @chkName VARCHAR(MAX) = (SELECT TOP 1 [name] FROM sys.check_constraints WHERE [parent_object_id] = OBJECT_ID(@parentTable) AND [type] = 'C' AND HASHBYTES('MD5', REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(CONVERT(VARCHAR(MAX), [definition])), '(', ''), ')', ''), '[', ''), ']', ''), ' ', '')) = @defSql AND [is_system_named] = 1)
     IF (@chkName IS NULL) BEGIN
         EXEC #print 1, '[WARN] Could not locate system-named check constraint on ', @parentTable, '. Manual clean-up may be required.'
@@ -180,7 +204,8 @@ GO"));
 
         if (sqlBody.Contains("#usp_DropUnnamedDefault"))
         {
-            sb.AppendLine(Flatten(@"CREATE OR ALTER PROC #usp_DropUnnamedDefault(@parentTable NVARCHAR(max), @colName VARCHAR(255)) AS BEGIN
+            sb.AppendLine(Flatten(@"
+CREATE OR ALTER PROC #usp_DropUnnamedDefault(@parentTable NVARCHAR(max), @colName VARCHAR(255)) AS BEGIN
     DECLARE @chkName VARCHAR(MAX) = (SELECT TOP 1 DF.[name] FROM sys.default_constraints DF JOIN sys.all_columns C ON C.[object_id] = DF.[parent_object_id] AND C.[column_id] = DF.[parent_column_id] WHERE DF.[parent_object_id] = OBJECT_ID(@parentTable) AND DF.[type] = 'D' AND DF.[is_system_named] = 1 AND C.[name] = @colName)
     IF (@chkName IS NULL) BEGIN
         EXEC #print 1, '[WARN] Could not locate system-named check constraint on ', @parentTable, '. Manual clean-up may be required.'
@@ -195,7 +220,8 @@ GO"));
 
         if (sqlBody.Contains("#usp_DropUnnamedUniqueConstraint"))
         {
-            sb.AppendLine(Flatten(@"CREATE OR ALTER PROC #usp_DropUnnamedUniqueConstraint(@parentTable NVARCHAR(max), @columns NVARCHAR(MAX)) AS BEGIN
+            sb.AppendLine(Flatten(@"
+CREATE OR ALTER PROC #usp_DropUnnamedUniqueConstraint(@parentTable NVARCHAR(max), @columns NVARCHAR(MAX)) AS BEGIN
 	DECLARE @uqName VARCHAR(MAX) = (SELECT TOP 1 KC.[name] FROM sys.key_constraints KC JOIN sys.index_columns IC ON IC.[object_id] = KC.[parent_object_id] AND IC.[index_id] = KC.[unique_index_id] JOIN sys.columns TC ON TC.[object_id] = IC.[object_id] AND TC.[column_id] = IC.[column_id] WHERE KC.[parent_object_id] = OBJECT_ID(@parentTable) AND KC.[type] = 'UQ' GROUP BY KC.[name] HAVING COUNT(1) - SUM(IIF(CHARINDEX(',' + TC.[name] + ',', ',' + @columns + ',') > 0, 1, 0)) = 0)
 	IF (@uqName IS NULL) BEGIN
 		EXEC #print 1, '[WARN] Could not locate system-named check constraint on ', @parentTable, ' matching column list. Manual clean-up may be required.'
@@ -208,11 +234,13 @@ END
 GO"));
         }
 
-        sb.AppendLine(@"-- Starting
-SET NOEXEC OFF; EXEC #SetCI 1, 0; EXEC #usp_CheckState 0
-GO
+        sb.AppendLine().AppendLine(Flatten(@"
+-- Starting
+SET NOEXEC OFF
+EXEC #usp_CheckState 0
 BEGIN TRAN
-GO");
+IF (dbo.tmpIsActive() = 0) SET NOEXEC ON
+GO"));
     }
 
     private static void addScriptFoot(StringBuilder sb)
@@ -220,7 +248,7 @@ GO");
         sb.AppendLine($@"
 -- Complete
 GO
-EXEC #SetCI 1, 0; EXEC #usp_CheckState 1; IF (dbo.tmpIsActive() = 0) SET NOEXEC ON
+EXEC #usp_CheckState 1; IF (dbo.tmpIsActive() = 0) SET NOEXEC ON
 GO
 COMMIT
 GO

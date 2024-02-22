@@ -131,7 +131,7 @@ public class SchemeComparer
         foreach (var inOrder in DiffOrder)
         {
             ++partL; partR = 0;
-            result.Add(new SqlComment { Comment = "-- Order " + partL });
+            //result.Add(new SqlComment { Comment = "-- Order " + partL });
             processMatcher(inOrder);
         }
 
