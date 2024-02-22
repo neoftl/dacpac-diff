@@ -171,10 +171,7 @@ public class DacpacSchemeParser : ISchemeParser
             .Where(e => e != null && e.Attribute("ExternalSource") == null)
             .Select(e => e?.Attribute("Name")?.Value)
             .Where(e => e != null).Cast<string>().ToArray();
-        return depEls?.Select(d => d.Split('.'))
-            .Where(d => d.Length > 1)
-            .Select(d => $"{d[0]}.{d[1]}")
-            .Distinct().ToArray() ?? Array.Empty<string>();
+        return depEls ?? Array.Empty<string>();
     }
 
     private static void withSchema(DatabaseModel db, XElement el, Action<SchemaModel, XElement, string> parser)
