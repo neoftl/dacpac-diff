@@ -8,25 +8,25 @@ public class DiffFieldAlter : IDifference, IDataLossChange, IChangeProvider
 {
     public const string TITLE = "Alter table field";
 
-    public FieldModel LeftField { get; }
-    public FieldModel RightField { get; }
+    public FieldModel TargetField { get; }
+    public FieldModel CurrentField { get; }
 
-    public IModel Model => LeftField;
-    public string Name => $"{LeftField.Table.FullName}.[{LeftField.Name}]";
+    public IModel Model => TargetField;
+    public string Name => $"{TargetField.Table.FullName}.[{TargetField.Name}]";
     public string Title => TITLE;
 
-    public DiffFieldAlter(FieldModel lft, FieldModel rgt)
+    public DiffFieldAlter(FieldModel tgt, FieldModel cur)
     {
-        LeftField = lft ?? throw new ArgumentNullException(nameof(lft));
-        RightField = rgt ?? throw new ArgumentNullException(nameof(rgt));
+        TargetField = tgt ?? throw new ArgumentNullException(nameof(tgt));
+        CurrentField = cur ?? throw new ArgumentNullException(nameof(cur));
     }
 
     public bool GetDataLossTable(out string tableName)
     {
         // TODO: More accurate test
-        // numeric precision: decimal(x,y) = (x-y).y = if lft > rgt, dataloss
-        tableName = RightField.Table.FullName;
-        return LeftField.Type != RightField.Type;
+        // numeric precision: decimal(x,y) = (x-y).y = if tgt > cur, dataloss
+        tableName = CurrentField.Table.FullName;
+        return TargetField.Type != CurrentField.Type;
     }
 
     public IEnumerable<IDifference> GetAdditionalChanges()
@@ -34,12 +34,12 @@ public class DiffFieldAlter : IDifference, IDataLossChange, IChangeProvider
         var diffs = new List<IDifference>();
 
         // Will need to drop certain dependencies before can alter
-        var rdeps = RightField.Dependents;
+        var rdeps = CurrentField.Dependents;
         if (rdeps.Length == 0)
         {
             return diffs;
         }
-        var ldeps = LeftField.Dependents.ToDictionary(d => d.FullName);
+        var ldeps = TargetField.Dependents.ToDictionary(d => d.FullName);
         foreach (var rdep in rdeps)
         {
             if (!ldeps.TryGetValue(rdep.FullName, out var ldep))

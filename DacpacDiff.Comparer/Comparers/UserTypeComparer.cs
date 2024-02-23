@@ -6,18 +6,18 @@ namespace DacpacDiff.Comparer.Comparers
 {
     public class UserTypeComparer : IModelComparer<UserTypeModel>
     {
-        public IEnumerable<IDifference> Compare(UserTypeModel? lft, UserTypeModel? rgt)
+        public IEnumerable<IDifference> Compare(UserTypeModel? tgt, UserTypeModel? cur)
         {
             var diffs = new List<IDifference>();
 
             // May be a drop/create
-            if (lft == null)
+            if (tgt == null)
             {
                 // TODO
             }
-            else if (rgt == null)
+            else if (cur == null)
             {
-                diffs.Add(new DiffUserTypeCreate(lft));
+                diffs.Add(new DiffUserTypeCreate(tgt));
             }
             else
             {

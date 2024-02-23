@@ -5,17 +5,17 @@ namespace DacpacDiff.Core.Diff
 {
     public class DiffTableCheckAlter : IDifference
     {
-        public TableCheckModel LeftTableCheck { get; }
-        public TableCheckModel RightTableCheck { get; }
+        public TableCheckModel TargetTableCheck { get; }
+        public TableCheckModel CurrentTableCheck { get; }
 
-        public IModel Model => LeftTableCheck;
+        public IModel Model => TargetTableCheck;
         public string Title => "Alter check constraint";
-        public string Name => $"{LeftTableCheck.Table.FullName}.{(LeftTableCheck.IsSystemNamed ? "*" : $"[{LeftTableCheck.Name}]")}";
+        public string Name => $"{TargetTableCheck.Table.FullName}.{(TargetTableCheck.IsSystemNamed ? "*" : $"[{TargetTableCheck.Name}]")}";
 
-        public DiffTableCheckAlter(TableCheckModel leftTableCheck, TableCheckModel rightTableCheck)
+        public DiffTableCheckAlter(TableCheckModel targetTableCheck, TableCheckModel currentTableCheck)
         {
-            LeftTableCheck = leftTableCheck ?? throw new ArgumentNullException(nameof(leftTableCheck));
-            RightTableCheck = rightTableCheck ?? throw new ArgumentNullException(nameof(rightTableCheck));
+            TargetTableCheck = targetTableCheck ?? throw new ArgumentNullException(nameof(targetTableCheck));
+            CurrentTableCheck = currentTableCheck ?? throw new ArgumentNullException(nameof(currentTableCheck));
         }
     }
 }

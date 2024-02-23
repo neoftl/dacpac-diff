@@ -141,10 +141,10 @@ namespace DacpacDiff.Comparer.Tests.EndToEndTests
             Assert.That.DoesNotContain(res, e => e is IDifference d && d.Model == sp1);
             Assert.That.DoesNotContain(res, e => e is IDifference d && d.Model == tr1);
             Assert.That.DoesNotContain(res, e => e is IDifference d && d.Model == vw1);
-            Assert.That.ItemAppearsBefore(res, e => e is DiffFieldAlter d && d.RightField == tbl1.Fields[0], chg);
+            Assert.That.ItemAppearsBefore(res, e => e is DiffFieldAlter d && d.CurrentField == tbl1.Fields[0], chg);
             Assert.That.ItemAppearsBefore(res, e => e is DiffModuleCreate d && d.Model == fn3, chg);
             Assert.That.ItemAppearsBefore(res, e => e is DiffTableCheckDrop d && d.Model == tbl2.Checks[0], chg);
-            Assert.That.ItemAppearsBefore(res, chg, e => e is DiffFieldAlter d && d.LeftField == tbl1.Fields[0]);
+            Assert.That.ItemAppearsBefore(res, chg, e => e is DiffFieldAlter d && d.TargetField == tbl1.Fields[0]);
             Assert.That.ItemAppearsBefore(res, chg, e => e is DiffModuleAlter d && d.Model == fn3);
             Assert.That.ItemAppearsBefore(res, chg, e => e is DiffTableCheckCreate d && d.Model == tbl2.Checks[0]);
         }

@@ -33,18 +33,18 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         public void Compare__Compares_left_to_right()
         {
             // Arrange
-            var lftScheme = new SchemeModel("left");
-            var lftDb = new DatabaseModel("left");
-            lftScheme.Databases["left"] = lftDb;
+            var tgtScheme = new SchemeModel("left");
+            var tgtDb = new DatabaseModel("left");
+            tgtScheme.Databases["left"] = tgtDb;
 
-            var rgtScheme = new SchemeModel("right");
-            var rgtDb = new DatabaseModel("right");
-            rgtScheme.Databases["right"] = rgtDb;
+            var curScheme = new SchemeModel("right");
+            var curDb = new DatabaseModel("right");
+            curScheme.Databases["right"] = curDb;
 
             var diffMock = new Mock<IDifference>();
 
             var comparerMock = new Mock<IModelComparer<DatabaseModel>>(MockBehavior.Strict);
-            comparerMock.Setup(m => m.Compare(lftDb, rgtDb))
+            comparerMock.Setup(m => m.Compare(tgtDb, curDb))
                 .Returns(new[] { diffMock.Object });
 
             var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
@@ -54,7 +54,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var comparer = new SchemeComparer(comparerFactMock.Object);
 
             // Act
-            var res = comparer.Compare(lftScheme, rgtScheme);
+            var res = comparer.Compare(tgtScheme, curScheme);
 
             // Assert
             Assert.AreSame(diffMock.Object, res.Single());
@@ -64,19 +64,19 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         public void Compare__Only_supports_single_left_database()
         {
             // Arrange
-            var lftScheme = new SchemeModel("left");
-            var lftDb = new DatabaseModel("left");
-            lftScheme.Databases["leftA"] = lftDb;
-            lftScheme.Databases["leftB"] = lftDb;
+            var tgtScheme = new SchemeModel("left");
+            var tgtDb = new DatabaseModel("left");
+            tgtScheme.Databases["targetA"] = tgtDb;
+            tgtScheme.Databases["targetB"] = tgtDb;
 
-            var rgtScheme = new SchemeModel("right");
-            var rgtDb = new DatabaseModel("right");
-            rgtScheme.Databases["right"] = rgtDb;
+            var curScheme = new SchemeModel("right");
+            var curDb = new DatabaseModel("right");
+            curScheme.Databases["right"] = curDb;
 
             var diffMock = new Mock<IDifference>();
 
             var comparerMock = new Mock<IModelComparer<DatabaseModel>>(MockBehavior.Strict);
-            comparerMock.Setup(m => m.Compare(lftDb, rgtDb))
+            comparerMock.Setup(m => m.Compare(tgtDb, curDb))
                 .Returns(new[] { diffMock.Object });
 
             var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
@@ -88,7 +88,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             // Act
             Assert.ThrowsException<NotSupportedException>(() =>
             {
-                comparer.Compare(lftScheme, rgtScheme);
+                comparer.Compare(tgtScheme, curScheme);
             });
         }
 
@@ -96,19 +96,19 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         public void Compare__Only_supports_single_right_database()
         {
             // Arrange
-            var lftScheme = new SchemeModel("left");
-            var lftDb = new DatabaseModel("left");
-            lftScheme.Databases["left"] = lftDb;
+            var tgtScheme = new SchemeModel("left");
+            var tgtDb = new DatabaseModel("left");
+            tgtScheme.Databases["left"] = tgtDb;
 
-            var rgtScheme = new SchemeModel("right");
-            var rgtDb = new DatabaseModel("right");
-            rgtScheme.Databases["rightA"] = rgtDb;
-            rgtScheme.Databases["rightB"] = rgtDb;
+            var curScheme = new SchemeModel("right");
+            var curDb = new DatabaseModel("right");
+            curScheme.Databases["currentA"] = curDb;
+            curScheme.Databases["currentB"] = curDb;
 
             var diffMock = new Mock<IDifference>();
 
             var comparerMock = new Mock<IModelComparer<DatabaseModel>>(MockBehavior.Strict);
-            comparerMock.Setup(m => m.Compare(lftDb, rgtDb))
+            comparerMock.Setup(m => m.Compare(tgtDb, curDb))
                 .Returns(new[] { diffMock.Object });
 
             var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
@@ -120,7 +120,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             // Act
             Assert.ThrowsException<NotSupportedException>(() =>
             {
-                comparer.Compare(lftScheme, rgtScheme);
+                comparer.Compare(tgtScheme, curScheme);
             });
         }
 

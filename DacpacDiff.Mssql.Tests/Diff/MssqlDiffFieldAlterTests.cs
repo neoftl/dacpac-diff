@@ -20,12 +20,12 @@ public class MssqlDiffFieldAlterTests
         {
             Type = "LType"
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Computation = "COMPUTATION"
         };
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -46,12 +46,12 @@ public class MssqlDiffFieldAlterTests
         {
             Computation = "COMPUTATION"
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "RType"
         };
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -79,14 +79,14 @@ public class MssqlDiffFieldAlterTests
             Type = "XType",
             Nullable = nullable
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType",
             Nullable = nullable
         };
         tgt.Default = new FieldDefaultModel(tgt, null, "LDefValue");
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -104,14 +104,14 @@ public class MssqlDiffFieldAlterTests
             Type = "LType",
             Nullable = true
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "RType",
             Nullable = false
         };
         tgt.Default = new FieldDefaultModel(tgt, null, "LDefValue");
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -135,14 +135,14 @@ public class MssqlDiffFieldAlterTests
             Type = "XType",
             Nullable = nullable
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType",
             Nullable = nullable
         };
         tgt.Default = new FieldDefaultModel(tgt, "LDefault", "LDefValue");
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -160,14 +160,14 @@ public class MssqlDiffFieldAlterTests
             Type = "LType",
             Nullable = true
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "RType",
             Nullable = false
         };
         tgt.Default = new FieldDefaultModel(tgt, "LDefault", "LDefValue");
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -191,14 +191,14 @@ public class MssqlDiffFieldAlterTests
             Type = "XType",
             Nullable = nullable
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType",
             Nullable = nullable
         };
-        rgt.Default = new FieldDefaultModel(rgt, null, "RDefValue");
+        cur.Default = new FieldDefaultModel(cur, null, "RDefValue");
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -216,14 +216,14 @@ public class MssqlDiffFieldAlterTests
             Type = "LType",
             Nullable = true
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "RType",
             Nullable = false
         };
-        rgt.Default = new FieldDefaultModel(rgt, null, "RDefValue");
+        cur.Default = new FieldDefaultModel(cur, null, "RDefValue");
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -247,14 +247,14 @@ public class MssqlDiffFieldAlterTests
             Type = "XType",
             Nullable = nullable
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType",
             Nullable = nullable
         };
-        rgt.Default = new FieldDefaultModel(rgt, "RDefault", "RDefValue");
+        cur.Default = new FieldDefaultModel(cur, "RDefault", "RDefValue");
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -272,14 +272,14 @@ public class MssqlDiffFieldAlterTests
             Type = "LType",
             Nullable = true
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "RType",
             Nullable = false
         };
-        rgt.Default = new FieldDefaultModel(rgt, "RDefault", "RDefValue");
+        cur.Default = new FieldDefaultModel(cur, "RDefault", "RDefValue");
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -305,13 +305,13 @@ public class MssqlDiffFieldAlterTests
             Type = "XType",
             Nullable = true
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType",
             Nullable = false
         };
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -329,13 +329,13 @@ public class MssqlDiffFieldAlterTests
             Type = "XType",
             Nullable = false
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType",
             Nullable = true
         };
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -357,13 +357,13 @@ public class MssqlDiffFieldAlterTests
             Type = "XType",
             IsUnique = true
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType",
             IsUnique = false
         };
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -381,13 +381,13 @@ public class MssqlDiffFieldAlterTests
             Type = "XType",
             IsUnique = false
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType",
             IsUnique = true
         };
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -408,7 +408,7 @@ public class MssqlDiffFieldAlterTests
         {
             Type = "XType"
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType"
         };
@@ -416,7 +416,7 @@ public class MssqlDiffFieldAlterTests
         var end = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "TSchema"), "TTable"), "TField");
         tgt.Ref = new FieldRefModel(tgt, end);
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -433,7 +433,7 @@ public class MssqlDiffFieldAlterTests
         {
             Type = "XType"
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType"
         };
@@ -445,7 +445,7 @@ public class MssqlDiffFieldAlterTests
             IsSystemNamed = false
         };
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -462,15 +462,15 @@ public class MssqlDiffFieldAlterTests
         {
             Type = "XType"
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType"
         };
 
         var end = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "TSchema"), "TTable"), "TField");
-        rgt.Ref = new FieldRefModel(rgt, end);
+        cur.Ref = new FieldRefModel(cur, end);
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -493,19 +493,19 @@ public class MssqlDiffFieldAlterTests
         {
             Type = "XType"
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType"
         };
 
         var end = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "TSchema"), "TTable"), "TField");
-        rgt.Ref = new FieldRefModel(rgt, end)
+        cur.Ref = new FieldRefModel(cur, end)
         {
             Name = "Ref",
             IsSystemNamed = false
         };
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -522,7 +522,7 @@ public class MssqlDiffFieldAlterTests
         {
             Type = "XType"
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType"
         };
@@ -533,9 +533,9 @@ public class MssqlDiffFieldAlterTests
             Name = "Ref",
             IsSystemNamed = false
         };
-        rgt.Ref = new FieldRefModel(rgt, end);
+        cur.Ref = new FieldRefModel(cur, end);
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -559,20 +559,20 @@ public class MssqlDiffFieldAlterTests
         {
             Type = "XType"
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
         {
             Type = "XType"
         };
 
         var end = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "TSchema"), "TTable"), "TField");
         tgt.Ref = new FieldRefModel(tgt, end);
-        rgt.Ref = new FieldRefModel(rgt, end)
+        cur.Ref = new FieldRefModel(cur, end)
         {
             Name = "Ref",
             IsSystemNamed = false
         };
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -595,7 +595,7 @@ public class MssqlDiffFieldAlterTests
         {
             Type = "XType"
         };
-        var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "XSchema"), "XTable"), "XField")
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "XSchema"), "XTable"), "XField")
         {
             Type = "XType"
         };
@@ -606,13 +606,13 @@ public class MssqlDiffFieldAlterTests
             Name = "Ref",
             IsSystemNamed = isNamed
         };
-        rgt.Ref = new FieldRefModel(rgt, end)
+        cur.Ref = new FieldRefModel(cur, end)
         {
             Name = "Ref",
             IsSystemNamed = isNamed
         };
 
-        var diff = new DiffFieldAlter(tgt, rgt);
+        var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();

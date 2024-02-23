@@ -6,8 +6,8 @@ namespace DacpacDiff.Comparer;
 
 public class Options : IOutputOptions, IParserOptions
 {
-    [Value(index: 0, MetaName = "Start schema", Required = true, HelpText = "The path of the dacpac file for the current scheme.")]
-    public string? StartSchemeFile { get; init; }
+    [Value(index: 0, MetaName = "Current schema", Required = true, HelpText = "The path of the dacpac file for the current scheme.")]
+    public string? CurrentSchemeFile { get; init; }
 
     [Value(index: 1, MetaName = "Target schema", Required = false, HelpText = "The path of the dacpac file for the desired scheme.")]
     public string? TargetSchemeFile { get; init; }

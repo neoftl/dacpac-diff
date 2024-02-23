@@ -6,30 +6,30 @@ namespace DacpacDiff.Comparer.Comparers;
 
 public class ModuleComparer : IModelComparer<ModuleModel>
 {
-    public IEnumerable<IDifference> Compare(ModuleModel? lft, ModuleModel? rgt)
+    public IEnumerable<IDifference> Compare(ModuleModel? tgt, ModuleModel? cur)
     {
-        if (lft is null)
+        if (tgt is null)
         {
-            return rgt is null
+            return cur is null
                 ? Array.Empty<IDifference>()
-                : new[] { new DiffObjectDrop(rgt) }; // Dropped
+                : new[] { new DiffObjectDrop(cur) }; // Dropped
         }
-        if (rgt is null)
+        if (cur is null)
         {
             // Create
             // TODO: Can only have one clustered index per object
-            return new[] { new DiffModuleCreate(lft) };
+            return new[] { new DiffModuleCreate(tgt) };
         }
 
         // Type changing, full recreate
-        if (lft.Type != rgt.Type)
+        if (tgt.Type != cur.Type)
         {
-            return new[] { new RecreateObject<ModuleModel>(lft, rgt) };
+            return new[] { new RecreateObject<ModuleModel>(tgt, cur) };
         }
 
         // Definition change, alter
-        return lft.IsSimilarDefinition(rgt)
+        return tgt.IsSimilarDefinition(cur)
             ? Array.Empty<IDifference>()
-            : new[] { new AlterObject<ModuleModel>(lft, rgt) };
+            : new[] { new AlterObject<ModuleModel>(tgt, cur) };
     }
 }

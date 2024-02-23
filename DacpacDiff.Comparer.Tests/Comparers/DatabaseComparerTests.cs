@@ -13,13 +13,13 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         public void Compare__Checks_each_left_schema_against_null_right()
         {
             // Arrange
-            var lft = new DatabaseModel("left");
-            lft.Schemas["A"] = SchemaModel.Empty;
-            lft.Schemas["B"] = SchemaModel.Empty;
-            lft.Schemas["C"] = SchemaModel.Empty;
+            var tgt = new DatabaseModel("left");
+            tgt.Schemas["A"] = SchemaModel.Empty;
+            tgt.Schemas["B"] = SchemaModel.Empty;
+            tgt.Schemas["C"] = SchemaModel.Empty;
 
             var comparerMock = new Mock<IModelComparer<SchemaModel>>(MockBehavior.Strict);
-            comparerMock.Setup(m => m.Compare(It.Is<SchemaModel>(s => lft.Schemas.Values.Contains(s)), null))
+            comparerMock.Setup(m => m.Compare(It.Is<SchemaModel>(s => tgt.Schemas.Values.Contains(s)), null))
                 .Returns(new IDifference[1]);
 
             var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
@@ -29,7 +29,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var comparer = new DatabaseComparer(comparerFactMock.Object);
 
             // Act
-            var res = comparer.Compare(lft, null);
+            var res = comparer.Compare(tgt, null);
 
             // Assert
             Assert.AreEqual(3, res.Count());
@@ -40,13 +40,13 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         public void Compare__Checks_each_right_schema_against_null_left()
         {
             // Arrange
-            var rgt = new DatabaseModel("right");
-            rgt.Schemas["A"] = SchemaModel.Empty;
-            rgt.Schemas["B"] = SchemaModel.Empty;
-            rgt.Schemas["C"] = SchemaModel.Empty;
+            var cur = new DatabaseModel("right");
+            cur.Schemas["A"] = SchemaModel.Empty;
+            cur.Schemas["B"] = SchemaModel.Empty;
+            cur.Schemas["C"] = SchemaModel.Empty;
 
             var comparerMock = new Mock<IModelComparer<SchemaModel>>(MockBehavior.Strict);
-            comparerMock.Setup(m => m.Compare(null, It.Is<SchemaModel>(s => rgt.Schemas.Values.Contains(s))))
+            comparerMock.Setup(m => m.Compare(null, It.Is<SchemaModel>(s => cur.Schemas.Values.Contains(s))))
                 .Returns(new IDifference[1]);
 
             var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
@@ -56,7 +56,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var comparer = new DatabaseComparer(comparerFactMock.Object);
 
             // Act
-            var res = comparer.Compare(null, rgt);
+            var res = comparer.Compare(null, cur);
 
             // Assert
             Assert.AreEqual(3, res.Count());
@@ -67,15 +67,15 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         public void Compare__Checks_each_schema_against_the_same_named_schema()
         {
             // Arrange
-            var lft = new DatabaseModel("left");
-            lft.Schemas["A"] = new SchemaModel(lft, "A");
-            lft.Schemas["B"] = new SchemaModel(lft, "B");
-            lft.Schemas["C"] = new SchemaModel(lft, "C");
+            var tgt = new DatabaseModel("left");
+            tgt.Schemas["A"] = new SchemaModel(tgt, "A");
+            tgt.Schemas["B"] = new SchemaModel(tgt, "B");
+            tgt.Schemas["C"] = new SchemaModel(tgt, "C");
 
-            var rgt = new DatabaseModel("right");
-            rgt.Schemas["A"] = new SchemaModel(rgt, "A");
-            rgt.Schemas["B"] = new SchemaModel(rgt, "B");
-            rgt.Schemas["C"] = new SchemaModel(rgt, "C");
+            var cur = new DatabaseModel("right");
+            cur.Schemas["A"] = new SchemaModel(cur, "A");
+            cur.Schemas["B"] = new SchemaModel(cur, "B");
+            cur.Schemas["C"] = new SchemaModel(cur, "C");
 
             var comparerMock = new Mock<IModelComparer<SchemaModel>>(MockBehavior.Strict);
             comparerMock.Setup(m => m.Compare(It.Is<SchemaModel>(s => s.Name == "A"), It.Is<SchemaModel>(s => s.Name == "A"))).Returns(new IDifference[1]);
@@ -89,7 +89,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var comparer = new DatabaseComparer(comparerFactMock.Object);
 
             // Act
-            var res = comparer.Compare(lft, rgt);
+            var res = comparer.Compare(tgt, cur);
 
             // Assert
             Assert.AreEqual(3, res.Count());
@@ -100,11 +100,11 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         public void Compare__Checks_each_schema_against_null_if_no_name_match()
         {
             // Arrange
-            var lft = new DatabaseModel("left");
-            lft.Schemas["A"] = new SchemaModel(lft, "A");
+            var tgt = new DatabaseModel("left");
+            tgt.Schemas["A"] = new SchemaModel(tgt, "A");
 
-            var rgt = new DatabaseModel("right");
-            rgt.Schemas["B"] = new SchemaModel(rgt, "B");
+            var cur = new DatabaseModel("right");
+            cur.Schemas["B"] = new SchemaModel(cur, "B");
 
             var comparerMock = new Mock<IModelComparer<SchemaModel>>(MockBehavior.Strict);
             comparerMock.Setup(m => m.Compare(It.Is<SchemaModel>(s => s.Name == "A"), null)).Returns(new IDifference[1]);
@@ -117,7 +117,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var comparer = new DatabaseComparer(comparerFactMock.Object);
 
             // Act
-            var res = comparer.Compare(lft, rgt);
+            var res = comparer.Compare(tgt, cur);
 
             // Assert
             Assert.AreEqual(2, res.Count());

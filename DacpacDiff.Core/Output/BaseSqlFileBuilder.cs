@@ -83,7 +83,7 @@ namespace DacpacDiff.Core.Output
             return sql ?? string.Empty;
         }
 
-        public abstract string Generate(string leftFileName, string rightFileName, string targetVersion, IEnumerable<ISqlFormattable> diffs);
+        public abstract string Generate(string targetFileName, string currentFileName, string targetVersion, IEnumerable<ISqlFormattable> diffs);
 
         public override string ToString() => _sql.ToString();
     }

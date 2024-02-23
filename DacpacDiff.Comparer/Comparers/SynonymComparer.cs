@@ -7,27 +7,27 @@ namespace DacpacDiff.Comparer.Comparers
 {
     public class SynonymComparer : IModelComparer<SynonymModel>
     {
-        public IEnumerable<IDifference> Compare(SynonymModel? lft, SynonymModel? rgt)
+        public IEnumerable<IDifference> Compare(SynonymModel? tgt, SynonymModel? cur)
         {
             // May be a drop/create
-            if (lft is null)
+            if (tgt is null)
             {
-                if (rgt is null)
+                if (cur is null)
                 {
                     return Array.Empty<IDifference>();
                 }
 
-                return new[] { new DiffObjectDrop(rgt) };
+                return new[] { new DiffObjectDrop(cur) };
             }
-            if (rgt is null)
+            if (cur is null)
             {
-                return new[] { new DiffSynonymCreate(lft) };
+                return new[] { new DiffSynonymCreate(tgt) };
             }
 
             // Alter
-            if (lft.BaseObject != rgt.BaseObject)
+            if (tgt.BaseObject != cur.BaseObject)
             {
-                return new[] { new DiffSynonymAlter(lft) };
+                return new[] { new DiffSynonymAlter(tgt) };
             }
 
             return Array.Empty<IDifference>();

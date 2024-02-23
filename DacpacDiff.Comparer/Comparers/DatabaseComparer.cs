@@ -13,17 +13,17 @@ public class DatabaseComparer : IModelComparer<DatabaseModel>
         _comparerFactory = comparerFactory;
     }
 
-    public IEnumerable<IDifference> Compare(DatabaseModel? lft, DatabaseModel? rgt)
+    public IEnumerable<IDifference> Compare(DatabaseModel? tgt, DatabaseModel? cur)
     {
         // TODO: others
 
         // Schemas
-        var keys = (lft?.Schemas.Keys ?? Array.Empty<string>())
-            .Union(rgt?.Schemas.Keys ?? Array.Empty<string>())
+        var keys = (tgt?.Schemas.Keys ?? Array.Empty<string>())
+            .Union(cur?.Schemas.Keys ?? Array.Empty<string>())
             .Distinct();
         var schCompr = _comparerFactory.GetComparer<SchemaModel>();
         var diffs1 = keys.SelectMany(k =>
-            schCompr.Compare(lft?.Schemas.Get(k), rgt?.Schemas.Get(k))
+            schCompr.Compare(tgt?.Schemas.Get(k), cur?.Schemas.Get(k))
         );
 
         return diffs1.ToArray();

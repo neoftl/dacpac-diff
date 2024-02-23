@@ -24,7 +24,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         }
         private static IEnumerable<object[]> getTwoModules()
         {
-            var rgt = new ModuleModel[]
+            var cur = new ModuleModel[]
             {
                 new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RMod"),
                 new IndexModuleModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RMod") ,
@@ -34,11 +34,11 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             };
 
             return getModules().SelectMany(m => m)
-                .SelectMany(m => rgt.Where(r => r.GetType() == m.GetType()).Select(n => new[] { m, n }).ToArray());
+                .SelectMany(m => cur.Where(r => r.GetType() == m.GetType()).Select(n => new[] { m, n }).ToArray());
         }
         private static IEnumerable<object[]> getAnyTwoModules()
         {
-            var rgt = new ModuleModel[]
+            var cur = new ModuleModel[]
             {
                 new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RMod"),
                 new IndexModuleModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RMod") ,
@@ -48,7 +48,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             };
 
             return getModules().SelectMany(m => m)
-                .SelectMany(m => rgt.Select(n => new[] { m, n }).ToArray());
+                .SelectMany(m => cur.Select(n => new[] { m, n }).ToArray());
         }
 
         [TestMethod]
@@ -66,41 +66,41 @@ namespace DacpacDiff.Comparer.Comparers.Tests
 
         [TestMethod]
         [DynamicData(nameof(getModules), DynamicDataSourceType.Method)]
-        public void Compare__Null_right__Create_module(ModuleModel lft)
+        public void Compare__Null_right__Create_module(ModuleModel tgt)
         {
             // Arrange
             var comp = new ModuleComparer();
 
             // Act
-            var res = comp.Compare(lft, null).ToArray();
+            var res = comp.Compare(tgt, null).ToArray();
 
             // Assert
             CollectionAssert.That.AreEqual(res,
-                e => e is DiffModuleCreate d && d.Model == lft);
+                e => e is DiffModuleCreate d && d.Model == tgt);
             Assert.IsFalse(((DiffModuleCreate)res[0]).DoAsAlter);
         }
 
         [TestMethod]
         [DynamicData(nameof(getModules), DynamicDataSourceType.Method)]
-        public void Compare__Null_left__Drop_module(ModuleModel rgt)
+        public void Compare__Null_left__Drop_module(ModuleModel cur)
         {
             // Arrange
             var comp = new ModuleComparer();
 
             // Act
-            var res = comp.Compare(null, rgt).ToArray();
+            var res = comp.Compare(null, cur).ToArray();
 
             // Assert
             var diff = (DiffObjectDrop)res.Single();
-            Assert.AreSame(rgt, diff.Model);
+            Assert.AreSame(cur, diff.Model);
         }
 
         [TestMethod]
         [DynamicData(nameof(getTwoModules), DynamicDataSourceType.Method)]
-        public void Compare__Similar_body__Noop(ModuleModel lft, ModuleModel rgt)
+        public void Compare__Similar_body__Noop(ModuleModel tgt, ModuleModel cur)
         {
             // Arrange
-            if (lft is not IModuleWithBody modL || rgt is not IModuleWithBody modR)
+            if (tgt is not IModuleWithBody modL || cur is not IModuleWithBody modR)
             {
                 return;
             }
@@ -111,7 +111,7 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var comp = new ModuleComparer();
 
             // Act
-            var res = comp.Compare(lft, rgt).ToArray();
+            var res = comp.Compare(tgt, cur).ToArray();
 
             // Assert
             Assert.AreEqual(0, res.Length);
@@ -119,9 +119,9 @@ namespace DacpacDiff.Comparer.Comparers.Tests
 
         [TestMethod]
         [DynamicData(nameof(getAnyTwoModules), DynamicDataSourceType.Method)]
-        public void Compare__Type_change__Drop_right_Create_left(ModuleModel lft, ModuleModel rgt)
+        public void Compare__Type_change__Drop_right_Create_left(ModuleModel tgt, ModuleModel cur)
         {
-            if (lft.Type == rgt.Type)
+            if (tgt.Type == cur.Type)
             {
                 return;
             }
@@ -130,23 +130,23 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var comp = new ModuleComparer();
 
             // Act
-            var res = comp.Compare(lft, rgt).ToArray();
+            var res = comp.Compare(tgt, cur).ToArray();
 
             // Assert
             CollectionAssert.That.AreEqual(res,
-                e => e is RecreateObject<ModuleModel> d && d.Model == lft && d.OldModel == rgt);
+                e => e is RecreateObject<ModuleModel> d && d.Model == tgt && d.OldModel == cur);
         }
 
         [TestMethod]
         [DynamicData(nameof(getTwoModules), DynamicDataSourceType.Method)]
-        public void Compare__Definition_change__Alter(ModuleModel lft, ModuleModel rgt)
+        public void Compare__Definition_change__Alter(ModuleModel tgt, ModuleModel cur)
         {
             // Arrange
-            if (rgt is IModuleWithBody m)
+            if (cur is IModuleWithBody m)
             {
                 m.Body = "XBody";
             }
-            else if (rgt is IndexModuleModel idx)
+            else if (cur is IndexModuleModel idx)
             {
                 idx.Condition = "X";
             }
@@ -154,11 +154,11 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var comp = new ModuleComparer();
 
             // Act
-            var res = comp.Compare(lft, rgt).ToArray();
+            var res = comp.Compare(tgt, cur).ToArray();
 
             // Assert
             CollectionAssert.That.AreEqual(res,
-                e => e is AlterObject<ModuleModel> d && d.Model == lft && d.OldModel == rgt);
+                e => e is AlterObject<ModuleModel> d && d.Model == tgt && d.OldModel == cur);
         }
     }
 }

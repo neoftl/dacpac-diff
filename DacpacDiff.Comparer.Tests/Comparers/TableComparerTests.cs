@@ -26,54 +26,54 @@ namespace DacpacDiff.Comparer.Comparers.Tests
         public void Compare__Null_right__Create_table()
         {
             // Arrange
-            var lft = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable");
+            var tgt = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable");
 
             var comparerFactMock = new Mock<IModelComparerFactory>();
 
             var comp = new TableComparer(comparerFactMock.Object);
 
             // Act
-            var res = comp.Compare(lft, null).ToArray();
+            var res = comp.Compare(tgt, null).ToArray();
 
             // Assert
             var diff = (DiffTableCreate)res.Single();
-            Assert.AreSame(lft, diff.Table);
+            Assert.AreSame(tgt, diff.Table);
         }
 
         [TestMethod]
         public void Compare__Null_left__Drop_table()
         {
             // Arrange
-            var rgt = new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable");
+            var cur = new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable");
 
             var comparerFactMock = new Mock<IModelComparerFactory>();
 
             var comp = new TableComparer(comparerFactMock.Object);
 
             // Act
-            var res = comp.Compare(null, rgt).ToArray();
+            var res = comp.Compare(null, cur).ToArray();
 
             // Assert
             var diff = (DiffObjectDrop)res.Single();
-            Assert.AreSame(rgt, diff.Model);
+            Assert.AreSame(cur, diff.Model);
         }
 
         [TestMethod]
         public void Compare__Compares_fields()
         {
             // Arrange
-            var lft = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable");
-            lft.Fields = new[]
+            var tgt = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable");
+            tgt.Fields = new[]
             {
-                new FieldModel(lft, "LFld1"),
-                new FieldModel(lft, "XFld2"),
+                new FieldModel(tgt, "LFld1"),
+                new FieldModel(tgt, "XFld2"),
             };
 
-            var rgt = new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable");
-            rgt.Fields = new[]
+            var cur = new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable");
+            cur.Fields = new[]
             {
-                new FieldModel(rgt, "XFld2"),
-                new FieldModel(rgt, "RFld3"),
+                new FieldModel(cur, "XFld2"),
+                new FieldModel(cur, "RFld3"),
             };
 
             var comparerMock = new Mock<IModelComparer<FieldModel>>();
@@ -86,31 +86,31 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var comp = new TableComparer(comparerFactMock.Object);
 
             // Act
-            var res = comp.Compare(lft, rgt).ToArray();
+            var res = comp.Compare(tgt, cur).ToArray();
 
             // Assert
             Assert.AreEqual(3, res.Length);
-            comparerMock.Verify(m => m.Compare(lft.Fields[0], null), Times.Once);
-            comparerMock.Verify(m => m.Compare(lft.Fields[1], rgt.Fields[0]), Times.Once);
-            comparerMock.Verify(m => m.Compare(null, rgt.Fields[1]), Times.Once);
+            comparerMock.Verify(m => m.Compare(tgt.Fields[0], null), Times.Once);
+            comparerMock.Verify(m => m.Compare(tgt.Fields[1], cur.Fields[0]), Times.Once);
+            comparerMock.Verify(m => m.Compare(null, cur.Fields[1]), Times.Once);
         }
 
         [TestMethod]
         public void Compare__Compares_named_checks()
         {
             // Arrange
-            var lft = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable");
-            lft.Checks = new[]
+            var tgt = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable");
+            tgt.Checks = new[]
             {
-                new TableCheckModel(lft, "LChk1", "ChkDef"),
-                new TableCheckModel(lft, "XChk2", "ChkDef"),
+                new TableCheckModel(tgt, "LChk1", "ChkDef"),
+                new TableCheckModel(tgt, "XChk2", "ChkDef"),
             };
 
-            var rgt = new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable");
-            rgt.Checks = new[]
+            var cur = new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable");
+            cur.Checks = new[]
             {
-                new TableCheckModel(rgt, "XChk2", "ChkDef"),
-                new TableCheckModel(rgt, "RChk3", "ChkDef"),
+                new TableCheckModel(cur, "XChk2", "ChkDef"),
+                new TableCheckModel(cur, "RChk3", "ChkDef"),
             };
 
             var comparerMock = new Mock<IModelComparer<TableCheckModel>>();
@@ -123,31 +123,31 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var comp = new TableComparer(comparerFactMock.Object);
 
             // Act
-            var res = comp.Compare(lft, rgt).ToArray();
+            var res = comp.Compare(tgt, cur).ToArray();
 
             // Assert
             Assert.AreEqual(3, res.Length);
-            comparerMock.Verify(m => m.Compare(lft.Checks[0], null), Times.Once);
-            comparerMock.Verify(m => m.Compare(lft.Checks[1], rgt.Checks[0]), Times.Once);
-            comparerMock.Verify(m => m.Compare(null, rgt.Checks[1]), Times.Once);
+            comparerMock.Verify(m => m.Compare(tgt.Checks[0], null), Times.Once);
+            comparerMock.Verify(m => m.Compare(tgt.Checks[1], cur.Checks[0]), Times.Once);
+            comparerMock.Verify(m => m.Compare(null, cur.Checks[1]), Times.Once);
         }
 
         [TestMethod]
         public void Compare__Compares_unnamed_checks()
         {
             // Arrange
-            var lft = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable");
-            lft.Checks = new[]
+            var tgt = new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable");
+            tgt.Checks = new[]
             {
-                new TableCheckModel(lft, null, "ChkDef1"),
-                new TableCheckModel(lft, null, "ChkDef2"),
+                new TableCheckModel(tgt, null, "ChkDef1"),
+                new TableCheckModel(tgt, null, "ChkDef2"),
             };
 
-            var rgt = new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable");
-            rgt.Checks = new[]
+            var cur = new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable");
+            cur.Checks = new[]
             {
-                new TableCheckModel(rgt, null, "ChkDef2"),
-                new TableCheckModel(rgt, null, "ChkDef3"),
+                new TableCheckModel(cur, null, "ChkDef2"),
+                new TableCheckModel(cur, null, "ChkDef3"),
             };
 
             var comparerMock = new Mock<IModelComparer<TableCheckModel>>();
@@ -160,13 +160,13 @@ namespace DacpacDiff.Comparer.Comparers.Tests
             var comp = new TableComparer(comparerFactMock.Object);
 
             // Act
-            var res = comp.Compare(lft, rgt).ToArray();
+            var res = comp.Compare(tgt, cur).ToArray();
 
             // Assert
             Assert.AreEqual(3, res.Length);
-            comparerMock.Verify(m => m.Compare(lft.Checks[0], null), Times.Once);
-            comparerMock.Verify(m => m.Compare(lft.Checks[1], rgt.Checks[0]), Times.Once);
-            comparerMock.Verify(m => m.Compare(null, rgt.Checks[1]), Times.Once);
+            comparerMock.Verify(m => m.Compare(tgt.Checks[0], null), Times.Once);
+            comparerMock.Verify(m => m.Compare(tgt.Checks[1], cur.Checks[0]), Times.Once);
+            comparerMock.Verify(m => m.Compare(null, cur.Checks[1]), Times.Once);
         }
     }
 }

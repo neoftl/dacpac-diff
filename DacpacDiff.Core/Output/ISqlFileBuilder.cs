@@ -7,7 +7,7 @@ namespace DacpacDiff.Core.Output
     {
         IOutputOptions? Options { get; set; }
 
-        string Generate(string leftFileName, string rightFileName, string targetVersion, IEnumerable<ISqlFormattable> objs);
+        string Generate(string targetFileName, string currentFileName, string targetVersion, IEnumerable<ISqlFormattable> objs);
 
         ISqlFileBuilder Append(char value);
         ISqlFileBuilder Append(string? value);

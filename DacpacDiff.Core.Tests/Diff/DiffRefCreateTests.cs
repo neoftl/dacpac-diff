@@ -11,10 +11,10 @@ namespace DacpacDiff.Core.Diff.Tests
         public void DiffRefCreate__Unnamed()
         {
             // Arrange
-            var lft = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable"), "LField");
-            var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField");
+            var tgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable"), "LField");
+            var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField");
 
-            var fref = new FieldRefModel(lft, rgt);
+            var fref = new FieldRefModel(tgt, cur);
 
             // Act
             var diff = new DiffRefCreate(fref);
@@ -30,16 +30,16 @@ namespace DacpacDiff.Core.Diff.Tests
         public void DiffRefCreate__Named()
         {
             // Arrange
-            var lft = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable"), "LField")
+            var tgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable"), "LField")
             {
                 Type = "LType"
             };
-            var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+            var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
             {
                 Computation = "COMPUTATION"
             };
 
-            var fref = new FieldRefModel(lft, rgt)
+            var fref = new FieldRefModel(tgt, cur)
             {
                 Name = "FRef",
                 IsSystemNamed = false

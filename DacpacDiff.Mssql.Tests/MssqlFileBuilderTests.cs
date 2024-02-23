@@ -27,10 +27,10 @@ public class MssqlFileBuilderTests
         };
 
         // Act
-        var res = fb.Generate("target.dacpac", "right.dacpac", "1.2.3.4", Array.Empty<ISqlFormattable>());
+        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", Array.Empty<ISqlFormattable>());
 
         // Assert
-        StringAssert.StartsWith(res, "-- Delta upgrade from right.dacpac to target.dacpac");
+        StringAssert.StartsWith(res, "-- Delta upgrade from current.dacpac to target.dacpac");
         StringAssert.Contains(res, "-- Changes (0):");
         StringAssert.Contains(res, "-- Pre-flight checks");
         StringAssert.Contains(res, "IF (@CurVersion <> '1.2.3.4') BEGIN");
@@ -65,7 +65,7 @@ public class MssqlFileBuilderTests
         formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
 
         // Act
-        var res = fb.Generate("target.dacpac", "right.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
+        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
 
         // Assert
         Assert.IsTrue(res.Contains("-- Changes (1):"));
@@ -106,7 +106,7 @@ public class MssqlFileBuilderTests
         formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
 
         // Act
-        var res = fb.Generate("target.dacpac", "right.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
+        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
 
         // Assert
         Assert.IsTrue(res.Contains("-- Changes (1):"));
@@ -146,7 +146,7 @@ public class MssqlFileBuilderTests
         formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
 
         // Act
-        var res = fb.Generate("target.dacpac", "right.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
+        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
 
         // Assert
         Assert.IsTrue(res.Contains("-- Changes (1):"));
@@ -179,7 +179,7 @@ public class MssqlFileBuilderTests
         formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
 
         // Act
-        var res = fb.Generate("target.dacpac", "right.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
+        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
 
         // Assert
         Assert.IsTrue(res.Contains("-- Changes (0):"));

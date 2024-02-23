@@ -7,7 +7,7 @@ namespace DacpacDiff.Comparer.Comparers
     public interface IModelComparer<T> : IModelComparer
         where T : IModel
     {
-        IEnumerable<IDifference> Compare(T? lft, T? rgt);
+        IEnumerable<IDifference> Compare(T? tgt, T? cur);
     }
 
     public interface IModelComparer

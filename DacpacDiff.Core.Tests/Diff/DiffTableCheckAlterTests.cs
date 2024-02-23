@@ -21,8 +21,8 @@ namespace DacpacDiff.Core.Diff.Tests
             var diff = new DiffTableCheckAlter(chkL, chkR);
 
             // Assert
-            Assert.AreSame(chkL, diff.LeftTableCheck);
-            Assert.AreSame(chkR, diff.RightTableCheck);
+            Assert.AreSame(chkL, diff.TargetTableCheck);
+            Assert.AreSame(chkR, diff.CurrentTableCheck);
             Assert.AreSame(chkL, diff.Model);
             Assert.AreEqual("Alter check constraint", diff.Title);
             Assert.AreEqual("[LSchema].[LTable].*", diff.Name);
@@ -42,8 +42,8 @@ namespace DacpacDiff.Core.Diff.Tests
             var diff = new DiffTableCheckAlter(chkL, chkR);
 
             // Assert
-            Assert.AreSame(chkL, diff.LeftTableCheck);
-            Assert.AreSame(chkR, diff.RightTableCheck);
+            Assert.AreSame(chkL, diff.TargetTableCheck);
+            Assert.AreSame(chkR, diff.CurrentTableCheck);
             Assert.AreSame(chkL, diff.Model);
             Assert.AreEqual("Alter check constraint", diff.Title);
             Assert.AreEqual("[LSchema].[LTable].[LCheck]", diff.Name);

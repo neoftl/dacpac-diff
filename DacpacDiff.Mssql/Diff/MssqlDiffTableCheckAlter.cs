@@ -11,8 +11,8 @@ namespace DacpacDiff.Mssql.Diff
 
         protected override void GetFormat(ISqlFileBuilder sb)
         {
-            var diffDrop = new MssqlDiffTableCheckDrop(new DiffTableCheckDrop(_diff.RightTableCheck));
-            var diffCreate = new MssqlDiffTableCheckCreate(new DiffTableCheckCreate(_diff.LeftTableCheck));
+            var diffDrop = new MssqlDiffTableCheckDrop(new DiffTableCheckDrop(_diff.CurrentTableCheck));
+            var diffCreate = new MssqlDiffTableCheckCreate(new DiffTableCheckCreate(_diff.TargetTableCheck));
             
             sb.Append(diffDrop.ToString())
                 .EnsureLine(2)

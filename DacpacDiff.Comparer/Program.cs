@@ -14,16 +14,16 @@ Parser.Default.ParseArguments<Options>(args)
     })
     .WithParsed(o =>
     {
-        if (!FileUtilities.TryParsePath(o.StartSchemeFile, out var rightSchemeFile) || rightSchemeFile?.Exists != true)
+        if (!FileUtilities.TryParsePath(o.CurrentSchemeFile, out var currentSchemeFile) || currentSchemeFile?.Exists != true)
         {
-            Console.Error.WriteLine("Unable to find source scheme: " + o.StartSchemeFile);
+            Console.Error.WriteLine("Unable to find current scheme: " + o.CurrentSchemeFile);
             return;
         }
-        if (!FileUtilities.TryParsePath(o.TargetSchemeFile, out var leftSchemeFile) || leftSchemeFile?.Exists != true)
+        if (!FileUtilities.TryParsePath(o.TargetSchemeFile, out var targetSchemeFile) || targetSchemeFile?.Exists != true)
         {
             if (o.New)
             {
-                leftSchemeFile = rightSchemeFile;
+                targetSchemeFile = currentSchemeFile;
             }
             else
             {
@@ -33,7 +33,7 @@ Parser.Default.ParseArguments<Options>(args)
         }
         if (o.New)
         {
-            rightSchemeFile = new FileInfo("blank" + leftSchemeFile.Extension); // TODO: blank file
+            currentSchemeFile = new FileInfo("blank" + targetSchemeFile.Extension); // TODO: blank file
         }
 
         if ((o.OutputFile?.Length ?? 0) > 0 & !FileUtilities.TryParsePath(o.OutputFile, out var outputFile))
@@ -47,18 +47,18 @@ Parser.Default.ParseArguments<Options>(args)
         var formatProvider = new FormatProviderFactory().GetFormat("mssql");
 
         // Source scheme
-        var rightFmt = schemeParserFactory.GetFileFormat(rightSchemeFile);
-        var rightScheme = rightFmt.ParseFile(rightSchemeFile.FullName);
-        if (rightScheme?.Databases.Any() != true)
+        var currentFmt = schemeParserFactory.GetFileFormat(currentSchemeFile);
+        var currentScheme = currentFmt.ParseFile(currentSchemeFile.FullName);
+        if (currentScheme?.Databases.Any() != true)
         {
             Console.Error.WriteLine("Unable to find a database specified in the source scheme");
             return;
         }
 
         // Target scheme
-        var leftFmt = schemeParserFactory.GetFileFormat(leftSchemeFile);
-        var leftScheme = leftFmt.ParseFile(leftSchemeFile.FullName);
-        if (leftScheme?.Databases.Any() != true)
+        var targetFmt = schemeParserFactory.GetFileFormat(targetSchemeFile);
+        var targetScheme = targetFmt.ParseFile(targetSchemeFile.FullName);
+        if (targetScheme?.Databases.Any() != true)
         {
             Console.Error.WriteLine("Unable to find a database specified in the target scheme");
             return;
@@ -69,11 +69,11 @@ Parser.Default.ParseArguments<Options>(args)
         {
             foreach (var schemaName in o.ExcludeSchemas)
             {
-                foreach (var db in leftScheme.Databases.Values)
+                foreach (var db in targetScheme.Databases.Values)
                 {
                     db.Schemas.Remove(schemaName);
                 }
-                foreach (var db in rightScheme.Databases.Values)
+                foreach (var db in currentScheme.Databases.Values)
                 {
                     db.Schemas.Remove(schemaName);
                 }
@@ -120,27 +120,27 @@ Parser.Default.ParseArguments<Options>(args)
             foreach (var objectPattern in o.ExcludeObjects)
             {
                 var re = new Regex("^" + Regex.Escape(objectPattern).Replace("\\*", ".*?") + "$");
-                foreach (var db in leftScheme.Databases.Values)
+                foreach (var db in targetScheme.Databases.Values)
                 {
                     stripExcludedObjects(re, db);
                 }
-                foreach (var db in rightScheme.Databases.Values)
+                foreach (var db in currentScheme.Databases.Values)
                 {
                     stripExcludedObjects(re, db);
                 }
             }
         }
 
-        // Compare schemes (left scheme to replace right)
+        // Compare schemes (target scheme to replace current)
         var comparer = new SchemeComparer(comparerFactory);
-        var diffs = comparer.Compare(leftScheme, rightScheme);
+        var diffs = comparer.Compare(targetScheme, currentScheme);
 
-        var targetVer = rightScheme.GetDatabaseVersion();
+        var targetVer = currentScheme.GetDatabaseVersion();
 
         // Output
         var outputFormat = formatProvider.GetSqlFileBuilder();
         outputFormat.Options = o;
-        var result = outputFormat.Generate(leftScheme.Name, rightScheme.Name, targetVer, diffs);
+        var result = outputFormat.Generate(targetScheme.Name, currentScheme.Name, targetVer, diffs);
 
         if (o.StandardiseLineEndings)
         {

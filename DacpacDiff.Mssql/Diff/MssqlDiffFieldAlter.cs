@@ -27,23 +27,23 @@ public class MssqlDiffFieldAlter : BaseMssqlDiffBlock<DiffFieldAlter>
 
     protected override void GetFormat(ISqlFileBuilder sb)
     {
-        var lft = _diff.LeftField;
-        var rgt = _diff.RightField;
+        var tgt = _diff.TargetField;
+        var cur = _diff.CurrentField;
 
         // Change to/from computed column
-        if ((lft.Computation?.Length > 0) != (rgt.Computation?.Length > 0))
+        if ((tgt.Computation?.Length > 0) != (cur.Computation?.Length > 0))
         {
-            sb.AppendLine(CommonMssql.ALTER_TABLE_DROP_COLUMN(rgt.Table.FullName, rgt.Name))
+            sb.AppendLine(CommonMssql.ALTER_TABLE_DROP_COLUMN(cur.Table.FullName, cur.Name))
                 .AppendLine()
-                .Append($"ALTER TABLE {lft.Table.FullName} ADD ");
-            appendFieldSql(lft, sb, false, false);
+                .Append($"ALTER TABLE {tgt.Table.FullName} ADD ");
+            appendFieldSql(tgt, sb, false, false);
             sb.EnsureLine();
             return;
         }
 
         // TODO
         //// Cannot modify PKey
-        //if (sql.Count > 0 && rgt?.Table?.PrimaryKey?.Contains(rgt?.Name) == true)
+        //if (sql.Count > 0 && cur?.Table?.PrimaryKey?.Contains(cur?.Name) == true)
         //{
         //    // TODO: Need to replace whole table via temp
         //    sql.Insert(0, " NOTE: Cannot modify Primary Key column");
@@ -51,81 +51,79 @@ public class MssqlDiffFieldAlter : BaseMssqlDiffBlock<DiffFieldAlter>
         //}
 
         // Remove existing default
-        if (!lft.IsDefaultMatch(rgt) && rgt.HasDefault)
+        if (!tgt.IsDefaultMatch(cur) && cur.HasDefault)
         {
             // Remove default
-            if (rgt.IsDefaultSystemNamed)
+            if (cur.IsDefaultSystemNamed)
             {
-                sb.AppendLine($"EXEC #usp_DropUnnamedDefault '{rgt.Table.FullName}', '{rgt.Name}'");
+                sb.AppendLine($"EXEC #usp_DropUnnamedDefault '{cur.Table.FullName}', '{cur.Name}'");
             }
             else
             {
-                sb.AppendLine($"ALTER TABLE {rgt.Table.FullName} DROP CONSTRAINT [{rgt.DefaultName}]");
+                sb.AppendLine($"ALTER TABLE {cur.Table.FullName} DROP CONSTRAINT [{cur.DefaultName}]");
             }
             sb.AppendLine();
         }
 
         // Main definition
-        var didDefault = false;
-        if (!lft.IsSignatureMatch(rgt, false))
+        if (!tgt.IsSignatureMatch(cur, false))
         {
             // Drop unnamed uniqueness
-            if (rgt.IsUnique)
+            if (cur.IsUnique)
             {
                 sb.Append("EXEC #usp_DropUnnamedUniqueConstraint ")
-                    .Append($"'{rgt.Table.FullName}', ")
-                    .Append($"'{rgt.Name}'")
+                    .Append($"'{cur.Table.FullName}', ")
+                    .Append($"'{cur.Name}'")
                     .AppendGo();
-                rgt.IsUnique = false;
+                cur.IsUnique = false;
             }
 
             // Alter
-            sb.Append($"ALTER TABLE {lft.Table.FullName} ALTER COLUMN ");
-            appendFieldSql(lft, sb, rgt.Nullable, true); // TODO: changing between nullability needs thinking about
-            sb.AppendLine(!lft.Nullable && !lft.HasDefault && rgt.Nullable ? " -- NOTE: Cannot change to NOT NULL without default" : string.Empty)
+            sb.Append($"ALTER TABLE {tgt.Table.FullName} ALTER COLUMN ");
+            appendFieldSql(tgt, sb, cur.Nullable, true); // TODO: changing between nullability needs thinking about
+            sb.AppendLine(!tgt.Nullable && !tgt.HasDefault && cur.Nullable ? " -- NOTE: Cannot change to NOT NULL without default" : string.Empty)
                 .AppendLine();
-            didDefault = lft.IsDefaultSystemNamed;
         }
 
         // Default
-        if (!lft.IsDefaultMatch(rgt) && lft.HasDefault && !didDefault)
+        if (!tgt.IsDefaultMatch(cur) && tgt.HasDefault)
         {
             // Add default
-            sb.Append($"ALTER TABLE {lft.Table.FullName} ADD ")
-                .AppendIf(() => $"CONSTRAINT [{lft.DefaultName}] ", !lft.IsDefaultSystemNamed)
-                .AppendLine($"DEFAULT ({lft.DefaultValue}) FOR [{lft.Name}]");
+            sb.Append($"ALTER TABLE {tgt.Table.FullName} ADD ")
+                .AppendIf(() => $"CONSTRAINT [{tgt.DefaultName}] ", !tgt.IsDefaultSystemNamed)
+                .AppendLine($"DEFAULT ({tgt.DefaultValue}) FOR [{tgt.Name}]");
         }
 
         // Make unique (drop is handled elsewhere)
-        if (lft.IsUnique && !rgt.IsUnique)
+        if (tgt.IsUnique && !cur.IsUnique)
         {
-            sb.AppendLine($"ALTER TABLE {lft.Table.FullName} ADD UNIQUE ([{lft.Name}])");
+            sb.AppendLine($"ALTER TABLE {tgt.Table.FullName} ADD UNIQUE ([{tgt.Name}])");
         }
 
         // Reference
-        var lftRef = lft.Ref != null ? new FieldRefModel(lft.Ref) : null;
-        var rgtRef = rgt.Ref != null ? new FieldRefModel(rgt.Ref) : null;
-        if (rgtRef is null || lftRef?.Equals(rgtRef) != true)
+        var tgtRef = tgt.Ref != null ? new FieldRefModel(tgt.Ref) : null;
+        var curRef = cur.Ref != null ? new FieldRefModel(cur.Ref) : null;
+        if (curRef is null || tgtRef?.Equals(curRef) != true)
         {
-            if (rgtRef != null)
+            if (curRef != null)
             {
-                if (rgtRef.IsSystemNamed || rgtRef.Name.Length == 0)
+                if (curRef.IsSystemNamed || curRef.Name.Length == 0)
                 {
-                    sb.AppendLine($"-- Removing unnamed FKey: {rgtRef.Field.FullName} -> {rgtRef.TargetField.FullName}")
-                        .AppendLine(CommonMssql.REF_GET_FKEYNAME(rgtRef.Table.FullName, rgtRef.Field.Name))
-                        .AppendLine(CommonMssql.REF_GET_DROP_SQL(rgtRef.Table.FullName))
+                    sb.AppendLine($"-- Removing unnamed FKey: {curRef.Field.FullName} -> {curRef.TargetField.FullName}")
+                        .AppendLine(CommonMssql.REF_GET_FKEYNAME(curRef.Table.FullName, curRef.Field.Name))
+                        .AppendLine(CommonMssql.REF_GET_DROP_SQL(curRef.Table.FullName))
                         .AppendLine("EXEC (@DropConstraintSql)");
                 }
                 else
                 {
-                    sb.AppendLine(CommonMssql.ALTER_TABLE_DROP_CONSTRAINT(rgtRef.Table.FullName, rgtRef.Name));
+                    sb.AppendLine(CommonMssql.ALTER_TABLE_DROP_CONSTRAINT(curRef.Table.FullName, curRef.Name));
                 }
             }
-            if (lftRef != null)
+            if (tgtRef != null)
             {
-                sb.Append($"ALTER TABLE {lftRef.Table.FullName} WITH NOCHECK ADD ")
-                    .AppendIf(() => $"CONSTRAINT [{lftRef.Name}] ", !lftRef.IsSystemNamed)
-                    .AppendLine($"FOREIGN KEY ([{lftRef.Field.Name}]) REFERENCES {lftRef.TargetField.Table.FullName} ([{lftRef.TargetField.Name}])");
+                sb.Append($"ALTER TABLE {tgtRef.Table.FullName} WITH NOCHECK ADD ")
+                    .AppendIf(() => $"CONSTRAINT [{tgtRef.Name}] ", !tgtRef.IsSystemNamed)
+                    .AppendLine($"FOREIGN KEY ([{tgtRef.Field.Name}]) REFERENCES {tgtRef.TargetField.Table.FullName} ([{tgtRef.TargetField.Name}])");
             }
         }
     }

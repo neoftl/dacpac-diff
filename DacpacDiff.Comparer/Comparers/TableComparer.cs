@@ -16,12 +16,12 @@ namespace DacpacDiff.Comparer.Comparers
             _comparerFactory = comparerFactory;
         }
 
-        public IEnumerable<IDifference> Compare(TableModel? lft, TableModel? rgt)
+        public IEnumerable<IDifference> Compare(TableModel? tgt, TableModel? cur)
         {
             // May be a drop/create
-            if (lft is null)
+            if (tgt is null)
             {
-                if (rgt is null)
+                if (cur is null)
                 {
                     return Array.Empty<IDifference>();
                 }
@@ -30,12 +30,12 @@ namespace DacpacDiff.Comparer.Comparers
                 // TODO: drop indexes?
 
                 // Drop checks
-                return rgt.Checks.Select(c => (IDifference)new DiffTableCheckDrop(c))
-                    .Append(new DiffObjectDrop(rgt)).ToArray();
+                return cur.Checks.Select(c => (IDifference)new DiffTableCheckDrop(c))
+                    .Append(new DiffObjectDrop(cur)).ToArray();
             }
-            if (rgt is null)
+            if (cur is null)
             {
-                return new IDifference[] { new DiffTableCreate(lft) };
+                return new IDifference[] { new DiffTableCreate(tgt) };
             }
 
             var result = new List<IDifference>();
@@ -46,27 +46,27 @@ namespace DacpacDiff.Comparer.Comparers
             // TODO: Change field order as a specific diff (optional)
 
             // Fields
-            var lftFields = lft.Fields.ToDictionary(f => f.Name);
-            var rgtFields = rgt.Fields.ToDictionary(f => f.Name);
+            var tgtFields = tgt.Fields.ToDictionary(f => f.Name);
+            var curFields = cur.Fields.ToDictionary(f => f.Name);
             var fldCompr = _comparerFactory.GetComparer<FieldModel>();
-            var diffs = lftFields.Keys.Union(rgtFields.Keys).Distinct().SelectMany(k =>
-                fldCompr.Compare(lftFields.Get(k), rgtFields.GetValueOrDefault(k))
+            var diffs = tgtFields.Keys.Union(curFields.Keys).Distinct().SelectMany(k =>
+                fldCompr.Compare(tgtFields.Get(k), curFields.GetValueOrDefault(k))
             );
             result.AddRange(diffs);
 
             // Checks
             var chkCompr = _comparerFactory.GetComparer<TableCheckModel>();
-            var rgtChecks = rgt.Checks.ToList();
-            foreach (var chkL in lft.Checks)
+            var curChecks = cur.Checks.ToList();
+            foreach (var chkL in tgt.Checks)
             {
-                var chkR = rgtChecks.FirstOrDefault(c => chkL.IsSystemNamed && c.IsSystemNamed ? c.Definition.ScrubSQL() == chkL.Definition.ScrubSQL() : c.Name == chkL.Name);
+                var chkR = curChecks.FirstOrDefault(c => chkL.IsSystemNamed && c.IsSystemNamed ? c.Definition.ScrubSQL() == chkL.Definition.ScrubSQL() : c.Name == chkL.Name);
                 if (chkR != null)
                 {
-                    rgtChecks.Remove(chkR);
+                    curChecks.Remove(chkR);
                 }
                 result.AddRange(chkCompr.Compare(chkL, chkR));
             }
-            foreach (var chkR in rgtChecks)
+            foreach (var chkR in curChecks)
             {
                 result.AddRange(chkCompr.Compare(null, chkR));
             }

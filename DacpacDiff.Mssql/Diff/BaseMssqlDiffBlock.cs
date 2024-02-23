@@ -12,7 +12,7 @@ public abstract class BaseMssqlDiffBlock<T> : ISqlFormatter
     private class NullSqlBuilder : BaseSqlFileBuilder
     {
         [ExcludeFromCodeCoverage(Justification = "Not application logic")]
-        public override string Generate(string leftFileName, string rightFileName, string targetVersion, IEnumerable<ISqlFormattable> diffs)
+        public override string Generate(string targetFileName, string currentFileName, string targetVersion, IEnumerable<ISqlFormattable> diffs)
             => throw new NotImplementedException();
 
         public override string ToString() => _sql.ToString();

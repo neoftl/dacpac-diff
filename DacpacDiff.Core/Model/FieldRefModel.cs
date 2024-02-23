@@ -41,11 +41,11 @@ namespace DacpacDiff.Core.Model
             TargetField = target;
         }
 
-        public bool Equals(FieldRefModel? rgt)
+        public bool Equals(FieldRefModel? cur)
         {
-            return Field.FullName == rgt?.Field.FullName
-                && TargetField.FullName == rgt.TargetField.FullName
-                && (IsSystemNamed ? rgt.IsSystemNamed : Name == rgt.Name);
+            return Field.FullName == cur?.Field.FullName
+                && TargetField.FullName == cur.TargetField.FullName
+                && (IsSystemNamed ? cur.IsSystemNamed : Name == cur.Name);
         }
         public override bool Equals(object? obj) => Equals(obj as FieldRefModel);
 

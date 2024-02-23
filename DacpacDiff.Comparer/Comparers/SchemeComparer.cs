@@ -40,23 +40,23 @@ public class SchemeComparer
         _comparerFactory = comparerFactory;
     }
 
-    public IEnumerable<ISqlFormattable> Compare(SchemeModel lft, SchemeModel rgt)
+    public IEnumerable<ISqlFormattable> Compare(SchemeModel tgt, SchemeModel cur)
     {
-        if (lft.Databases.Count > 1)
+        if (tgt.Databases.Count > 1)
         {
             throw new NotSupportedException("DacpacDiff does not yet support multiple databases per scheme");
         }
-        var leftDb = lft.Databases.Values.Single();
+        var targetDb = tgt.Databases.Values.Single();
 
-        if (rgt.Databases.Count > 1)
+        if (cur.Databases.Count > 1)
         {
             throw new NotSupportedException("DacpacDiff does not yet support multiple databases per scheme");
         }
-        var rightDb = rgt.Databases.Values.Single();
+        var currentDb = cur.Databases.Values.Single();
 
         // Generate diffs
         var diffs = _comparerFactory.GetComparer<DatabaseModel>()
-            .Compare(leftDb, rightDb).ToList();
+            .Compare(targetDb, currentDb).ToList();
 
         // Ensure all chained diffs are added
         var diffQueue = new Queue<IChangeProvider>(diffs.OfType<IChangeProvider>());

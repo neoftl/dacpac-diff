@@ -18,10 +18,10 @@ namespace DacpacDiff.Core.Changes
         public virtual string Title => "Alter " + Model.Name;
         public string Name => Model.Name;
 
-        public AlterObject(T lft, T rgt)
+        public AlterObject(T tgt, T cur)
         {
-            Model = lft ?? throw new ArgumentNullException(nameof(lft));
-            OldModel = rgt ?? throw new ArgumentNullException(nameof(rgt));
+            Model = tgt ?? throw new ArgumentNullException(nameof(tgt));
+            OldModel = cur ?? throw new ArgumentNullException(nameof(cur));
         }
 
         public virtual IEnumerable<IDifference> GetAdditionalChanges()

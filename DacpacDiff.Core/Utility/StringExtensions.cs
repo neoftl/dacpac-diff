@@ -13,13 +13,13 @@ namespace DacpacDiff.Core.Utility
         /// <example>"(a)" => "a", but "(a),(b)" is unchanged</example>
         public static string ReduceBrackets(this string sql)
         {
-            // Must start and end in brackes
+            // Must current and end in brackes
             if (sql.Length < 2 || sql[0] != '(' || sql[^1] != ')')
             {
                 return sql;
             }
 
-            int startScore = 0, scoreAtLastChar = 0;
+            int currentScore = 0, scoreAtLastChar = 0;
             var score = 1; // We know it starts '('
             var tsql = sql.Replace(" ", "");
             for (var i = 1; i < tsql.Length - 1; ++i)
@@ -35,19 +35,19 @@ namespace DacpacDiff.Core.Utility
                     {
                         return sql; // No brackets to remove
                     }
-                    if (score < startScore)
+                    if (score < currentScore)
                     {
-                        startScore = score;
+                        currentScore = score;
                     }
                 }
-                else if (startScore == 0)
+                else if (currentScore == 0)
                 {
-                    startScore = score;
+                    currentScore = score;
                     scoreAtLastChar = score;
                 }
                 else
                 {
-                    scoreAtLastChar = startScore;
+                    scoreAtLastChar = currentScore;
                 }
             }
 

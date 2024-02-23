@@ -14,8 +14,8 @@ namespace DacpacDiff.Core.Changes
     {
         public override string Title => "Recreate " + Model.Name;
 
-        public RecreateObject(T lft, T rgt)
-            : base(lft, rgt)
+        public RecreateObject(T tgt, T cur)
+            : base(tgt, cur)
         {
         }
 

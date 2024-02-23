@@ -11,26 +11,26 @@ namespace DacpacDiff.Core.Diff.Tests
         public void Model__Left_field()
         {
             // Arrange
-            var lft = new FieldModel(TableModel.Empty, "lfield");
-            var rgt = new FieldModel(TableModel.Empty, "rfield");
+            var tgt = new FieldModel(TableModel.Empty, "lfield");
+            var cur = new FieldModel(TableModel.Empty, "rfield");
 
-            var diff = new DiffFieldAlter(lft, rgt);
+            var diff = new DiffFieldAlter(tgt, cur);
 
             // Act
             var res = diff.Model;
 
             // Assert
-            Assert.AreSame(lft, res);
+            Assert.AreSame(tgt, res);
         }
 
         [TestMethod]
         public void Name__Based_on_left_table()
         {
             // Arrange
-            var lft = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "lschema"), "ltable"), "lfield");
-            var rgt = new FieldModel(TableModel.Empty, "rfield");
+            var tgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "lschema"), "ltable"), "lfield");
+            var cur = new FieldModel(TableModel.Empty, "rfield");
 
-            var diff = new DiffFieldAlter(lft, rgt);
+            var diff = new DiffFieldAlter(tgt, cur);
 
             // Act
             var res = diff.Name;
@@ -78,17 +78,17 @@ namespace DacpacDiff.Core.Diff.Tests
         public void GetDataLossTable__Types_mismatch__True_with_right_table_name()
         {
             // Arrange
-            var lft = new FieldModel(TableModel.Empty, "lfield")
+            var tgt = new FieldModel(TableModel.Empty, "lfield")
             {
                 Type = "A"
             };
 
-            var rgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "rschema"), "rtable"), "rfield")
+            var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "rschema"), "rtable"), "rfield")
             {
                 Type = "B"
             };
 
-            var diff = new DiffFieldAlter(lft, rgt);
+            var diff = new DiffFieldAlter(tgt, cur);
 
             // Act
             var res = diff.GetDataLossTable(out var dataLossTable);
@@ -102,17 +102,17 @@ namespace DacpacDiff.Core.Diff.Tests
         public void GetDataLossTable__Types_match__False()
         {
             // Arrange
-            var lft = new FieldModel(TableModel.Empty, "lfield")
+            var tgt = new FieldModel(TableModel.Empty, "lfield")
             {
                 Type = "A"
             };
 
-            var rgt = new FieldModel(TableModel.Empty, "rfield")
+            var cur = new FieldModel(TableModel.Empty, "rfield")
             {
                 Type = "A"
             };
 
-            var diff = new DiffFieldAlter(lft, rgt);
+            var diff = new DiffFieldAlter(tgt, cur);
 
             // Act
             var res = diff.GetDataLossTable(out _);

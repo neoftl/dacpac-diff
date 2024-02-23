@@ -8,27 +8,27 @@ namespace DacpacDiff.Comparer.Comparers
 {
     public class TableCheckComparer : IModelComparer<TableCheckModel>
     {
-        public IEnumerable<IDifference> Compare(TableCheckModel? lft, TableCheckModel? rgt)
+        public IEnumerable<IDifference> Compare(TableCheckModel? tgt, TableCheckModel? cur)
         {
             // May be a drop/create
-            if (lft is null)
+            if (tgt is null)
             {
-                if (rgt is null)
+                if (cur is null)
                 {
                     return Array.Empty<IDifference>();
                 }
 
-                return new[] { new DiffTableCheckDrop(rgt) };
+                return new[] { new DiffTableCheckDrop(cur) };
             }
-            if (rgt is null)
+            if (cur is null)
             {
-                return new[] { new DiffTableCheckCreate(lft) };
+                return new[] { new DiffTableCheckCreate(tgt) };
             }
 
             // Alter
-            if (lft.Definition.ScrubSQL() != rgt.Definition.ScrubSQL())
+            if (tgt.Definition.ScrubSQL() != cur.Definition.ScrubSQL())
             {
-                return new[] { new DiffTableCheckAlter(lft, rgt) };
+                return new[] { new DiffTableCheckAlter(tgt, cur) };
             }
 
             return Array.Empty<IDifference>();

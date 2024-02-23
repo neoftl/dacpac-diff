@@ -18,7 +18,7 @@ public class MssqlFileBuilder : BaseSqlFileBuilder
         _formatProvider = formatProvider;
     }
 
-    public override string Generate(string leftFileName, string rightFileName, string targetVersion, IEnumerable<ISqlFormattable> objs)
+    public override string Generate(string targetFileName, string currentFileName, string targetVersion, IEnumerable<ISqlFormattable> objs)
     {
         var objCount = objs.Count(d => (d.Title?.Length ?? 0) > 0);
         var countMag = 1 + (int)Math.Log10(objCount);
@@ -26,7 +26,7 @@ public class MssqlFileBuilder : BaseSqlFileBuilder
         _sql.Clear();
         var sqlHead = new StringBuilder();
 
-        sqlHead.AppendLine($@"-- Delta upgrade from {rightFileName} to {leftFileName}
+        sqlHead.AppendLine($@"-- Delta upgrade from {currentFileName} to {targetFileName}
 -- Generated {DateTime.UtcNow}
 --
 -- Changes ({objCount}):");
