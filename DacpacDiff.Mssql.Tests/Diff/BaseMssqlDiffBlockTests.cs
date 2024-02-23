@@ -104,16 +104,17 @@ namespace DacpacDiff.Mssql.Diff.Tests
             Assert.IsTrue(blk.Formatted);
             CollectionAssert.AreEqual(new[]
             {
+                "EXEC #usp_CheckState 1",
                 "BEGIN TRAN",
-                "EXEC #usp_CheckState 2",
-                "IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON",
+                "IF (dbo.tmpIsActive() = 0) SET NOEXEC ON",
                 "GO",
                 "",
                 "TestMssqlDiffBlock",
                 "",
                 "GO",
+                "SET NOEXEC OFF",
                 "EXEC #usp_CheckState 2",
-                "IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON",
+                "IF (dbo.tmpIsActive() = 0) SET NOEXEC ON",
                 "COMMIT",
                 "GO",
             }, res, string.Join("\n", res));
@@ -148,16 +149,17 @@ namespace DacpacDiff.Mssql.Diff.Tests
             // Assert
             CollectionAssert.AreEqual(new[]
             {
+                "EXEC #usp_CheckState 1",
                 "BEGIN TRAN",
-                "EXEC #usp_CheckState 2",
-                "IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON",
+                "IF (dbo.tmpIsActive() = 0) SET NOEXEC ON",
                 "GO",
                 "",
                 "TestMssqlDiffBlock",
                 "",
                 "GO",
+                "SET NOEXEC OFF",
                 "EXEC #usp_CheckState 2",
-                "IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON",
+                "IF (dbo.tmpIsActive() = 0) SET NOEXEC ON",
                 "COMMIT",
                 "GO",
             }, res, string.Join("\n", res));
@@ -192,9 +194,9 @@ namespace DacpacDiff.Mssql.Diff.Tests
             // Assert
             CollectionAssert.AreEqual(new[]
             {
+                "EXEC #usp_CheckState 1",
                 "BEGIN TRAN",
-                "EXEC #usp_CheckState 2",
-                "IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON",
+                "IF (dbo.tmpIsActive() = 0) SET NOEXEC ON",
                 "GO",
                 "",
                 "IF EXISTS (SELECT TOP 1 1 FROM DataLossTable) BEGIN",
@@ -206,8 +208,9 @@ namespace DacpacDiff.Mssql.Diff.Tests
                 "TestMssqlDiffBlock",
                 "",
                 "GO",
+                "SET NOEXEC OFF",
                 "EXEC #usp_CheckState 2",
-                "IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON",
+                "IF (dbo.tmpIsActive() = 0) SET NOEXEC ON",
                 "COMMIT",
                 "GO",
             }, res, string.Join("\n", res));
@@ -243,16 +246,17 @@ namespace DacpacDiff.Mssql.Diff.Tests
             // Assert
             CollectionAssert.AreEqual(new[]
             {
+                "EXEC #usp_CheckState 1",
                 "BEGIN TRAN",
-                "EXEC #usp_CheckState 2",
-                "IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON",
+                "IF (dbo.tmpIsActive() = 0) SET NOEXEC ON",
                 "GO",
                 "",
                 "TestMssqlDiffBlock",
                 "",
                 "GO",
+                "SET NOEXEC OFF",
                 "EXEC #usp_CheckState 2",
-                "IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON",
+                "IF (dbo.tmpIsActive() = 0) SET NOEXEC ON",
                 "COMMIT",
                 "GO",
             }, res, string.Join("\n", res));
@@ -281,15 +285,13 @@ namespace DacpacDiff.Mssql.Diff.Tests
             Assert.IsTrue(blk.Formatted);
             CollectionAssert.AreEqual(new[]
             {
-                "BEGIN TRAN",
-                "EXEC #usp_CheckState 2; IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON",
+                "EXEC #usp_CheckState 1; BEGIN TRAN; IF (dbo.tmpIsActive() = 0) SET NOEXEC ON",
                 "GO",
                 "",
                 "TestMssqlDiffBlock",
                 "",
                 "GO",
-                "EXEC #usp_CheckState 2; IF (dbo.ufn_IsRunning() = 0) SET NOEXEC ON",
-                "COMMIT",
+                "SET NOEXEC OFF; EXEC #usp_CheckState 2; IF (dbo.tmpIsActive() = 0) SET NOEXEC ON; COMMIT",
                 "GO",
             }, res, string.Join("\n", res));
         }

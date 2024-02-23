@@ -12,20 +12,20 @@ namespace DacpacDiff.Mssql.Diff.Tests
         public void MssqlDiffModuleCreate__Function__Args()
         {
             // Arrange
-            var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            var tgt = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
                 ReturnType = "LType",
                 Body = "ModuleDefinition"
             };
-            lft.Parameters = new[]
+            tgt.Parameters = new[]
             {
-                new ParameterModel(lft, "@ArgA") { Type = "INT" },
-                new ParameterModel(lft, "@ArgB") { Type = "BIT", DefaultValue = "NULL" },
-                new ParameterModel(lft, "@ArgC") { Type = "VARCHAR(MAX)", IsOutput = true },
-                new ParameterModel(lft, "@ArgD") { Type = "DECIMAL(19, 5)", IsReadOnly = true },
+                new ParameterModel(tgt, "@ArgA") { Type = "INT" },
+                new ParameterModel(tgt, "@ArgB") { Type = "BIT", DefaultValue = "NULL" },
+                new ParameterModel(tgt, "@ArgC") { Type = "VARCHAR(MAX)", IsOutput = true },
+                new ParameterModel(tgt, "@ArgD") { Type = "DECIMAL(19, 5)", IsReadOnly = true },
             };
 
-            var diff = new DiffModuleCreate(lft);
+            var diff = new DiffModuleCreate(tgt);
 
             // Act
             var res = new MssqlDiffModuleCreate(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -49,13 +49,13 @@ namespace DacpacDiff.Mssql.Diff.Tests
         public void MssqlDiffModuleCreate__Scalar_function__Creates_stub()
         {
             // Arrange
-            var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            var tgt = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
                 ReturnType = "LType",
                 Body = "ModuleDefinition"
             };
 
-            var diff = new DiffModuleCreate(lft);
+            var diff = new DiffModuleCreate(tgt);
 
             // Act
             var res = new MssqlDiffModuleCreate(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -75,20 +75,20 @@ namespace DacpacDiff.Mssql.Diff.Tests
         public void MssqlDiffModuleCreate__Unnamed_table_function__Creates_stub()
         {
             // Arrange
-            var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            var tgt = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
                 ReturnType = "TABLE",
                 Body = "ModuleDefinition"
             };
-            lft.Parameters = new[]
+            tgt.Parameters = new[]
             {
-                new ParameterModel(lft, "@Param1")
+                new ParameterModel(tgt, "@Param1")
                 {
                     Type = "PType"
                 }
             };
 
-            var diff = new DiffModuleCreate(lft);
+            var diff = new DiffModuleCreate(tgt);
 
             // Act
             var res = new MssqlDiffModuleCreate(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -108,27 +108,27 @@ namespace DacpacDiff.Mssql.Diff.Tests
         public void MssqlDiffModuleCreate__Named_table_function__Creates_stub()
         {
             // Arrange
-            var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            var tgt = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
                 ReturnType = "@TableVar",
                 ReturnTable = new TableModel(SchemaModel.Empty, "LMod"),
                 Body = "ModuleDefinition"
             };
-            lft.Parameters = new[]
+            tgt.Parameters = new[]
             {
-                new ParameterModel(lft, "@Param1")
+                new ParameterModel(tgt, "@Param1")
                 {
                     Type = "PType"
                 }
             };
 
-            lft.ReturnTable.Fields = new[]
+            tgt.ReturnTable.Fields = new[]
             {
-                new FieldModel(lft.ReturnTable, "FldA") { Type = "INT", IsPrimaryKey = true },
-                new FieldModel(lft.ReturnTable, "FldB") { Type = "VARCHAR(MAX)", Nullable = true },
+                new FieldModel(tgt.ReturnTable, "FldA") { Type = "INT", IsPrimaryKey = true },
+                new FieldModel(tgt.ReturnTable, "FldB") { Type = "VARCHAR(MAX)", Nullable = true },
             };
 
-            var diff = new DiffModuleCreate(lft);
+            var diff = new DiffModuleCreate(tgt);
 
             // Act
             var res = new MssqlDiffModuleCreate(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -151,14 +151,14 @@ namespace DacpacDiff.Mssql.Diff.Tests
         public void MssqlDiffModuleCreate__Scalar_function__ReturnNullForNullInput()
         {
             // Arrange
-            var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            var tgt = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
                 ReturnType = "LType",
                 Body = "ModuleDefinition",
                 ReturnNullForNullInput = true
             };
 
-            var diff = new DiffModuleCreate(lft);
+            var diff = new DiffModuleCreate(tgt);
 
             // Act
             var res = new MssqlDiffModuleCreate(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -181,7 +181,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
         public void MssqlDiffModuleCreate__Nonscalar_function__ReturnNullForNullInput_no_effect(string returnType, bool withTable)
         {
             // Arrange
-            var lft = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            var tgt = new FunctionModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
                 ReturnType = returnType,
                 ReturnTable = withTable ? new TableModel(SchemaModel.Empty, "LMod") : null,
@@ -189,7 +189,7 @@ namespace DacpacDiff.Mssql.Diff.Tests
                 ReturnNullForNullInput = true
             };
 
-            var diff = new DiffModuleCreate(lft);
+            var diff = new DiffModuleCreate(tgt);
 
             // Act
             var res = new MssqlDiffModuleCreate(diff).ToString();
@@ -202,19 +202,19 @@ namespace DacpacDiff.Mssql.Diff.Tests
         public void MssqlDiffModuleCreate__Procedure__Creates_stub()
         {
             // Arrange
-            var lft = new ProcedureModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            var tgt = new ProcedureModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
                 Body = "ModuleDefinition"
             };
-            lft.Parameters = new[]
+            tgt.Parameters = new[]
             {
-                new ParameterModel(lft, "@Param1")
+                new ParameterModel(tgt, "@Param1")
                 {
                     Type = "PType"
                 }
             };
 
-            var diff = new DiffModuleCreate(lft);
+            var diff = new DiffModuleCreate(tgt);
 
             // Act
             var res = new MssqlDiffModuleCreate(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -232,12 +232,12 @@ namespace DacpacDiff.Mssql.Diff.Tests
         public void MssqlDiffModuleCreate__View__Creates_stub()
         {
             // Arrange
-            var lft = new ViewModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
+            var tgt = new ViewModuleModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LMod")
             {
                 Body = "ModuleDefinition"
             };
 
-            var diff = new DiffModuleCreate(lft);
+            var diff = new DiffModuleCreate(tgt);
 
             // Act
             var res = new MssqlDiffModuleCreate(diff).ToString().Trim();

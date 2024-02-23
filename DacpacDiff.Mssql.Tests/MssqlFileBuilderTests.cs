@@ -5,180 +5,184 @@ using Moq;
 using System;
 using IFormatProvider = DacpacDiff.Core.IFormatProvider;
 
-namespace DacpacDiff.Mssql.Tests
+namespace DacpacDiff.Mssql.Tests;
+
+[TestClass]
+public class MssqlFileBuilderTests
 {
-    [TestClass]
-    public class MssqlFileBuilderTests
+    [TestMethod]
+    public void Generate__Without_items()
     {
-        [TestMethod]
-        public void Generate__Without_items()
+        // Arrange
+        var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
+
+        var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
+        optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
+        optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
+        optionsMock.SetupGet(m => m.ChangeDisableOption).Returns(false);
+
+        var fb = new MssqlFileBuilder(formatMock.Object)
         {
-            // Arrange
-            var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
+            Options = optionsMock.Object
+        };
 
-            var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
-            optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
-            optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
+        // Act
+        var res = fb.Generate("target.dacpac", "right.dacpac", "1.2.3.4", Array.Empty<ISqlFormattable>());
 
-            var fb = new MssqlFileBuilder(formatMock.Object)
-            {
-                Options = optionsMock.Object
-            };
+        // Assert
+        StringAssert.StartsWith(res, "-- Delta upgrade from right.dacpac to target.dacpac");
+        StringAssert.Contains(res, "-- Changes (0):");
+        StringAssert.Contains(res, "-- Pre-flight checks");
+        StringAssert.Contains(res, "IF (@CurVersion <> '1.2.3.4') BEGIN");
+        StringAssert.Contains(res, "-- Release framework");
+        StringAssert.Contains(res, "EXEC #print 0, 'Complete'");
+    }
 
-            // Act
-            var res = fb.Generate("left.dacpac", "right.dacpac", "1.2.3.4", Array.Empty<ISqlFormattable>());
+    [TestMethod]
+    public void Generate__Formats_items()
+    {
+        // Arrange
+        var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
 
-            // Assert
-            Assert.IsTrue(res.StartsWith("-- Delta upgrade from right.dacpac to left.dacpac"));
-            Assert.IsTrue(res.Contains("-- Changes (0):"));
-            Assert.IsTrue(res.Contains("-- Pre-flight checks"));
-            Assert.IsTrue(res.Contains("IF (@CurVersion <> '1.2.3.4') BEGIN"));
-            Assert.IsTrue(res.Contains("-- Temporary release helpers"));
-            Assert.IsTrue(res.Contains("EXEC #print 0, 'Complete'"));
-        }
+        var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
+        optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
+        optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
+        optionsMock.SetupGet(m => m.ChangeDisableOption).Returns(false);
 
-        [TestMethod]
-        public void Generate__Formats_items()
+        var fb = new MssqlFileBuilder(formatMock.Object)
         {
-            // Arrange
-            var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
+            Options = optionsMock.Object
+        };
 
-            var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
-            optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
-            optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
+        var sqlItemMock = new Mock<ISqlFormattable>(MockBehavior.Strict);
+        sqlItemMock.Setup(m => m.Name).Returns("SqlItemName");
+        sqlItemMock.Setup(m => m.Title).Returns("SqlItemTitle");
 
-            var fb = new MssqlFileBuilder(formatMock.Object)
-            {
-                Options = optionsMock.Object
-            };
+        var sqlItemFormatterMock = new Mock<ISqlFormatter>(MockBehavior.Strict);
+        sqlItemFormatterMock.Setup(m => m.Format(fb))
+            .Callback<ISqlFileBuilder>(f => f.AppendLine("ISqlFormatter.Format"));
 
-            var sqlItemMock = new Mock<ISqlFormattable>(MockBehavior.Strict);
-            sqlItemMock.Setup(m => m.Name).Returns("SqlItemName");
-            sqlItemMock.Setup(m => m.Title).Returns("SqlItemTitle");
+        formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
 
-            var sqlItemFormatterMock = new Mock<ISqlFormatter>(MockBehavior.Strict);
-            sqlItemFormatterMock.Setup(m => m.Format(fb))
-                .Callback<ISqlFileBuilder>(f => f.AppendLine("ISqlFormatter.Format"));
-            
-            formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
+        // Act
+        var res = fb.Generate("target.dacpac", "right.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
 
-            // Act
-            var res = fb.Generate("left.dacpac", "right.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
+        // Assert
+        Assert.IsTrue(res.Contains("-- Changes (1):"));
+        Assert.IsTrue(res.Contains("-- [1] SqlItemTitle: SqlItemName"));
+        Assert.IsTrue(res.Contains("ISqlFormatter.Format"));
+        Assert.IsTrue(res.Contains("#print 0, '> [1] SqlItemTitle: SqlItemName (99.99%%)'"));
+    }
 
-            // Assert
-            Assert.IsTrue(res.Contains("-- Changes (1):"));
-            Assert.IsTrue(res.Contains("-- [1] SqlItemTitle: SqlItemName"));
-            Assert.IsTrue(res.Contains("ISqlFormatter.Format"));
-            Assert.IsTrue(res.Contains("#print 0, '> [1] SqlItemTitle: SqlItemName (99.99%%)'"));
-        }
-        
-        [TestMethod]
-        public void Generate__Marks_dataloss_items()
+    [TestMethod]
+    public void Generate__Marks_dataloss_items()
+    {
+        // Arrange
+        var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
+
+        var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
+        optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
+        optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
+        optionsMock.SetupGet(m => m.ChangeDisableOption).Returns(false);
+
+        var fb = new MssqlFileBuilder(formatMock.Object)
         {
-            // Arrange
-            var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
+            Options = optionsMock.Object
+        };
 
-            var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
-            optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
-            optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
+        var sqlItemMock = new Mock<ISqlFormattable>(MockBehavior.Strict);
+        sqlItemMock.Setup(m => m.Name).Returns("SqlItemName");
+        sqlItemMock.Setup(m => m.Title).Returns("SqlItemTitle");
 
-            var fb = new MssqlFileBuilder(formatMock.Object)
-            {
-                Options = optionsMock.Object
-            };
+        var datalossTable = "";
+        var sqlItemDatalossMock = sqlItemMock.As<IDataLossChange>();
+        sqlItemDatalossMock.Setup(m => m.GetDataLossTable(out datalossTable))
+            .Returns(true);
 
-            var sqlItemMock = new Mock<ISqlFormattable>(MockBehavior.Strict);
-            sqlItemMock.Setup(m => m.Name).Returns("SqlItemName");
-            sqlItemMock.Setup(m => m.Title).Returns("SqlItemTitle");
+        var sqlItemFormatterMock = new Mock<ISqlFormatter>(MockBehavior.Strict);
+        sqlItemFormatterMock.Setup(m => m.Format(fb))
+            .Callback<ISqlFileBuilder>(f => f.AppendLine("ISqlFormatter.Format"));
 
-            var datalossTable = "";
-            var sqlItemDatalossMock = sqlItemMock.As<IDataLossChange>();
-            sqlItemDatalossMock.Setup(m => m.GetDataLossTable(out datalossTable))
-                .Returns(true);
+        formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
 
-            var sqlItemFormatterMock = new Mock<ISqlFormatter>(MockBehavior.Strict);
-            sqlItemFormatterMock.Setup(m => m.Format(fb))
-                .Callback<ISqlFileBuilder>(f => f.AppendLine("ISqlFormatter.Format"));
-            
-            formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
+        // Act
+        var res = fb.Generate("target.dacpac", "right.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
 
-            // Act
-            var res = fb.Generate("left.dacpac", "right.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
+        // Assert
+        Assert.IsTrue(res.Contains("-- Changes (1):"));
+        Assert.IsTrue(res.Contains("-- [1] SqlItemTitle: SqlItemName (potential data-loss)"));
+        Assert.IsTrue(res.Contains("#print 0, '> [1] SqlItemTitle: SqlItemName (99.99%%)'"));
+    }
 
-            // Assert
-            Assert.IsTrue(res.Contains("-- Changes (1):"));
-            Assert.IsTrue(res.Contains("-- [1] SqlItemTitle: SqlItemName (potential data-loss)"));
-            Assert.IsTrue(res.Contains("#print 0, '> [1] SqlItemTitle: SqlItemName (99.99%%)'"));
-        }
+    [TestMethod]
+    public void Generate__Does_not_mark_dataloss_items_if_no_dataloss()
+    {
+        // Arrange
+        var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
 
-        [TestMethod]
-        public void Generate__Does_not_mark_dataloss_items_if_no_dataloss()
+        var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
+        optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
+        optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
+        optionsMock.SetupGet(m => m.ChangeDisableOption).Returns(false);
+
+        var fb = new MssqlFileBuilder(formatMock.Object)
         {
-            // Arrange
-            var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
+            Options = optionsMock.Object
+        };
 
-            var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
-            optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
-            optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
+        var sqlItemMock = new Mock<ISqlFormattable>(MockBehavior.Strict);
+        sqlItemMock.Setup(m => m.Name).Returns("SqlItemName");
+        sqlItemMock.Setup(m => m.Title).Returns("SqlItemTitle");
 
-            var fb = new MssqlFileBuilder(formatMock.Object)
-            {
-                Options = optionsMock.Object
-            };
+        var datalossTable = "";
+        var sqlItemDatalossMock = sqlItemMock.As<IDataLossChange>();
+        sqlItemDatalossMock.Setup(m => m.GetDataLossTable(out datalossTable))
+            .Returns(false);
 
-            var sqlItemMock = new Mock<ISqlFormattable>(MockBehavior.Strict);
-            sqlItemMock.Setup(m => m.Name).Returns("SqlItemName");
-            sqlItemMock.Setup(m => m.Title).Returns("SqlItemTitle");
+        var sqlItemFormatterMock = new Mock<ISqlFormatter>(MockBehavior.Strict);
+        sqlItemFormatterMock.Setup(m => m.Format(fb))
+            .Callback<ISqlFileBuilder>(f => f.AppendLine("ISqlFormatter.Format"));
 
-            var datalossTable = "";
-            var sqlItemDatalossMock = sqlItemMock.As<IDataLossChange>();
-            sqlItemDatalossMock.Setup(m => m.GetDataLossTable(out datalossTable))
-                .Returns(false);
+        formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
 
-            var sqlItemFormatterMock = new Mock<ISqlFormatter>(MockBehavior.Strict);
-            sqlItemFormatterMock.Setup(m => m.Format(fb))
-                .Callback<ISqlFileBuilder>(f => f.AppendLine("ISqlFormatter.Format"));
-            
-            formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
+        // Act
+        var res = fb.Generate("target.dacpac", "right.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
 
-            // Act
-            var res = fb.Generate("left.dacpac", "right.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
+        // Assert
+        Assert.IsTrue(res.Contains("-- Changes (1):"));
+        Assert.IsFalse(res.Contains("-- [1] SqlItemTitle: SqlItemName (potential data-loss)"));
+    }
 
-            // Assert
-            Assert.IsTrue(res.Contains("-- Changes (1):"));
-            Assert.IsFalse(res.Contains("-- [1] SqlItemTitle: SqlItemName (potential data-loss)"));
-        }
+    [TestMethod]
+    public void Generate__Does_not_count_items_without_title()
+    {
+        // Arrange
+        var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
 
-        [TestMethod]
-        public void Generate__Does_not_count_items_without_title()
+        var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
+        optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
+        optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
+        optionsMock.SetupGet(m => m.ChangeDisableOption).Returns(false);
+
+        var fb = new MssqlFileBuilder(formatMock.Object)
         {
-            // Arrange
-            var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
+            Options = optionsMock.Object
+        };
 
-            var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
-            optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
-            optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
+        var sqlItemMock = new Mock<ISqlFormattable>(MockBehavior.Strict);
+        sqlItemMock.Setup(m => m.Name).Returns("SqlItemName");
+        sqlItemMock.Setup(m => m.Title).Returns((string?)null);
 
-            var fb = new MssqlFileBuilder(formatMock.Object)
-            {
-                Options = optionsMock.Object
-            };
+        var sqlItemFormatterMock = new Mock<ISqlFormatter>(MockBehavior.Strict);
+        sqlItemFormatterMock.Setup(m => m.Format(fb));
 
-            var sqlItemMock = new Mock<ISqlFormattable>(MockBehavior.Strict);
-            sqlItemMock.Setup(m => m.Name).Returns("SqlItemName");
-            sqlItemMock.Setup(m => m.Title).Returns((string?)null);
+        formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
 
-            var sqlItemFormatterMock = new Mock<ISqlFormatter>(MockBehavior.Strict);
-            sqlItemFormatterMock.Setup(m => m.Format(fb));
-            
-            formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
+        // Act
+        var res = fb.Generate("target.dacpac", "right.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
 
-            // Act
-            var res = fb.Generate("left.dacpac", "right.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
-
-            // Assert
-            Assert.IsTrue(res.Contains("-- Changes (0):"));
-            Assert.IsTrue(!res.Contains("SqlItemName"));
-        }
+        // Assert
+        Assert.IsTrue(res.Contains("-- Changes (0):"));
+        Assert.IsTrue(!res.Contains("SqlItemName"));
     }
 }
