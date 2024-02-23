@@ -39,7 +39,7 @@ We work on a large platform that makes use of Visual Studio Database Projects fo
 
 ## Logical structure
 1. Each dacpac is parsed in to an hierarchical set of models, representing the parts of the database we support
-1. The full set of left (target) and right (current) models are compared for differences by "comparers" specific to the object type
+1. The full set of target and current models are compared for differences by "comparers" specific to the object type
 1. The comparers produce a list of differences
 1. The differences are ordered based on a number of factors, including dependencies
 1. The differences are converted to the output format

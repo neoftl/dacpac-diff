@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28729.10
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34511.98
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DacpacDiff.Comparer", "DacpacDiff.Comparer\DacpacDiff.Comparer.csproj", "{9A8D4D05-54C0-4547-AE2C-0DC00193E06C}"
 EndProject
@@ -16,6 +16,12 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DacpacDiff.Comparer.Tests", "DacpacDiff.Comparer.Tests\DacpacDiff.Comparer.Tests.csproj", "{3D49303F-C250-446F-98D4-AAE352083419}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DacpacDiff.Mssql.Tests", "DacpacDiff.Mssql.Tests\DacpacDiff.Mssql.Tests.csproj", "{97689C4A-18E9-4D2E-B621-1ACD619DC461}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Meta", "Meta", "{4B0A71EC-9461-40BC-9B1E-56C38871A4B4}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
