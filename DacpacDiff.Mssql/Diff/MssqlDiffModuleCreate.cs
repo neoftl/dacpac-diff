@@ -129,8 +129,9 @@ namespace DacpacDiff.Mssql.Diff
                     return;
 
                 case TriggerModuleModel trigMod:
-                    sb.Append($"TRIGGER {trigMod.FullName} ON {trigMod.Parent} ")
-                        .Append(trigMod.Before ? "AFTER " : "FOR ")
+                    sb.AppendLine($"TRIGGER {trigMod.FullName} ON {trigMod.Parent}")
+                        .AppendIf(() => $"    WITH EXECUTE AS {trigMod.ExecuteAs}\r\n", trigMod.ExecuteAs?.Length > 0)
+                        .Append(trigMod.Before ? "    AFTER " : "    FOR ")
                         .AppendIf(() => "INSERT", trigMod.ForUpdate)
                         .AppendIf(() => ", ", trigMod.ForUpdate && (trigMod.ForInsert || trigMod.ForDelete))
                         .AppendIf(() => "UPDATE", trigMod.ForInsert)

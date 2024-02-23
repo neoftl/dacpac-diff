@@ -363,6 +363,11 @@ public class DacpacSchemeParser : ISchemeParser
             .Element("References")?
             .Attribute("Name")?.Value ?? string.Empty;
 
+        trig.ExecuteAs = el.Find("Property", ("Name", "IsCaller"), ("Value", "True"))?.Any() == true
+            ? "CALLER"
+            : el.Find("Property", ("Name", "IsOwner"), ("Value", "True"))?.Any() == true
+            ? "OWNER" : null;
+
         trig.Before = el.Find("Property", ("Name", "SqlTriggerType")).FirstOrDefault()?.Attribute("Value")?.Value != "2";
         trig.ForDelete = el.Find("Property", ("Name", "IsDeleteTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True";
         trig.ForInsert = el.Find("Property", ("Name", "IsInsertTrigger")).FirstOrDefault()?.Attribute("Value")?.Value == "True";

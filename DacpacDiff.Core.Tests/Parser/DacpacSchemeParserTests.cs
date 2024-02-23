@@ -160,13 +160,15 @@ namespace DacpacDiff.Core.Parser.Tests
         }
 
         [TestMethod]
-        public void ParseContent__Parses_procedures_with_caller_execute()
+        [DataRow("IsOwner", "OWNER")]
+        [DataRow("IsCaller", "CALLER")]
+        public void ParseContent__Parses_procedures_with_execute(string element, string executeType)
         {
             // Arrange
-            var xml = @"<root><Model>
+            var xml = $@"<root><Model>
     <Element Type=""SqlProcedure"" Name=""[dbo].[usp_Test]"">
         <Property Name=""BodyScript""><Value>BODY</Value></Property>
-        <Property Name=""IsCaller"" Value=""True"" />
+        <Property Name=""{element}"" Value=""True"" />
     </Element>
 </Model></root>";
 
@@ -176,27 +178,7 @@ namespace DacpacDiff.Core.Parser.Tests
 
             // Assert
             var proc = (ProcedureModuleModel)sch.Modules["usp_Test"];
-            Assert.AreEqual("CALLER", proc.ExecuteAs);
-        }
-
-        [TestMethod]
-        public void ParseContent__Parses_procedures_with_owner_execute()
-        {
-            // Arrange
-            var xml = @"<root><Model>
-    <Element Type=""SqlProcedure"" Name=""[dbo].[usp_Test]"">
-        <Property Name=""BodyScript""><Value>BODY</Value></Property>
-        <Property Name=""IsOwner"" Value=""True"" />
-    </Element>
-</Model></root>";
-
-            // Act
-            var res = DacpacSchemeParser.ParseContent("test", xml);
-            var sch = res.Databases["database"].Schemas["dbo"];
-
-            // Assert
-            var proc = (ProcedureModuleModel)sch.Modules["usp_Test"];
-            Assert.AreEqual("OWNER", proc.ExecuteAs);
+            Assert.AreEqual(executeType, proc.ExecuteAs);
         }
 
         #endregion Procedures
@@ -519,10 +501,36 @@ namespace DacpacDiff.Core.Parser.Tests
             Assert.AreEqual(ModuleModel.ModuleType.TRIGGER, trig.Type);
             Assert.AreEqual("[dbo].[Test]", trig.Parent);
             Assert.AreEqual("BODY", trig.Body);
+            Assert.IsNull(trig.ExecuteAs);
             Assert.IsTrue(trig.Before);
             Assert.IsFalse(trig.ForDelete);
             Assert.IsFalse(trig.ForInsert);
             Assert.IsFalse(trig.ForUpdate);
+        }
+
+        [TestMethod]
+        [DataRow("IsOwner", "OWNER")]
+        [DataRow("IsCaller", "CALLER")]
+        public void ParseContent__Parses_triggers_with_execute(string element, string executeType)
+        {
+            // Arrange
+            var xml = $@"<root><Model>
+    <Element Type=""SqlDmlTrigger"" Name=""[dbo].[tr_Test]"">
+        <Relationship Name=""Parent"">
+            <Entry><References Name=""[dbo].[Test]"" /></Entry>
+        </Relationship>
+        <Property Name=""BodyScript""><Value>BODY</Value></Property>
+        <Property Name=""{element}"" Value=""True"" />
+    </Element>
+</Model></root>";
+
+            // Act
+            var res = DacpacSchemeParser.ParseContent("test", xml);
+            var sch = res.Databases["database"].Schemas["dbo"];
+
+            // Assert
+            var trig = (TriggerModuleModel)sch.Modules["tr_Test"];
+            Assert.AreEqual(executeType, trig.ExecuteAs);
         }
 
         [TestMethod]
