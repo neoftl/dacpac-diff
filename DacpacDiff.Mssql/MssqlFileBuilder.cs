@@ -1,5 +1,6 @@
 ﻿using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Output;
+using System.Reflection;
 using System.Text;
 using IFormatProvider = DacpacDiff.Core.IFormatProvider;
 
@@ -11,10 +12,24 @@ namespace DacpacDiff.Mssql;
 // TODO: ability to disable each section at the top of the file (temp table)
 public class MssqlFileBuilder : BaseSqlFileBuilder
 {
+    private readonly string _fullByLine;
     private readonly IFormatProvider _formatProvider;
 
     public MssqlFileBuilder(IFormatProvider formatProvider)
     {
+        string? sqlVer = null;
+        try
+        {
+            sqlVer = GetType().Assembly?.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version;
+        }
+        catch { }
+
+        var exeAsm = Assembly.GetEntryAssembly();
+        var productName = exeAsm?.GetCustomAttribute<AssemblyProductAttribute>()?.Product;
+        var exeVer = exeAsm?.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version;
+        _fullByLine = $"{productName ?? "unknown"} v{exeVer ?? "?"}"
+            + $" ({formatProvider.FormatName}{(sqlVer != exeVer && sqlVer is not null ? " v" + sqlVer : null)})";
+
         _formatProvider = formatProvider;
     }
 
@@ -27,7 +42,7 @@ public class MssqlFileBuilder : BaseSqlFileBuilder
         var sqlHead = new StringBuilder();
 
         sqlHead.AppendLine($@"-- Delta upgrade from {currentFileName} to {targetFileName}
--- Generated {DateTime.UtcNow}
+-- Generated {DateTime.UtcNow} by {_fullByLine}
 --
 -- Changes ({objCount}):");
         if (Options?.ChangeDisableOption == true)

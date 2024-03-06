@@ -1,14 +1,27 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <OutputType>Library</OutputType>
-	<ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Company>Neo Fintech Lab</Company>
+        <Authors>IFYates</Authors>
+        <Version>0.2.2-beta</Version>
+        <Copyright>(c) Neo Fintech Lab 2021</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/neoftl/dacpac-diff</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/neoftl/dacpac-diff</RepositoryUrl>
+        <RepositoryType>GitHub</RepositoryType>
+        <PackageTags>dacpac,sql,release,mssql</PackageTags>
+        <Description>MSSQL support for dacpac-diff.</Description>
+        <Copyright>(c) Neo Fintech Lab 2021</Copyright>
+        <Version>0.2.2-beta</Version>
+        <Product>dd.MSSQL</Product>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\DacpacDiff.Core\DacpacDiff.Core.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\DacpacDiff.Core\DacpacDiff.Core.csproj" />
+    </ItemGroup>
 
 </Project>
