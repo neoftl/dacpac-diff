@@ -24,7 +24,7 @@ public class ModuleComparer : IModelComparer<ModuleModel>
         // Type changing, full recreate
         if (tgt.Type != cur.Type)
         {
-            return new[] { new RecreateObject<ModuleModel>(tgt, cur) };
+            return new[] { new RecreateObject<ModuleModel>(tgt, cur, true) };
         }
 
         // Definition change, alter

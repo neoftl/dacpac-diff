@@ -8,7 +8,7 @@
         <AssemblyName>dacpac-diff</AssemblyName>
         <Company>Neo Fintech Lab</Company>
         <Authors>IFYates</Authors>
-        <Version>0.2.2-beta</Version>
+        <Version>0.2.3-beta</Version>
         <Copyright>(c) Neo Fintech Lab 2021</Copyright>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/neoftl/dacpac-diff</PackageProjectUrl>

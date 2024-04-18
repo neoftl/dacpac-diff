@@ -7,7 +7,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Company>Neo Fintech Lab</Company>
         <Authors>IFYates</Authors>
-        <Version>0.2.2-beta</Version>
+        <Version>0.2.3-beta</Version>
         <Copyright>(c) Neo Fintech Lab 2021</Copyright>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/neoftl/dacpac-diff</PackageProjectUrl>
@@ -16,7 +16,7 @@
         <PackageTags>dacpac,sql,release,mssql</PackageTags>
         <Description>MSSQL support for dacpac-diff.</Description>
         <Copyright>(c) Neo Fintech Lab 2021</Copyright>
-        <Version>0.2.2-beta</Version>
+        <Version>0.2.3-beta</Version>
         <Product>dd.MSSQL</Product>
     </PropertyGroup>
 

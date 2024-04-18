@@ -55,15 +55,10 @@ COMMIT"))
 
     protected abstract void GetFormat(ISqlFileBuilder sb);
 
-    protected string? _sql = null;
     public override string ToString()
     {
-        if (_sql == null)
-        {
-            var sb = new NullSqlBuilder();
-            GetFormat(sb);
-            _sql = sb.ToString().Trim();
-        }
-        return _sql;
+        var sb = new NullSqlBuilder();
+        GetFormat(sb);
+        return sb.ToString().Trim();
     }
 }
