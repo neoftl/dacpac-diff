@@ -13,6 +13,7 @@ public class FieldModel : IModel<FieldModel, TableModel>, IDependentModel, IEqua
     public string Name { get; }
     public string FullName => $"{Table.FullName}.[{Name}]";
     public string? Type { get; set; }
+    public string? Collation { get; set; }
     public string? Computation { get; set; }
 
     public FieldDefaultModel? Default { get; set; }
@@ -50,6 +51,7 @@ public class FieldModel : IModel<FieldModel, TableModel>, IDependentModel, IEqua
         Table = field.Table;
         Name = field.Name;
         Type = field.Type;
+        Collation = field.Collation;
         Computation = field.Computation;
         Order = field.Order;
         Nullable = field.Nullable;
@@ -86,6 +88,7 @@ public class FieldModel : IModel<FieldModel, TableModel>, IDependentModel, IEqua
         }
         return eq(m => m.FullName)
             && eq(m => m.Type)
+            && eq(m => m.Collation)
             && eq(m => m.Computation?.ScrubSQL())
             && IsDefaultMatch(other)
             && eq(m => m.IsUnique)
@@ -105,6 +108,7 @@ public class FieldModel : IModel<FieldModel, TableModel>, IDependentModel, IEqua
             return (l is null && r is null) || l?.Equals(r) == true;
         }
         return eq(m => m.Type)
+            && eq(m => m.Collation)
             && eq(m => m.Computation)
             && eq(m => m.Nullable)
             && (!checkDefault || IsDefaultMatch(other));
@@ -116,6 +120,7 @@ public class FieldModel : IModel<FieldModel, TableModel>, IDependentModel, IEqua
         {
             FullName,
             Type,
+            Collation,
             Computation,
             Default,
             IsUnique,

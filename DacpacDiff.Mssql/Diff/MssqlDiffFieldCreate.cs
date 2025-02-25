@@ -2,41 +2,38 @@
 using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Output;
 
-namespace DacpacDiff.Mssql.Diff
+namespace DacpacDiff.Mssql.Diff;
+
+public class MssqlDiffFieldCreate(DiffFieldCreate diff)
+    : BaseMssqlDiffBlock<DiffFieldCreate>(diff)
 {
-    public class MssqlDiffFieldCreate : BaseMssqlDiffBlock<DiffFieldCreate>
+    private static void appendFieldSql(FieldModel fld, ISqlFileBuilder sb)
     {
-        public MssqlDiffFieldCreate(DiffFieldCreate diff)
-            : base(diff)
-        { }
+        sb.Append($"[{fld.Name}]");
 
-        private static void appendFieldSql(FieldModel fld, ISqlFileBuilder sb)
+        if ((fld.Computation?.Length ?? 0) > 0)
         {
-            sb.Append($"[{fld.Name}]");
-
-            if ((fld.Computation?.Length ?? 0) > 0)
-            {
-                sb.Append($" AS {fld.Computation}");
-                return;
-            }
-
-            sb.Append($" {fld.Type}")
-                .Append(!fld.Nullable && fld.HasDefault ? " NOT NULL" : " NULL")
-                .AppendIf(() => $" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed)
-                .AppendIf(() => $" REFERENCES {fld.Ref?.TargetField.Table.FullName} ([{fld.Ref?.TargetField.Name}])", fld.Ref?.IsSystemNamed == true);
+            sb.Append($" AS {fld.Computation}");
+            return;
         }
 
-        protected override void GetFormat(ISqlFileBuilder sb)
-        {
-            // TODO: unique
+        sb.Append($" {fld.Type}")
+            .AppendIf(() => " COLLATE " + fld.Collation, fld.Collation != null)
+            .Append(!fld.Nullable && fld.HasDefault ? " NOT NULL" : " NULL")
+            .AppendIf(() => $" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed)
+            .AppendIf(() => $" REFERENCES {fld.Ref?.TargetField.Table.FullName} ([{fld.Ref?.TargetField.Name}])", fld.Ref?.IsSystemNamed == true);
+    }
 
-            var fld = _diff.Field;
-            sb.Append($"ALTER TABLE {fld.Table.FullName} ADD ");
-            appendFieldSql(fld, sb);
-            sb.AppendIf(() => " -- NOTE: Cannot create NOT NULL column", !fld.Nullable && !fld.HasDefault)
-                .AppendLine();
+    protected override void GetFormat(ISqlFileBuilder sb)
+    {
+        // TODO: unique
 
-            // TODO: Way to provide transformation method for adding NOT NULL column
-        }
+        var fld = _diff.Field;
+        sb.Append($"ALTER TABLE {fld.Table.FullName} ADD ");
+        appendFieldSql(fld, sb);
+        sb.AppendIf(() => " -- NOTE: Cannot create NOT NULL column", !fld.Nullable && !fld.HasDefault)
+            .AppendLine();
+
+        // TODO: Way to provide transformation method for adding NOT NULL column
     }
 }

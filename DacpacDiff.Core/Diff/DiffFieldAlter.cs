@@ -4,22 +4,17 @@ using System.Diagnostics;
 namespace DacpacDiff.Core.Diff;
 
 // TODO: should be individual diff per type of alter?
-public class DiffFieldAlter : IDifference, IDataLossChange, IChangeProvider
+public class DiffFieldAlter(FieldModel tgt, FieldModel cur)
+    : IDifference, IDataLossChange, IChangeProvider
 {
     public const string TITLE = "Alter table field";
 
-    public FieldModel TargetField { get; }
-    public FieldModel CurrentField { get; }
+    public FieldModel TargetField { get; } = tgt ?? throw new ArgumentNullException(nameof(tgt));
+    public FieldModel CurrentField { get; } = cur ?? throw new ArgumentNullException(nameof(cur));
 
     public IModel Model => TargetField;
     public string Name => $"{TargetField.Table.FullName}.[{TargetField.Name}]";
     public string Title => TITLE;
-
-    public DiffFieldAlter(FieldModel tgt, FieldModel cur)
-    {
-        TargetField = tgt ?? throw new ArgumentNullException(nameof(tgt));
-        CurrentField = cur ?? throw new ArgumentNullException(nameof(cur));
-    }
 
     public bool GetDataLossTable(out string tableName)
     {
@@ -54,6 +49,9 @@ public class DiffFieldAlter : IDifference, IDataLossChange, IChangeProvider
                     diffs.Add(new DiffModuleCreate((ModuleModel)ldep));
                     break;
                 case FunctionModuleModel:
+                case ProcedureModuleModel:
+                case TriggerModuleModel:
+                case ViewModuleModel:
                     // NOOP
                     break;
                 default:

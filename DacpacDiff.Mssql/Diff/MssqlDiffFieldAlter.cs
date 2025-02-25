@@ -21,8 +21,9 @@ public class MssqlDiffFieldAlter : BaseMssqlDiffBlock<DiffFieldAlter>
         }
 
         sb.Append($" {fld.Type}")
-            .AppendIf(() => $" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed && !asAlter)
-            .Append(!fld.Nullable && (!existingIsNull || fld.HasDefault) ? " NOT NULL" : " NULL");
+            .AppendIf(() => " COLLATE " + fld.Collation, fld.Collation != null)
+            .Append(!fld.Nullable && (!existingIsNull || fld.HasDefault) ? " NOT NULL" : " NULL")
+            .AppendIf(() => $" DEFAULT ({fld.DefaultValue})", fld.IsDefaultSystemNamed && !asAlter);
     }
 
     protected override void GetFormat(ISqlFileBuilder sb)
