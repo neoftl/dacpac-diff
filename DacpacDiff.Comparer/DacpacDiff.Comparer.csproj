@@ -6,19 +6,19 @@
 		<LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <AssemblyName>dacpac-diff</AssemblyName>
         <Company>Neo Fintech Lab</Company>
         <Authors>IFYates</Authors>
-        <Version>0.2.3-beta</Version>
+        <Version>0.3.0</Version>
         <Copyright>(c) Neo Fintech Lab 2021</Copyright>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/neoftl/dacpac-diff</PackageProjectUrl>
         <RepositoryUrl>https://github.com/neoftl/dacpac-diff</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>
         <PackageTags>dacpac,sql,release</PackageTags>
-        <PackageReleaseNotes>Still some bits missing, but this has been used for 100+ production releases so far, without few issues.
+        <PackageReleaseNotes>Still some bits missing, but this has been used for 100+ production releases so far, with few issues.
             We strongly advise reviewing the final delta script before applying.</PackageReleaseNotes>
         <Description>dacpac-diff generates SQL diff files between the definitions of two dacpac files, to facilitate updating a database using easily managed scripts.</Description>
+        <AssemblyName>dacpac-diff</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
