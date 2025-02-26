@@ -29,7 +29,7 @@ public class MssqlDiffFieldAlter(DiffFieldAlter diff)
         var cur = _diff.CurrentField;
 
         // Change to/from computed column
-        if ((tgt.Computation?.Length > 0) != (cur.Computation?.Length > 0))
+        if (_diff.Has(DiffFieldAlter.Change.Computed, DiffFieldAlter.Change.ComputedUnset))
         {
             sb.AppendLine(CommonMssql.ALTER_TABLE_DROP_COLUMN(cur.Table.FullName, cur.Name))
                 .AppendLine()
@@ -49,7 +49,7 @@ public class MssqlDiffFieldAlter(DiffFieldAlter diff)
         //}
 
         // Remove existing default
-        if (!tgt.IsDefaultMatch(cur) && cur.HasDefault)
+        if (_diff.Has(DiffFieldAlter.Change.DefaultUnset))
         {
             // Remove default
             if (cur.IsDefaultSystemNamed)
@@ -64,15 +64,17 @@ public class MssqlDiffFieldAlter(DiffFieldAlter diff)
         }
 
         // Main definition
-        if (!tgt.IsSignatureMatch(cur, false))
+        if (_diff.Has(
+            DiffFieldAlter.Change.Type,
+            DiffFieldAlter.Change.Collation, DiffFieldAlter.Change.CollationUnset,
+            DiffFieldAlter.Change.Computed, DiffFieldAlter.Change.ComputedUnset,
+            DiffFieldAlter.Change.Nullable
+            ))
         {
             // Drop unnamed uniqueness
             if (cur.IsUnique)
             {
-                sb.Append("EXEC #usp_DropUnnamedUniqueConstraint ")
-                    .Append($"'{cur.Table.FullName}', ")
-                    .Append($"'{cur.Name}'")
-                    .AppendGo();
+                sb.DROP_UNNAMED_UNIQUE(cur);
                 cur.IsUnique = false;
             }
 
@@ -84,7 +86,7 @@ public class MssqlDiffFieldAlter(DiffFieldAlter diff)
         }
 
         // Default
-        if (!tgt.IsDefaultMatch(cur) && tgt.HasDefault)
+        if (_diff.Has(DiffFieldAlter.Change.Default))
         {
             // Add default
             sb.Append($"ALTER TABLE {tgt.Table.FullName} ADD ")
@@ -93,36 +95,21 @@ public class MssqlDiffFieldAlter(DiffFieldAlter diff)
         }
 
         // Make unique (drop is handled elsewhere)
-        if (tgt.IsUnique && !cur.IsUnique)
+        if (_diff.Has(DiffFieldAlter.Change.Unique))
         {
             sb.AppendLine($"ALTER TABLE {tgt.Table.FullName} ADD UNIQUE ([{tgt.Name}])");
         }
 
         // Reference
-        var tgtRef = tgt.Ref != null ? new FieldRefModel(tgt.Ref) : null;
-        var curRef = cur.Ref != null ? new FieldRefModel(cur.Ref) : null;
-        if (curRef is null || tgtRef?.Equals(curRef) != true)
+        if (_diff.Has(DiffFieldAlter.Change.ReferenceUnset))
         {
-            if (curRef != null)
-            {
-                if (curRef.IsSystemNamed || curRef.Name.Length == 0)
-                {
-                    sb.AppendLine($"-- Removing unnamed FKey: {curRef.Field.FullName} -> {curRef.TargetField.FullName}")
-                        .AppendLine(CommonMssql.REF_GET_FKEYNAME(curRef.Table.FullName, curRef.Field.Name))
-                        .AppendLine(CommonMssql.REF_GET_DROP_SQL(curRef.Table.FullName))
-                        .AppendLine("EXEC (@DropConstraintSql)");
-                }
-                else
-                {
-                    sb.AppendLine(CommonMssql.ALTER_TABLE_DROP_CONSTRAINT(curRef.Table.FullName, curRef.Name));
-                }
-            }
-            if (tgtRef != null)
-            {
-                sb.Append($"ALTER TABLE {tgtRef.Table.FullName} WITH NOCHECK ADD ")
-                    .AppendIf(() => $"CONSTRAINT [{tgtRef.Name}] ", !tgtRef.IsSystemNamed)
-                    .AppendLine($"FOREIGN KEY ([{tgtRef.Field.Name}]) REFERENCES {tgtRef.TargetField.Table.FullName} ([{tgtRef.TargetField.Name}])");
-            }
+            sb.ALTER_TABLE_DROP_FIELD_REF(cur.Ref!);
+        }
+        if (_diff.Has(DiffFieldAlter.Change.Reference))
+        {
+            sb.Append($"ALTER TABLE {tgt.Ref!.Table.FullName} WITH NOCHECK ADD ")
+                .AppendIf(() => $"CONSTRAINT [{tgt.Ref.Name}] ", !tgt.Ref.IsSystemNamed)
+                .AppendLine($"FOREIGN KEY ([{tgt.Ref.Field.Name}]) REFERENCES {tgt.Ref.TargetField.Table.FullName} ([{tgt.Ref.TargetField.Name}])");
         }
     }
 }

@@ -1,33 +1,30 @@
 ﻿using DacpacDiff.Core.Utility;
-using System;
 
-namespace DacpacDiff.Core.Model
+namespace DacpacDiff.Core.Model;
+
+public class FieldDefaultModel(FieldModel field, string? name, string value)
+    : IModel<FieldDefaultModel, FieldModel>, IDependentModel
 {
-    public class FieldDefaultModel : IModel<FieldDefaultModel, FieldModel>, IDependentModel
+    public FieldModel Field { get; } = field;
+    public string Name { get; } = name ?? string.Empty;
+    public bool IsSystemNamed { get; } = name?.Length is null or 0;
+    public string FullName => $"{Field.FullName}:{(IsSystemNamed ? "*(unnamed)*" : $"[{Name}]")}";
+    public string Value { get; } = value.ReduceBrackets();
+    public string[] Dependencies { get; set; } = [];
+
+    public override bool Equals(object? obj)
     {
-        public FieldModel Field { get; }
-        public string FullName => $"{Field.FullName}:{(IsSystemNamed ? "*(unnamed)*" : $"[{Name}]")}";
-        public string Name { get; }
-        public bool IsSystemNamed { get; }
-        public string Value { get; }
-        public string[] Dependencies { get; set; } = Array.Empty<string>();
+        return obj is FieldDefaultModel field
+            && Value.ScrubSQL() == field.Value.ScrubSQL();
+    }
 
-        public FieldDefaultModel(FieldModel field, string? name, string value)
+    public override int GetHashCode()
+    {
+        return new object?[]
         {
-            Field = field;
-            Name = name ?? string.Empty;
-            IsSystemNamed = Name.Length == 0;
-            Value = value.ReduceBrackets();
-        }
-
-        public override int GetHashCode()
-        {
-            return new object?[]
-            {
-                FullName,
-                IsSystemNamed,
-                Value
-            }.CalculateHashCode();
-        }
+            FullName,
+            IsSystemNamed,
+            Value
+        }.CalculateHashCode();
     }
 }

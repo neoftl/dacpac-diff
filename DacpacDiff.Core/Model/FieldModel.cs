@@ -90,12 +90,12 @@ public class FieldModel : IModel<FieldModel, TableModel>, IDependentModel, IEqua
             && eq(m => m.Type)
             && eq(m => m.Collation)
             && eq(m => m.Computation?.ScrubSQL())
-            && IsDefaultMatch(other)
+            && eq(m => m.DefaultValue?.ScrubSQL())
             && eq(m => m.IsUnique)
             //&& eq(m => m.Order) // TODO: Table field ordering to separate option and diff
             && eq(m => m.Nullable)
             && eq(m => m.Identity)
-            && (Ref is null) == (other.Ref is null) && Ref?.Equals(other.Ref) != false;
+            && eq(m => m.Ref);
     }
     public override bool Equals(object? obj) => Equals(obj as FieldModel);
 
@@ -111,7 +111,7 @@ public class FieldModel : IModel<FieldModel, TableModel>, IDependentModel, IEqua
             && eq(m => m.Collation)
             && eq(m => m.Computation)
             && eq(m => m.Nullable)
-            && (!checkDefault || IsDefaultMatch(other));
+            && (!checkDefault || eq(m => m.DefaultValue?.ScrubSQL()));
     }
 
     public override int GetHashCode()
@@ -129,22 +129,5 @@ public class FieldModel : IModel<FieldModel, TableModel>, IDependentModel, IEqua
             Identity,
             Ref
         }.CalculateHashCode();
-    }
-
-    public bool IsDefaultMatch(FieldModel field)
-    {
-        if (DefaultValue != null)
-        {
-            if (field.DefaultValue == null)
-            {
-                return false;
-            }
-
-            var dbL = DefaultValue.ScrubSQL();
-            var dbR = field.DefaultValue.ScrubSQL();
-            return dbL == dbR;
-        }
-
-        return !field.HasDefault;
     }
 }

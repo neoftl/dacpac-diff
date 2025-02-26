@@ -4,12 +4,9 @@ using DacpacDiff.Core.Output;
 
 namespace DacpacDiff.Mssql.Diff;
 
-public class MssqlDiffObjectDrop : BaseMssqlDiffBlock<DiffObjectDrop>
+public class MssqlDiffObjectDrop(DiffObjectDrop diff)
+    : BaseMssqlDiffBlock<DiffObjectDrop>(diff)
 {
-    public MssqlDiffObjectDrop(DiffObjectDrop diff)
-        : base(diff)
-    { }
-
     protected override void GetFormat(ISqlFileBuilder sb)
     {
         if (_diff.Model is IndexModuleModel idx)
@@ -20,10 +17,7 @@ public class MssqlDiffObjectDrop : BaseMssqlDiffBlock<DiffObjectDrop>
         {
             if (uqMod.IsSystemNamed)
             {
-                sb.Append("EXEC #usp_DropUnnamedUniqueConstraint ")
-                    .Append($"'{uqMod.DefiningObjectFullName}', ")
-                    .Append($"'{string.Join(",", uqMod.Columns)}'")
-                    .AppendGo();
+                sb.DROP_UNNAMED_UNIQUE(uqMod.DefiningObjectFullName, string.Join(",", uqMod.Columns));
             }
             else
             {
