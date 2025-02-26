@@ -10,6 +10,32 @@ namespace DacpacDiff.Mssql.Diff.Tests;
 [TestClass]
 public class MssqlDiffFieldAlterTests
 {
+    [TestMethod]
+    public void MssqlFieldAlter__Change_collation()
+    {
+        // Arrange
+        var tgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable"), "LField")
+        {
+            Type = "FType",
+            Collation = "NewCollation"
+        };
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        {
+            Type = "FType"
+        };
+
+        var diff = new DiffFieldAlter(tgt, cur);
+
+        // Act
+        var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+
+        // Assert
+        CollectionAssert.AreEqual(new[]
+        {
+            "ALTER TABLE [LSchema].[LTable] ALTER COLUMN [LField] FType COLLATE NewCollation NOT NULL",
+        }, res);
+    }
+
     #region Computed
 
     [TestMethod]
@@ -28,7 +54,7 @@ public class MssqlDiffFieldAlterTests
         var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
-        var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
 
         // Assert
         CollectionAssert.AreEqual(new[]
@@ -54,7 +80,7 @@ public class MssqlDiffFieldAlterTests
         var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
-        var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
 
         // Assert
         CollectionAssert.AreEqual(new[]
@@ -117,11 +143,11 @@ public class MssqlDiffFieldAlterTests
         var res = new MssqlDiffFieldAlter(diff).ToString();
 
         // Assert
-        Assert.That.LinesEqual(new[]
-        {
+        Assert.That.LinesEqual(
+        [
             "ALTER TABLE [LSchema].[LTable] ALTER COLUMN [LField] LType NULL",
             "ALTER TABLE [LSchema].[LTable] ADD DEFAULT (LDefValue) FOR [LField]",
-        }, res);
+        ], res);
     }
 
     [TestMethod]
@@ -170,7 +196,7 @@ public class MssqlDiffFieldAlterTests
         var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
-        var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
 
         // Assert
         CollectionAssert.AreEqual(new[]
@@ -226,7 +252,7 @@ public class MssqlDiffFieldAlterTests
         var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
-        var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
 
         // Assert
         CollectionAssert.AreEqual(new[]
@@ -282,7 +308,7 @@ public class MssqlDiffFieldAlterTests
         var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
-        var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
 
         // Assert
         CollectionAssert.AreEqual(new[]
@@ -473,7 +499,7 @@ public class MssqlDiffFieldAlterTests
         var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
-        var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
 
         // Assert
         CollectionAssert.AreEqual(new[]
@@ -538,7 +564,7 @@ public class MssqlDiffFieldAlterTests
         var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
-        var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
 
         // Assert
         CollectionAssert.AreEqual(new[]
@@ -575,7 +601,7 @@ public class MssqlDiffFieldAlterTests
         var diff = new DiffFieldAlter(tgt, cur);
 
         // Act
-        var res = new MssqlDiffFieldAlter(diff).ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
 
         // Assert
         CollectionAssert.AreEqual(new[]

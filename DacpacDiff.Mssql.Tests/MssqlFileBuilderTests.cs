@@ -2,7 +2,6 @@
 using DacpacDiff.Core.Output;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using System;
 using IFormatProvider = DacpacDiff.Core.IFormatProvider;
 
 namespace DacpacDiff.Mssql.Tests;
@@ -10,24 +9,31 @@ namespace DacpacDiff.Mssql.Tests;
 [TestClass]
 public class MssqlFileBuilderTests
 {
+    private Mock<IFormatProvider> _formatMock = null!;
+
+    [TestInitialize]
+    public void Init()
+    {
+        _formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
+        _formatMock.SetupGet(m => m.FormatName).Returns("TEST");
+    }
+
     [TestMethod]
     public void Generate__Without_items()
     {
         // Arrange
-        var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
-
         var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
         optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
         optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
         optionsMock.SetupGet(m => m.ChangeDisableOption).Returns(false);
 
-        var fb = new MssqlFileBuilder(formatMock.Object)
+        var fb = new MssqlFileBuilder(_formatMock.Object)
         {
             Options = optionsMock.Object
         };
 
         // Act
-        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", Array.Empty<ISqlFormattable>());
+        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", []);
 
         // Assert
         StringAssert.StartsWith(res, "-- Delta upgrade from current.dacpac to target.dacpac");
@@ -42,14 +48,12 @@ public class MssqlFileBuilderTests
     public void Generate__Formats_items()
     {
         // Arrange
-        var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
-
         var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
         optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
         optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
         optionsMock.SetupGet(m => m.ChangeDisableOption).Returns(false);
 
-        var fb = new MssqlFileBuilder(formatMock.Object)
+        var fb = new MssqlFileBuilder(_formatMock.Object)
         {
             Options = optionsMock.Object
         };
@@ -62,10 +66,11 @@ public class MssqlFileBuilderTests
         sqlItemFormatterMock.Setup(m => m.Format(fb))
             .Callback<ISqlFileBuilder>(f => f.AppendLine("ISqlFormatter.Format"));
 
-        formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
+        _formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object))
+            .Returns(sqlItemFormatterMock.Object);
 
         // Act
-        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
+        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", [sqlItemMock.Object]);
 
         // Assert
         Assert.IsTrue(res.Contains("-- Changes (1):"));
@@ -78,14 +83,12 @@ public class MssqlFileBuilderTests
     public void Generate__Marks_dataloss_items()
     {
         // Arrange
-        var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
-
         var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
         optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
         optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
         optionsMock.SetupGet(m => m.ChangeDisableOption).Returns(false);
 
-        var fb = new MssqlFileBuilder(formatMock.Object)
+        var fb = new MssqlFileBuilder(_formatMock.Object)
         {
             Options = optionsMock.Object
         };
@@ -103,10 +106,11 @@ public class MssqlFileBuilderTests
         sqlItemFormatterMock.Setup(m => m.Format(fb))
             .Callback<ISqlFileBuilder>(f => f.AppendLine("ISqlFormatter.Format"));
 
-        formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
+        _formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object))
+            .Returns(sqlItemFormatterMock.Object);
 
         // Act
-        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
+        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", [sqlItemMock.Object]);
 
         // Assert
         Assert.IsTrue(res.Contains("-- Changes (1):"));
@@ -118,14 +122,12 @@ public class MssqlFileBuilderTests
     public void Generate__Does_not_mark_dataloss_items_if_no_dataloss()
     {
         // Arrange
-        var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
-
         var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
         optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
         optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
         optionsMock.SetupGet(m => m.ChangeDisableOption).Returns(false);
 
-        var fb = new MssqlFileBuilder(formatMock.Object)
+        var fb = new MssqlFileBuilder(_formatMock.Object)
         {
             Options = optionsMock.Object
         };
@@ -143,10 +145,11 @@ public class MssqlFileBuilderTests
         sqlItemFormatterMock.Setup(m => m.Format(fb))
             .Callback<ISqlFileBuilder>(f => f.AppendLine("ISqlFormatter.Format"));
 
-        formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
+        _formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object))
+            .Returns(sqlItemFormatterMock.Object);
 
         // Act
-        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
+        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", [sqlItemMock.Object]);
 
         // Assert
         Assert.IsTrue(res.Contains("-- Changes (1):"));
@@ -157,14 +160,12 @@ public class MssqlFileBuilderTests
     public void Generate__Does_not_count_items_without_title()
     {
         // Arrange
-        var formatMock = new Mock<IFormatProvider>(MockBehavior.Strict);
-
         var optionsMock = new Mock<IOutputOptions>(MockBehavior.Strict);
         optionsMock.SetupGet(m => m.PrettyPrint).Returns(false);
         optionsMock.SetupGet(m => m.DisableDatalossCheck).Returns(false);
         optionsMock.SetupGet(m => m.ChangeDisableOption).Returns(false);
 
-        var fb = new MssqlFileBuilder(formatMock.Object)
+        var fb = new MssqlFileBuilder(_formatMock.Object)
         {
             Options = optionsMock.Object
         };
@@ -176,10 +177,11 @@ public class MssqlFileBuilderTests
         var sqlItemFormatterMock = new Mock<ISqlFormatter>(MockBehavior.Strict);
         sqlItemFormatterMock.Setup(m => m.Format(fb));
 
-        formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object)).Returns(sqlItemFormatterMock.Object);
+        _formatMock.Setup(m => m.GetSqlFormatter(sqlItemMock.Object))
+            .Returns(sqlItemFormatterMock.Object);
 
         // Act
-        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", new[] { sqlItemMock.Object });
+        var res = fb.Generate("target.dacpac", "current.dacpac", "1.2.3.4", [sqlItemMock.Object]);
 
         // Assert
         Assert.IsTrue(res.Contains("-- Changes (0):"));

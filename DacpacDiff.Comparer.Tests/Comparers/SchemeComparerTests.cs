@@ -3,206 +3,199 @@ using DacpacDiff.Core.Model;
 using DacpacDiff.Core.Output;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 
-namespace DacpacDiff.Comparer.Comparers.Tests
+namespace DacpacDiff.Comparer.Comparers.Tests;
+
+[TestClass]
+public class SchemeComparerTests
 {
-    [TestClass]
-    public class SchemeComparerTests
+    public class TestModel : IModel, IDependentModel
     {
-        public class TestModel : IModel, IDependentModel
+        public string FullName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+
+        public string[] Dependencies { get; set; } = [];
+    }
+    public class TestDiff : IDifference
+    {
+        public IModel? Model { get; init; }
+
+        [ExcludeFromCodeCoverage(Justification = "Not used")]
+        public string? Title => throw new NotImplementedException();
+
+        public string Name => Model?.Name ?? string.Empty;
+    }
+
+    [TestMethod]
+    public void Compare__Compares_left_to_right()
+    {
+        // Arrange
+        var tgtScheme = new SchemeModel("left");
+        var tgtDb = new DatabaseModel("left");
+        tgtScheme.Databases["left"] = tgtDb;
+
+        var curScheme = new SchemeModel("right");
+        var curDb = new DatabaseModel("right");
+        curScheme.Databases["right"] = curDb;
+
+        var diffMock = new Mock<IDifference>();
+
+        var comparerMock = new Mock<IModelComparer<DatabaseModel>>(MockBehavior.Strict);
+        comparerMock.Setup(m => m.Compare(tgtDb, curDb))
+            .Returns([diffMock.Object]);
+
+        var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
+        comparerFactMock.Setup(m => m.GetComparer<DatabaseModel>())
+            .Returns(comparerMock.Object);
+
+        var comparer = new SchemeComparer(comparerFactMock.Object);
+
+        // Act
+        var res = comparer.Compare(tgtScheme, curScheme);
+
+        // Assert
+        Assert.AreSame(diffMock.Object, res.Single());
+    }
+
+    [TestMethod]
+    public void Compare__Only_supports_single_left_database()
+    {
+        // Arrange
+        var tgtScheme = new SchemeModel("left");
+        var tgtDb = new DatabaseModel("left");
+        tgtScheme.Databases["targetA"] = tgtDb;
+        tgtScheme.Databases["targetB"] = tgtDb;
+
+        var curScheme = new SchemeModel("right");
+        var curDb = new DatabaseModel("right");
+        curScheme.Databases["right"] = curDb;
+
+        var diffMock = new Mock<IDifference>();
+
+        var comparerMock = new Mock<IModelComparer<DatabaseModel>>(MockBehavior.Strict);
+        comparerMock.Setup(m => m.Compare(tgtDb, curDb))
+            .Returns([diffMock.Object]);
+
+        var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
+        comparerFactMock.Setup(m => m.GetComparer<DatabaseModel>())
+            .Returns(comparerMock.Object);
+
+        var comparer = new SchemeComparer(comparerFactMock.Object);
+
+        // Act
+        Assert.ThrowsException<NotSupportedException>
+            (() => comparer.Compare(tgtScheme, curScheme));
+    }
+
+    [TestMethod]
+    public void Compare__Only_supports_single_right_database()
+    {
+        // Arrange
+        var tgtScheme = new SchemeModel("left");
+        var tgtDb = new DatabaseModel("left");
+        tgtScheme.Databases["left"] = tgtDb;
+
+        var curScheme = new SchemeModel("right");
+        var curDb = new DatabaseModel("right");
+        curScheme.Databases["currentA"] = curDb;
+        curScheme.Databases["currentB"] = curDb;
+
+        var diffMock = new Mock<IDifference>();
+
+        var comparerMock = new Mock<IModelComparer<DatabaseModel>>(MockBehavior.Strict);
+        comparerMock.Setup(m => m.Compare(tgtDb, curDb))
+            .Returns([diffMock.Object]);
+
+        var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
+        comparerFactMock.Setup(m => m.GetComparer<DatabaseModel>())
+            .Returns(comparerMock.Object);
+
+        var comparer = new SchemeComparer(comparerFactMock.Object);
+
+        // Act
+        Assert.ThrowsException<NotSupportedException>
+            (() => comparer.Compare(tgtScheme, curScheme));
+    }
+
+    [TestMethod]
+    public void ReferencesRemain__List_contains_dependency_other_than_self__True()
+    {
+        // Arrange
+        var diff = new TestDiff
         {
-            public string FullName { get; set; } = string.Empty;
-            public string Name { get; set; } = string.Empty;
+            Model = new TestModel
+            {
+                Name = "TestDiff",
+                Dependencies = ["TestDep"]
+            }
+        };
 
-            public string[] Dependencies { get; set; } = Array.Empty<string>();
-        }
-        public class TestDiff : IDifference
+        var deps = new IDifference[]
         {
-            public IModel? Model { get; init; }
+            diff, // Self
+            new TestDiff { Model = new TestModel { Name = "TestDep" } }
+        };
 
-            [ExcludeFromCodeCoverage(Justification = "Not used")]
-            public string? Title => throw new NotImplementedException();
+        // Act
+        var res = SchemeComparer.ReferencesRemain(deps, diff);
 
-            public string Name => Model?.Name ?? string.Empty;
-        }
+        // Assert
+        Assert.IsTrue(res);
+    }
 
-        [TestMethod]
-        public void Compare__Compares_left_to_right()
+    [TestMethod]
+    public void ReferencesRemain__List_contains_only_self_dependency__False()
+    {
+        // Arrange
+        var diff = new TestDiff
         {
-            // Arrange
-            var tgtScheme = new SchemeModel("left");
-            var tgtDb = new DatabaseModel("left");
-            tgtScheme.Databases["left"] = tgtDb;
+            Model = new TestModel
+            {
+                Name = "TestDiff",
+                Dependencies = ["TestDep"]
+            }
+        };
 
-            var curScheme = new SchemeModel("right");
-            var curDb = new DatabaseModel("right");
-            curScheme.Databases["right"] = curDb;
-
-            var diffMock = new Mock<IDifference>();
-
-            var comparerMock = new Mock<IModelComparer<DatabaseModel>>(MockBehavior.Strict);
-            comparerMock.Setup(m => m.Compare(tgtDb, curDb))
-                .Returns(new[] { diffMock.Object });
-
-            var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
-            comparerFactMock.Setup(m => m.GetComparer<DatabaseModel>())
-                .Returns(comparerMock.Object);
-
-            var comparer = new SchemeComparer(comparerFactMock.Object);
-
-            // Act
-            var res = comparer.Compare(tgtScheme, curScheme);
-
-            // Assert
-            Assert.AreSame(diffMock.Object, res.Single());
-        }
-
-        [TestMethod]
-        public void Compare__Only_supports_single_left_database()
+        var deps = new IDifference[]
         {
-            // Arrange
-            var tgtScheme = new SchemeModel("left");
-            var tgtDb = new DatabaseModel("left");
-            tgtScheme.Databases["targetA"] = tgtDb;
-            tgtScheme.Databases["targetB"] = tgtDb;
+            diff, // Self
+            new TestDiff { Model = new TestModel { Name = "TestDepX" } }
+        };
 
-            var curScheme = new SchemeModel("right");
-            var curDb = new DatabaseModel("right");
-            curScheme.Databases["right"] = curDb;
+        // Act
+        var res = SchemeComparer.ReferencesRemain(deps, diff);
 
-            var diffMock = new Mock<IDifference>();
+        // Assert
+        Assert.IsFalse(res);
+    }
 
-            var comparerMock = new Mock<IModelComparer<DatabaseModel>>(MockBehavior.Strict);
-            comparerMock.Setup(m => m.Compare(tgtDb, curDb))
-                .Returns(new[] { diffMock.Object });
+    [TestMethod]
+    public void OrderDiffsByDependency__Orders_diffs_based_on_dependencies()
+    {
+        // Arrange
+        var diffA = new TestDiff { Model = new TestModel { Name = "DiffA" } };
+        ((TestModel)diffA.Model).Dependencies = ["DiffB"];
 
-            var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
-            comparerFactMock.Setup(m => m.GetComparer<DatabaseModel>())
-                .Returns(comparerMock.Object);
+        var diffB = new TestDiff { Model = new TestModel { Name = "DiffB" } };
+        var diffC = new TestDiff { Model = new TestModel { Name = "DiffC" } };
 
-            var comparer = new SchemeComparer(comparerFactMock.Object);
-
-            // Act
-            Assert.ThrowsException<NotSupportedException>(() =>
-            {
-                comparer.Compare(tgtScheme, curScheme);
-            });
-        }
-
-        [TestMethod]
-        public void Compare__Only_supports_single_right_database()
+        var diffs = new IDifference[]
         {
-            // Arrange
-            var tgtScheme = new SchemeModel("left");
-            var tgtDb = new DatabaseModel("left");
-            tgtScheme.Databases["left"] = tgtDb;
+            diffA,
+            diffB,
+            diffC
+        };
 
-            var curScheme = new SchemeModel("right");
-            var curDb = new DatabaseModel("right");
-            curScheme.Databases["currentA"] = curDb;
-            curScheme.Databases["currentB"] = curDb;
+        // Act
+        var res = SchemeComparer.OrderDiffsByDependency(diffs).ToArray();
 
-            var diffMock = new Mock<IDifference>();
-
-            var comparerMock = new Mock<IModelComparer<DatabaseModel>>(MockBehavior.Strict);
-            comparerMock.Setup(m => m.Compare(tgtDb, curDb))
-                .Returns(new[] { diffMock.Object });
-
-            var comparerFactMock = new Mock<IModelComparerFactory>(MockBehavior.Strict);
-            comparerFactMock.Setup(m => m.GetComparer<DatabaseModel>())
-                .Returns(comparerMock.Object);
-
-            var comparer = new SchemeComparer(comparerFactMock.Object);
-
-            // Act
-            Assert.ThrowsException<NotSupportedException>(() =>
-            {
-                comparer.Compare(tgtScheme, curScheme);
-            });
-        }
-
-        [TestMethod]
-        public void ReferencesRemain__List_contains_dependency_other_than_self__True()
+        // Assert
+        CollectionAssert.AreEqual(new ISqlFormattable[]
         {
-            // Arrange
-            var diff = new TestDiff
-            {
-                Model = new TestModel
-                {
-                    Name = "TestDiff",
-                    Dependencies = new[] { "TestDep" }
-                }
-            };
-
-            var deps = new IDifference[]
-            {
-                diff, // Self
-                new TestDiff { Model = new TestModel { Name = "TestDep" } }
-            };
-
-            // Act
-            var res = SchemeComparer.ReferencesRemain(deps, diff);
-
-            // Assert
-            Assert.IsTrue(res);
-        }
-
-        [TestMethod]
-        public void ReferencesRemain__List_contains_only_self_dependency__False()
-        {
-            // Arrange
-            var diff = new TestDiff
-            {
-                Model = new TestModel
-                {
-                    Name = "TestDiff",
-                    Dependencies = new[] { "TestDep" }
-                }
-            };
-
-            var deps = new IDifference[]
-            {
-                diff, // Self
-                new TestDiff { Model = new TestModel { Name = "TestDepX" } }
-            };
-
-            // Act
-            var res = SchemeComparer.ReferencesRemain(deps, diff);
-
-            // Assert
-            Assert.IsFalse(res);
-        }
-
-        [TestMethod]
-        public void OrderDiffsByDependency__Orders_diffs_based_on_dependencies()
-        {
-            // Arrange
-            var diffA = new TestDiff { Model = new TestModel { Name = "DiffA" } };
-            ((TestModel)diffA.Model).Dependencies = new[] { "DiffB" };
-
-            var diffB = new TestDiff { Model = new TestModel { Name = "DiffB" } };
-            var diffC = new TestDiff { Model = new TestModel { Name = "DiffC" } };
-
-            var diffs = new IDifference[]
-            {
-                diffA,
-                diffB,
-                diffC
-            };
-
-            // Act
-            var res = SchemeComparer.OrderDiffsByDependency(diffs).ToArray();
-
-            // Assert
-            CollectionAssert.AreEqual(new ISqlFormattable[]
-            {
-                diffB,
-                diffC,
-                diffA,
-            }, res);
-        }
+            diffB,
+            diffC,
+            diffA,
+        }, res);
     }
 }

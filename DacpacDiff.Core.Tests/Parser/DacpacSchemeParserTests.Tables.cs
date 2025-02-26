@@ -80,6 +80,38 @@ namespace DacpacDiff.Core.Parser.Tests
         }
 
         [TestMethod]
+        public void ParseContent__Parses_tables_with_field_collations()
+        {
+            // Arrange
+            var xml = @"<root><Model>
+    <Element Type=""SqlTable"" Name=""[dbo].[Test]"">
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[VarcharMax]"">
+            <Property Name=""Collation"" Value=""CustomCollation"" />
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""varchar"" /></Entry></Relationship>
+                <Property Name=""IsMax"" Value=""True"" />
+            </Element>
+        </Element>
+        <Element Type=""SqlSimpleColumn"" Name=""[dbo].[Test].[Char10]"">
+            <Element Type=""SqlTypeSpecifier"">
+                <Relationship Name=""Type""><Entry><References Name=""char"" /></Entry></Relationship>
+                <Property Name=""Length"" Value=""10"" />
+            </Element>
+        </Element>
+    </Element>
+</Model></root>";
+
+            // Act
+            var res = DacpacSchemeParser.ParseContent("test", xml);
+            var sch = res.Databases["database"].Schemas["dbo"];
+            var tbl = sch.Tables["Test"];
+
+            // Assert
+            Assert.AreEqual("CustomCollation", tbl.Fields.Single(f => f.Name == "VarcharMax").Collation);
+            Assert.IsNull(tbl.Fields.Single(f => f.Name == "Char10").Collation);
+        }
+
+        [TestMethod]
         public void ParseContent__Parses_tables_with_identity_field()
         {
             // Arrange

@@ -4,12 +4,9 @@ using DacpacDiff.Core.Output;
 
 namespace DacpacDiff.Mssql.Diff;
 
-public class MssqlDiffFieldAlter : BaseMssqlDiffBlock<DiffFieldAlter>
+public class MssqlDiffFieldAlter(DiffFieldAlter diff)
+    : BaseMssqlDiffBlock<DiffFieldAlter>(diff)
 {
-    public MssqlDiffFieldAlter(DiffFieldAlter diff)
-        : base(diff)
-    { }
-
     private static void appendFieldSql(FieldModel fld, ISqlFileBuilder sb, bool existingIsNull, bool asAlter)
     {
         sb.Append($"[{fld.Name}]");
