@@ -21,12 +21,12 @@ We work on a large platform that makes use of Visual Studio Database Projects fo
 * Extensible - not strongly tied to MSSQL
 
 # Structure
-:::mermaid
+```mermaid
 flowchart LR
     F1>dacpac 1] -->|Parse| M1[Models] --> C{{Compare}} --> D[Diffs] --> G{{Format}} --> S[[SQL]]
     F2>dacpac 2] -->|Parse| M2[Models] --> C
     O>Options] --> P[/Formatter/] --> G
-:::
+```
 
 # Limitations
 * Only supports one database per scheme
