@@ -52,3 +52,15 @@ flowchart LR
 1. The comparers produce a list of differences
 1. The differences are ordered based on a number of factors, including dependencies
 1. The differences are converted to the output format
+
+# Building and running in Docker container
+
+The container can be built locally by running:
+```bash
+docker build . -t dacpac-diff
+```
+
+To run the container:
+```bash
+docker run --rm -v /path/to/local/folder:/data dacpac-diff /data/first.dacpac /data/second.dacpac > output.sql
+```
