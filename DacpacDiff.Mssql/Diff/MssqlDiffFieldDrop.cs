@@ -8,7 +8,11 @@ public class MssqlDiffFieldDrop(DiffFieldDrop diff)
 {
     protected override void GetFormat(ISqlFileBuilder sb)
     {
-        // TODO: ref
+        // Drop ref
+        if (_diff.Field.Ref != null)
+        {
+            sb.ALTER_TABLE_DROP_FIELD_REF(_diff.Field.Ref);
+        }
 
         // Drop unnamed uniqueness
         if (_diff.Field.IsUnique)

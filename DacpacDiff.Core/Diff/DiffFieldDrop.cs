@@ -37,6 +37,9 @@ public class DiffFieldDrop : IDifference, IDataLossChange, IChangeProvider
                     diffs.Add(new DiffObjectDrop((ModuleModel)dep));
                     break;
                 case FunctionModuleModel:
+                case ProcedureModuleModel:
+                case TriggerModuleModel:
+                case ViewModuleModel:
                     // NOOP
                     break;
                 default:
