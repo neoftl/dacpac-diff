@@ -63,19 +63,21 @@ public class MssqlDiffFieldAlter(DiffFieldAlter diff)
             sb.AppendLine();
         }
 
+        var makeUnique = _diff.Has(DiffFieldAlter.Change.Unique);
+
         // Main definition
         if (_diff.Has(
-            DiffFieldAlter.Change.Type,
-            DiffFieldAlter.Change.Collation, DiffFieldAlter.Change.CollationUnset,
-            DiffFieldAlter.Change.Computed, DiffFieldAlter.Change.ComputedUnset,
-            DiffFieldAlter.Change.Nullable
+                DiffFieldAlter.Change.Type,
+                DiffFieldAlter.Change.Collation, DiffFieldAlter.Change.CollationUnset,
+                DiffFieldAlter.Change.Computed, DiffFieldAlter.Change.ComputedUnset,
+                DiffFieldAlter.Change.Nullable
             ))
         {
             // Drop unnamed uniqueness
             if (cur.IsUnique)
             {
                 sb.DROP_UNNAMED_UNIQUE(cur);
-                cur.IsUnique = false;
+                makeUnique = true;
             }
 
             // Alter
@@ -95,7 +97,7 @@ public class MssqlDiffFieldAlter(DiffFieldAlter diff)
         }
 
         // Make unique (drop is handled elsewhere)
-        if (_diff.Has(DiffFieldAlter.Change.Unique))
+        if (makeUnique)
         {
             sb.AppendLine($"ALTER TABLE {tgt.Table.FullName} ADD UNIQUE ([{tgt.Name}])");
         }
