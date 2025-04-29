@@ -3,23 +3,21 @@ using DacpacDiff.Core.Output;
 
 namespace DacpacDiff.Mssql.Diff;
 
-public class MssqlDiffFieldDrop : BaseMssqlDiffBlock<DiffFieldDrop>
+public class MssqlDiffFieldDrop(DiffFieldDrop diff)
+    : BaseMssqlDiffBlock<DiffFieldDrop>(diff)
 {
-    public MssqlDiffFieldDrop(DiffFieldDrop diff)
-        : base(diff)
-    { }
-
     protected override void GetFormat(ISqlFileBuilder sb)
     {
-        // TODO: ref
+        // Drop ref
+        if (_diff.Field.Ref != null)
+        {
+            sb.ALTER_TABLE_DROP_FIELD_REF(_diff.Field.Ref);
+        }
 
         // Drop unnamed uniqueness
         if (_diff.Field.IsUnique)
         {
-            sb.Append("EXEC #usp_DropUnnamedUniqueConstraint ")
-                .Append($"'{_diff.Field.Table.FullName}', ")
-                .Append($"'{_diff.Field.Name}'")
-                .AppendGo();
+            sb.DROP_UNNAMED_UNIQUE(_diff.Field);
         }
 
         // Drop unnamed default

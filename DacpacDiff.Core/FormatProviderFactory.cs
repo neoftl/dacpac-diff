@@ -9,6 +9,7 @@ public class FormatProviderFactory
 
     internal void Initialise()
     {
+        // TODO: This does not work for single-file compilation
         // Find all assemblies referencing DacpacDiff.Core
         var dacpacDiffAsm = typeof(IFormatProvider).Assembly;
         var dlls = new FileInfo(dacpacDiffAsm.Location).Directory?.GetFiles("*.dll") ?? Array.Empty<FileInfo>();

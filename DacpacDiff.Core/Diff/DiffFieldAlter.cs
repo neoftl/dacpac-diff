@@ -16,6 +16,28 @@ public class DiffFieldAlter(FieldModel tgt, FieldModel cur)
     public string Name => $"{TargetField.Table.FullName}.[{TargetField.Name}]";
     public string Title => TITLE;
 
+    // Changes for this alter
+    public enum Change
+    {
+        Computed,
+        ComputedUnset,
+        Collation,
+        CollationUnset,
+        Default,
+        DefaultUnset,
+        Identity,
+        IdentityUnset,
+        Nullable,
+        NullableUnset,
+        Reference,
+        ReferenceUnset,
+        Type,
+        Unique,
+        UniqueUnset
+    }
+    public Change[] Changes { get; set; } = [];
+    public bool Has(params Change[] changes) => changes.Any(Changes.Contains);
+
     public bool GetDataLossTable(out string tableName)
     {
         // TODO: More accurate test

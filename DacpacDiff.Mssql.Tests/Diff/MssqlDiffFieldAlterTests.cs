@@ -2,6 +2,7 @@
 using DacpacDiff.Core.Diff;
 using DacpacDiff.Core.Model;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using System;
 using System.Linq;
 
@@ -10,6 +11,8 @@ namespace DacpacDiff.Mssql.Diff.Tests;
 [TestClass]
 public class MssqlDiffFieldAlterTests
 {
+    #region Collation
+
     [TestMethod]
     public void MssqlFieldAlter__Change_collation()
     {
@@ -24,7 +27,10 @@ public class MssqlDiffFieldAlterTests
             Type = "FType"
         };
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.Collation]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
@@ -35,6 +41,37 @@ public class MssqlDiffFieldAlterTests
             "ALTER TABLE [LSchema].[LTable] ALTER COLUMN [LField] FType COLLATE NewCollation NOT NULL",
         }, res);
     }
+
+    [TestMethod]
+    public void MssqlFieldAlter__Remove_collation()
+    {
+        // Arrange
+        var tgt = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "LSchema"), "LTable"), "LField")
+        {
+            Type = "FType"
+        };
+        var cur = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "RSchema"), "RTable"), "RField")
+        {
+            Type = "FType",
+            Collation = "NewCollation"
+        };
+
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.CollationUnset]
+        };
+
+        // Act
+        var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+
+        // Assert
+        CollectionAssert.AreEqual(new[]
+        {
+            "ALTER TABLE [LSchema].[LTable] ALTER COLUMN [LField] FType NOT NULL",
+        }, res);
+    }
+    
+    #endregion Collation
 
     #region Computed
 
@@ -51,7 +88,10 @@ public class MssqlDiffFieldAlterTests
             Computation = "COMPUTATION"
         };
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.ComputedUnset]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
@@ -77,7 +117,10 @@ public class MssqlDiffFieldAlterTests
             Type = "RType"
         };
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.Computed]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
@@ -112,7 +155,10 @@ public class MssqlDiffFieldAlterTests
         };
         tgt.Default = new FieldDefaultModel(tgt, null, "LDefValue");
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.Default]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -137,7 +183,10 @@ public class MssqlDiffFieldAlterTests
         };
         tgt.Default = new FieldDefaultModel(tgt, null, "LDefValue");
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.Type, DiffFieldAlter.Change.Default]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -168,7 +217,10 @@ public class MssqlDiffFieldAlterTests
         };
         tgt.Default = new FieldDefaultModel(tgt, "LDefault", "LDefValue");
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.Default]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -193,7 +245,10 @@ public class MssqlDiffFieldAlterTests
         };
         tgt.Default = new FieldDefaultModel(tgt, "LDefault", "LDefValue");
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.Type, DiffFieldAlter.Change.Default]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
@@ -224,7 +279,10 @@ public class MssqlDiffFieldAlterTests
         };
         cur.Default = new FieldDefaultModel(cur, null, "RDefValue");
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.DefaultUnset]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -249,7 +307,10 @@ public class MssqlDiffFieldAlterTests
         };
         cur.Default = new FieldDefaultModel(cur, null, "RDefValue");
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.Type, DiffFieldAlter.Change.DefaultUnset]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
@@ -280,7 +341,10 @@ public class MssqlDiffFieldAlterTests
         };
         cur.Default = new FieldDefaultModel(cur, "RDefault", "RDefValue");
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.DefaultUnset]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -305,7 +369,10 @@ public class MssqlDiffFieldAlterTests
         };
         cur.Default = new FieldDefaultModel(cur, "RDefault", "RDefValue");
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.Type, DiffFieldAlter.Change.DefaultUnset]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
@@ -337,7 +404,10 @@ public class MssqlDiffFieldAlterTests
             Nullable = false
         };
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.Nullable]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -361,7 +431,10 @@ public class MssqlDiffFieldAlterTests
             Nullable = true
         };
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.Nullable]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -389,7 +462,10 @@ public class MssqlDiffFieldAlterTests
             IsUnique = false
         };
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.Unique]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -413,7 +489,10 @@ public class MssqlDiffFieldAlterTests
             IsUnique = true
         };
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.UniqueUnset]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -442,7 +521,10 @@ public class MssqlDiffFieldAlterTests
         var end = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "TSchema"), "TTable"), "TField");
         tgt.Ref = new FieldRefModel(tgt, end);
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.Reference]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -471,7 +553,10 @@ public class MssqlDiffFieldAlterTests
             IsSystemNamed = false
         };
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.Reference]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -496,7 +581,10 @@ public class MssqlDiffFieldAlterTests
         var end = new FieldModel(new TableModel(new SchemaModel(DatabaseModel.Empty, "TSchema"), "TTable"), "TField");
         cur.Ref = new FieldRefModel(cur, end);
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.ReferenceUnset]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
@@ -531,7 +619,10 @@ public class MssqlDiffFieldAlterTests
             IsSystemNamed = false
         };
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.ReferenceUnset]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString();
@@ -561,7 +652,10 @@ public class MssqlDiffFieldAlterTests
         };
         cur.Ref = new FieldRefModel(cur, end);
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.ReferenceUnset, DiffFieldAlter.Change.Reference]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
@@ -598,7 +692,10 @@ public class MssqlDiffFieldAlterTests
             IsSystemNamed = false
         };
 
-        var diff = new DiffFieldAlter(tgt, cur);
+        var diff = new DiffFieldAlter(tgt, cur)
+        {
+            Changes = [DiffFieldAlter.Change.ReferenceUnset, DiffFieldAlter.Change.Reference]
+        };
 
         // Act
         var res = new MssqlDiffFieldAlter(diff).ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
@@ -610,6 +707,8 @@ public class MssqlDiffFieldAlterTests
             "ALTER TABLE [LSchema].[LTable] WITH NOCHECK ADD FOREIGN KEY ([LField]) REFERENCES [TSchema].[TTable] ([TField])"
         }, res);
     }
+
+    #endregion Reference
 
     [TestMethod]
     [DataRow(false)]
@@ -646,6 +745,4 @@ public class MssqlDiffFieldAlterTests
         // Assert
         Assert.AreEqual(0, res.Length);
     }
-
-    #endregion Reference
 }
