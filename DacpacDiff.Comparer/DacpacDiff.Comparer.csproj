@@ -8,7 +8,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Company>Neo Fintech Lab</Company>
         <Authors>IFYates</Authors>
-        <Version>0.4.0</Version>
+        <Version>0.4.1</Version>
         <Copyright>(c) Neo Fintech Lab 2021</Copyright>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/neoftl/dacpac-diff</PackageProjectUrl>
@@ -19,6 +19,9 @@
             We strongly advise reviewing the final delta script before applying.</PackageReleaseNotes>
         <Description>dacpac-diff generates SQL diff files between the definitions of two dacpac files, to facilitate updating a database using easily managed scripts.</Description>
         <AssemblyName>dacpac-diff</AssemblyName>
+		
+		<PackAsTool>true</PackAsTool>
+		<ToolCommandName>dacpac-diff</ToolCommandName>
     </PropertyGroup>
 
     <ItemGroup>

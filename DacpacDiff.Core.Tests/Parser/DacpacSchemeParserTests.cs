@@ -142,6 +142,11 @@ namespace DacpacDiff.Core.Parser.Tests
                     </Element>
                     <Property Name=""IsOutput"" Value=""True"" />
                 </Element>
+                <Element Type=""SqlSubroutineParameter"" Name=""[dbo].[usp_Test].[@ComplexObject]"">
+                    <Element Type=""SqlTypeSpecifier"">
+                        <Relationship Name=""Type""><Entry><References Name=""[dbo].[MyType]"" /></Entry></Relationship>
+                    </Element>
+                </Element>
             </Entry>
         </Relationship>
     </Element>
@@ -153,10 +158,11 @@ namespace DacpacDiff.Core.Parser.Tests
 
             // Assert
             var proc = (ProcedureModuleModel)sch.Modules["usp_Test"];
-            Assert.AreEqual(3, proc.Parameters.Length);
+            Assert.AreEqual(4, proc.Parameters.Length);
             Assert.AreEqual(new ParameterModel(proc, "@VarcharMax") { Type = "varchar(MAX)", DefaultValue = "'default'", Order = 1 }, proc.Parameters[0]);
             Assert.AreEqual(new ParameterModel(proc, "@Char10") { Type = "char(10)", IsReadOnly = true, Order = 2 }, proc.Parameters[1]);
             Assert.AreEqual(new ParameterModel(proc, "@Decimal") { Type = "decimal(19, 5)", IsOutput = true, Order = 3 }, proc.Parameters[2]);
+            Assert.AreEqual(new ParameterModel(proc, "@ComplexObject") { Type = "[dbo].[MyType]", Order = 4 }, proc.Parameters[3]);
         }
 
         [TestMethod]

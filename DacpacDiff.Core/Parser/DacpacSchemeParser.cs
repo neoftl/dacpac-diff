@@ -130,7 +130,7 @@ public class DacpacSchemeParser : ISchemeParser
                 name = name[(prefix.Length + 1)..];
             }
         }
-        return (name.Length > 2 && name[0] == '[' && name[^1] == ']')
+        return (name.Length > 2 && name[0] == '[' && name[^1] == ']' && name.IndexOf('[', 1) < 0)
             ? name[1..^1]
             : name;
     }
@@ -541,7 +541,7 @@ public class DacpacSchemeParser : ISchemeParser
 
         var param = new ParameterModel(
             parent: parent,
-            name: getName(a).Split('.')[^1].Trim('[', ']')
+            name: getName(a).Split('.')[^1][1..^1]
         )
         {
             Order = order,
