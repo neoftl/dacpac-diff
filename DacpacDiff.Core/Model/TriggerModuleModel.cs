@@ -2,7 +2,8 @@
 
 namespace DacpacDiff.Core.Model;
 
-public class TriggerModuleModel : ModuleModel, IModuleWithBody
+public class TriggerModuleModel(SchemaModel schema, string name)
+    : ModuleWithBody(schema, name, ModuleType.TRIGGER)
 {
     public string Parent { get; set; } = string.Empty;
 
@@ -16,13 +17,6 @@ public class TriggerModuleModel : ModuleModel, IModuleWithBody
     public bool ForDelete { get; set; }
     public bool ForInsert { get; set; }
     public bool ForUpdate { get; set; }
-
-    public string Body { get; set; } = string.Empty;
-
-    public TriggerModuleModel(SchemaModel schema, string name)
-        : base(schema, name, ModuleType.TRIGGER)
-    {
-    }
 
     public override bool IsSimilarDefinition(ModuleModel other)
     {

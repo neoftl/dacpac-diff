@@ -318,7 +318,7 @@ public class DacpacSchemeParser : ISchemeParser
             ? "CALLER"
             : el.Find("Property", ("Name", "IsOwner"), ("Value", "True"))?.Length > 0
             ? "OWNER" : null;
-        func.ReturnNullForNullInput = el.Find("Property", ("Name", "DoReturnNullForNullInput"), ("Value", "True"))?.Any() == true;
+        func.ReturnNullForNullInput = el.Find("Property", ("Name", "DoReturnNullForNullInput"), ("Value", "True"))?.Length > 0;
 
         var idx = 0;
         func.Parameters = el.Find("Relationship", ("Name", "Parameters")).SingleOrDefault()?

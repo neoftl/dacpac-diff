@@ -1,25 +1,18 @@
 ﻿using DacpacDiff.Core.Utility;
 
-namespace DacpacDiff.Core.Model
+namespace DacpacDiff.Core.Model;
+
+public class ViewModuleModel(SchemaModel schema, string name)
+    : ModuleWithBody(schema, name, ModuleType.VIEW)
 {
-    public class ViewModuleModel : ModuleModel, IModuleWithBody
+    public override bool IsSimilarDefinition(ModuleModel other)
     {
-        public string Body { get; set; } = string.Empty;
-
-        public ViewModuleModel(SchemaModel schema, string name)
-            : base(schema, name, ModuleType.VIEW)
+        if (other is not ViewModuleModel vw)
         {
+            return false;
         }
 
-        public override bool IsSimilarDefinition(ModuleModel other)
-        {
-            if (other is not ViewModuleModel vw)
-            {
-                return false;
-            }
-            
-            return this.IsEqual(vw,
-                m => m.Body.ScrubSQL());
-        }
+        return this.IsEqual(vw,
+            m => m.Body.ScrubSQL());
     }
 }
