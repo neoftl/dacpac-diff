@@ -92,10 +92,13 @@ public class SchemeComparer
     /// </summary>
     internal static bool ReferencesRemain(IEnumerable<IDifference> dict, IDifference diff)
     {
-        if (diff.Model is IDependentModel d
-            && dict.Where(m => m != diff).Any(m => d.Dependencies?.Contains(m.Name) == true))
+        if (diff.Model is IDependentModel d)
         {
-            return true;
+            var deps = d.Dependencies;
+            if (deps?.ContainsAny(dict.Where(m => m != diff).Select(m => m.Name).ToArray()) == true)
+            {
+                return true;
+            }
         }
 
         // TODO?

@@ -32,7 +32,7 @@ public class FieldModel : IModel<FieldModel, TableModel>, IDependentModel, IEqua
     public bool HasReference => Ref is not null;
 
     public string[] Dependencies => (Default?.Dependencies ?? Array.Empty<string>())
-        .Append(Ref?.TargetField.Table == Table ? null : Ref?.TargetField.Table.Name)
+        .Append(Ref?.TargetField.Table == Table ? null : Ref?.TargetField.Table.FullName)
         .NotNull().ToArray();
     public IModel[] Dependents => Db.FindAllDependents(this).ToArray();
 
