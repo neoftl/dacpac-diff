@@ -8,9 +8,9 @@
 		<ImplicitUsings>enable</ImplicitUsings>
         <Company>Neo Fintech Lab</Company>
         <Authors>IFYates</Authors>
-        <Version>0.4.1</Version>
-        <Copyright>(c) Neo Fintech Lab 2021</Copyright>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Version>0.4.2</Version>
+        <Copyright>(c) Neo Fintech Lab 2026</Copyright>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/neoftl/dacpac-diff</PackageProjectUrl>
         <RepositoryUrl>https://github.com/neoftl/dacpac-diff</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>

@@ -10,9 +10,11 @@ public class SchemeComparer
 {
     // TODO: move to IDifference as a comparison
     public static readonly Func<IEnumerable<IDifference>, IDifference, bool>[] DiffOrder = new Func<IEnumerable<IDifference>, IDifference, bool>[] {
+        (a, d) => d is DiffTableCreate && !ReferencesRemain(a, d),
         (a, d) => d is DiffTableCheckDrop,
         (a, d) => d is DiffObjectDrop drop && drop.Type != DiffObjectDrop.ObjectType.SCHEMA,
         (a, d) => d is DiffObjectDrop drop && drop.Type == DiffObjectDrop.ObjectType.SCHEMA,
+        (a, d) => d is DiffFieldAlter fa && fa.Changes.All(c => c is DiffFieldAlter.Change.CollationUnset or DiffFieldAlter.Change.ComputedUnset or DiffFieldAlter.Change.DefaultUnset or DiffFieldAlter.Change.IdentityUnset or DiffFieldAlter.Change.NullableUnset or DiffFieldAlter.Change.ReferenceUnset or DiffFieldAlter.Change.UniqueUnset),
         (a, d) => d is DiffSchemaCreate,
         (a, d) => d is DiffUserTypeCreate,
         (a, d) => d is DiffModuleCreate create && create.Module.StubOnCreate,
@@ -22,7 +24,6 @@ public class SchemeComparer
         (a, d) => d is DiffFieldDrop,
         (a, d) => d is DiffFieldCreate,
         (a, d) => d is DiffTableCheckAlter,
-        (a, d) => d is DiffTableCreate,
         (a, d) => d.Model is not null && d.Model is FieldModel && !ReferencesRemain(a, d),
         (a, d) => d.Model is not null && d.Model is ModuleModel && !ReferencesRemain(a, d),
         (a, d) => d.Model is not null && d.Model is TableModel && !ReferencesRemain(a, d),

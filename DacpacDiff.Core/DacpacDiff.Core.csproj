@@ -7,8 +7,8 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <Company>Neo Fintech Lab</Company>
-        <Copyright>(c) Neo Fintech Lab 2021</Copyright>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Copyright>(c) Neo Fintech Lab 2026</Copyright>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/neoftl/dacpac-diff</PackageProjectUrl>
         <RepositoryUrl>https://github.com/neoftl/dacpac-diff</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>

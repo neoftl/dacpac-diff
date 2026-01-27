@@ -30,13 +30,8 @@ public class RecreateObject<T> : AlterObject<T>
         switch (Model)
         {
             case FieldDefaultModel def:
-                // TODO: Specific changes for defaults?
-                var fieldWithoutDefault = new FieldModel(def.Field)
-                {
-                    Default = null
-                };
-                diffs.Add(new DiffFieldAlter(fieldWithoutDefault, ((FieldDefaultModel)OldModel).Field));
-                diffs.Add(new DiffFieldAlter(def.Field, fieldWithoutDefault)); // TODO: prevent removal as duplicate; enforce order (or specific default changes)
+                diffs.Add(new DiffFieldAlter(def.Field, ((FieldDefaultModel)OldModel).Field) { Changes = [DiffFieldAlter.Change.DefaultUnset] });
+                diffs.Add(new DiffFieldAlter(def.Field, ((FieldDefaultModel)OldModel).Field) { Changes = [DiffFieldAlter.Change.Default] });
                 break;
             case ModuleModel mod:
                 // Stubbing will remove dependency, so only drop if no stub
