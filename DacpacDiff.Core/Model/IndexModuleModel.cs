@@ -52,6 +52,11 @@ public class IndexModuleModel : ModuleModel
             return IndexedColumns.All(c => tbl.Fields.Any(f => f.Name == c))
                 && IncludedColumns.All(c => tbl.Fields.Any(f => f.Name == c));
         }
+        if (IndexedObject is ViewModuleModel vw)
+        {
+            return IndexedColumns.All(c => vw.Columns.Any(f => f == c))
+                && IncludedColumns.All(c => vw.Columns.Any(f => f == c));
+        }
 
         throw new NotImplementedException("Index check against " + IndexedObject.GetType().FullName);
     }

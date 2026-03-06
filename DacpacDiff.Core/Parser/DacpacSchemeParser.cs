@@ -2,6 +2,7 @@
 using DacpacDiff.Core.Utility;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
+using System.Reflection.Emit;
 using System.Xml.Linq;
 
 namespace DacpacDiff.Core.Parser;
@@ -236,6 +237,10 @@ public class DacpacSchemeParser : ISchemeParser
 
         // TODO: maintain comment
         view.Body = el.Find("Property", ("Name", "QueryScript")).First().Element("Value")?.Value ?? string.Empty;
+
+        // Fields
+        var colsXml = el.Find(true, "Element", ("Type", a => a is "SqlSimpleColumn" or "SqlComputedColumn"), ("Name", a => a?.StartsWith(view.FullName, StringComparison.OrdinalIgnoreCase) == true));
+        view.Columns.AddRange(colsXml.Select(e => getName(e.Attribute("Name")!.Value, view.FullName)));
     }
 
     private static void parseProcedureElement(SchemaModel schema, XElement el, string name)
